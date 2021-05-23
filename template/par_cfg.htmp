@@ -47,26 +47,34 @@ typedef enum
 	ePAR_TEST_1,
 	ePAR_TEST_2,
 
+	ePAR_TEST_12,
+
+	ePAR_TEST_120,
+
+	ePAR_TEST_100,
+
+	ePAR_TEST_5210,
+
 	// USER CODE END
 
 	ePAR_NUM_OF
-} par_id_t;
+} par_name_t;
 
 
 /**
  * 	Enable/Disable storing persistent parameters to NVM
  */
-#define PAR_CFG_NVM_EN						( 1 )
+#define PAR_CFG_NVM_EN							( 1 )
 
 /**
  * 	Enable/Disable debug mode
  */
-#define PAR_CFG_DEBUG_EN					( 1 )
+#define PAR_CFG_DEBUG_EN						( 1 )
 
 /**
  * 	Enable/Disable assertions
  */
-#define PAR_CFG_ASSERT_EN					( 1 )
+#define PAR_CFG_ASSERT_EN						( 1 )
 
 /**
  * 	Debug communication port macros
@@ -87,67 +95,10 @@ typedef enum
 	#define PAR_ASSERT(x)							{ ; }
 #endif
 
-/**
- * 	Parameters type enumeration
- */
-typedef enum
-{
-	ePAR_TYPE_U8 = 0,	/**<Unsigned 8-bit value */
-	ePAR_TYPE_U16,		/**<Unsigned 16-bit value */
-	ePAR_TYPE_U32,		/**<Unsigned 32-bit value */
-	ePAR_TYPE_I8,		/**<Signed 8-bit value */
-	ePAR_TYPE_I16,		/**<Signed 16-bit value */
-	ePAR_TYPE_I32,		/**<Signed 32-bit value */
-	ePAR_TYPE_F32,		/**<32-bit floating value */
-	ePAR_TYPE_NUM_OF
-}par_type_list_t;
-
-/**
- * 	Parameter R/W access
- */
-typedef enum
-{
-	ePAR_ACCESS_RO = 0,			/**<Parameter read only */
-	ePAR_ACCESS_RW				/**<Parameter read/write */
-}par_io_acess_t;
-
-/**
- * 	Supported data types
- */
-typedef union
-{
-	uint8_t			u8;			/**<Unsigned 8-bit value */
-	uint16_t		u16;		/**<Unsigned 16-bit value */
-	uint32_t		u32;		/**<Unsigned 32-bit value */
-	int8_t			i8;			/**<Signed 8-bit value */
-	int16_t			i16;		/**<Signed 16-bit value */
-	int32_t			i32;		/**<Signed 32-bit value */
-	float32_t		f32;		/**<32-bit floating value */
-} par_type_t;
-
-/**
- * 	Parameter data settings
- *
- * @note	Single parameter object has size of 28 bytes on
- * 			arm-gcc compiler.
- */
-typedef struct
-{
- 	par_type_t		min;			/**<Minimum value of parameter */
-	par_type_t		max;			/**<Maximum value of parameter */
-	par_type_t		init;			/**<Default value of parameter */
-	const char*		name;			/**<Name of variable */
-	const char*		unit;			/**<Unit of parameter */
-	par_id_t		id;				/**<Variable ID */
-	par_type_list_t	type;			/**<Parameter type */
-	par_io_acess_t 	access;			/**<Parameter access */
- 	const bool		persistant;		/**<Parameter persistance flag */
-} par_cfg_t;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-const par_cfg_t * par_cfg_get_cfg_table(void);
+void * par_cfg_get_table(void);
 
 #endif // _PAR_CFG_H_

@@ -76,13 +76,11 @@ static par_status_t par_set_check_validy(const par_name_t par_name);
 
 static par_status_t par_set_u8	(const par_name_t par_name, uint8_t u8_val);
 static par_status_t par_set_i8	(const par_name_t par_name, int8_t i8_val);
-
-
-/*static par_status_t par_set_u16	(const par_name_t par_name, uint16_t u16_val);
+static par_status_t par_set_u16	(const par_name_t par_name, uint16_t u16_val);
 static par_status_t par_set_i16	(const par_name_t par_name, int16_t i16_val);
 static par_status_t par_set_u32	(const par_name_t par_name, uint32_t u32_val);
 static par_status_t par_set_i32	(const par_name_t par_name, int32_t i32_val);
-static par_status_t par_set_f32	(const par_name_t par_name, float32_t f32_val);*/
+static par_status_t par_set_f32	(const par_name_t par_name, float32_t f32_val);
 
 
 
@@ -102,7 +100,7 @@ par_status_t par_init(void)
 
 	gb_is_init = true;
 
-	// Check if defined correctly
+	// Check if par table is defined correctly
 	// TODO: unique par ID ?
 	// TODO: min lower than max ?
 	// TODO: def within min & max value ?
@@ -151,7 +149,7 @@ par_status_t par_set(const par_name_t par_name, const void * p_val)
 			status = par_set_i8( par_name, *(int8_t*) p_val );
 			break;
 
-/*		case ePAR_TYPE_U16:
+		case ePAR_TYPE_U16:
 			status = par_set_u16( par_name, *(uint16_t*) p_val );
 			break;
 
@@ -169,7 +167,7 @@ par_status_t par_set(const par_name_t par_name, const void * p_val)
 
 		case ePAR_TYPE_F32:
 			status = par_set_f32( par_name, *(float32_t*) p_val );
-			break;*/
+			break;
 
 		default:
 			PAR_ASSERT( 0 );
@@ -405,26 +403,26 @@ static par_status_t par_set_i8(const par_name_t par_name, int8_t i8_val)
 	return status;
 }
 
-/*
+
 static par_status_t par_set_u16(const par_name_t par_name, uint16_t u16_val)
 {
-	par_status_t status = par_set_check_validy(id);
+	par_status_t status = par_set_check_validy( par_name );
 
 	if ( ePAR_OK == status )
 	{
-		if ( u16_val > ( par[id].max.u16 ))
+		if ( u16_val > ( gp_par_table[ par_name ].max.u16 ))
 		{
-			par[id].val.u16 = par[id].max.u16;
+			*(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].max.u16;
 			status = ePAR_WAR_LIM_TO_MAX;
 		}
-		else if ( u16_val < ( par[id].min.u16 ))
+		else if ( u16_val < ( gp_par_table[ par_name ].min.u16 ))
 		{
-			par[id].val.u16 = par[id].min.u16;
+			*(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].min.u16;
 			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
-			par[id].val.u16 = (uint16_t) ( u16_val );
+			*(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = (uint16_t) ( u16_val );
 			status = ePAR_OK;
 		}
 	}
@@ -435,23 +433,23 @@ static par_status_t par_set_u16(const par_name_t par_name, uint16_t u16_val)
 
 static par_status_t par_set_i16(const par_name_t par_name, int16_t i16_val)
 {
-	par_status_t status = par_set_check_validy(id);
+	par_status_t status = par_set_check_validy( par_name );
 
 	if ( ePAR_OK == status )
 	{
-		if ( i16_val > ( par[id].max.i16 ))
+		if ( i16_val > ( gp_par_table[ par_name ].max.i16 ))
 		{
-			par[id].val.i16 = par[id].max.i16;
+			*(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].max.i16;
 			status = ePAR_WAR_LIM_TO_MAX;
 		}
-		else if ( i16_val < ( par[id].min.i16 ))
+		else if ( i16_val < ( gp_par_table[ par_name ].min.i16 ))
 		{
-			par[id].val.i16 = par[id].min.i16;
+			*(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].min.i16;
 			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
-			par[id].val.i16 = (int16_t) ( i16_val );
+			*(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = (int16_t) ( i16_val );
 			status = ePAR_OK;
 		}
 	}
@@ -462,23 +460,23 @@ static par_status_t par_set_i16(const par_name_t par_name, int16_t i16_val)
 
 static par_status_t par_set_u32(const par_name_t par_name, uint32_t u32_val)
 {
-	par_status_t status = par_set_check_validy(id);
+	par_status_t status = par_set_check_validy( par_name );
 
 	if ( ePAR_OK == status )
 	{
-		if ( u32_val > ( par[id].max.u32 ))
+		if ( u32_val > ( gp_par_table[ par_name ].max.u32 ))
 		{
-			par[id].val.u32 = par[id].max.u32;
+			*(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].max.u32;
 			status = ePAR_WAR_LIM_TO_MAX;
 		}
-		else if ( u32_val < ( par[id].min.u32 ))
+		else if ( u32_val < ( gp_par_table[ par_name ].min.u32 ))
 		{
-			par[id].val.u32 = par[id].min.u32;
+			*(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].min.u32;
 			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
-			par[id].val.u32 = (uint32_t) ( u32_val );
+			*(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = (uint32_t) ( u32_val );
 			status = ePAR_OK;
 		}
 	}
@@ -489,23 +487,23 @@ static par_status_t par_set_u32(const par_name_t par_name, uint32_t u32_val)
 
 static par_status_t par_set_i32(const par_name_t par_name, int32_t i32_val)
 {
-	par_status_t status = par_set_check_validy(id);
+	par_status_t status = par_set_check_validy( par_name );
 
 	if ( ePAR_OK == status )
 	{
-		if ( i32_val > ( par[id].max.i32 ))
+		if ( i32_val > ( gp_par_table[ par_name ].max.i32 ))
 		{
-			par[id].val.i32 = par[id].max.i32;
+			*(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].max.i32;
 			status = ePAR_WAR_LIM_TO_MAX;
 		}
-		else if ( i32_val < ( par[id].min.i32 ))
+		else if ( i32_val < ( gp_par_table[ par_name ].min.i32 ))
 		{
-			par[id].val.i32 = par[id].min.i32;
+			*(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].min.i32;
 			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
-			par[id].val.i32 = (int32_t) ( i32_val );
+			*(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = (int32_t) ( i32_val );
 			status = ePAR_OK;
 		}
 	}
@@ -516,40 +514,31 @@ static par_status_t par_set_i32(const par_name_t par_name, int32_t i32_val)
 
 static par_status_t par_set_f32(const par_name_t par_name, float32_t f32_val)
 {
-	par_status_t status = par_set_check_validy(id);
+	par_status_t status = par_set_check_validy( par_name );
 
 	if ( ePAR_OK == status )
 	{
-		if ( f32_val > ( par[id].max.f32 ))
+		if ( f32_val > ( gp_par_table[ par_name ].max.f32 ))
 		{
-			par[id].val.f32 = par[id].max.f32;
+			*(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].max.f32;
 			status = ePAR_WAR_LIM_TO_MAX;
 		}
-		else if ( f32_val < ( par[id].min.f32 ))
+		else if ( f32_val < ( gp_par_table[ par_name ].min.f32 ))
 		{
-			par[id].val.f32 = par[id].min.f32;
+			*(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = gp_par_table[ par_name ].min.f32;
 			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
-			par[id].val.f32 = (float32_t) ( f32_val );
+			*(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ] = (float32_t) ( f32_val );
 			status = ePAR_OK;
 		}
 	}
 
 	return status;
-}*/
+}
 
 
-//////////////////////////////////////////////////////////////
-//
-//			par_set_check_validy
-//
-//	param: 		id - parameter id
-//	return:		status
-//	brief:		Check if setting parameter is legal
-//
-//////////////////////////////////////////////////////////////
 static par_status_t par_set_check_validy(const par_name_t par_name)
 {
 	par_status_t status = ePAR_OK;
