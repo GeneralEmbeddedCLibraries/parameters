@@ -73,14 +73,13 @@ static uint8_t 		par_get_data_type_size	(const par_type_list_t par_type);
 
 
 static par_status_t par_set_check_validy(const par_name_t par_name);
-
-static par_status_t par_set_u8	(const par_name_t par_name, uint8_t u8_val);
-static par_status_t par_set_i8	(const par_name_t par_name, int8_t i8_val);
-static par_status_t par_set_u16	(const par_name_t par_name, uint16_t u16_val);
-static par_status_t par_set_i16	(const par_name_t par_name, int16_t i16_val);
-static par_status_t par_set_u32	(const par_name_t par_name, uint32_t u32_val);
-static par_status_t par_set_i32	(const par_name_t par_name, int32_t i32_val);
-static par_status_t par_set_f32	(const par_name_t par_name, float32_t f32_val);
+static par_status_t par_set_u8			(const par_name_t par_name, const uint8_t u8_val);
+static par_status_t par_set_i8			(const par_name_t par_name, const int8_t i8_val);
+static par_status_t par_set_u16			(const par_name_t par_name, const uint16_t u16_val);
+static par_status_t par_set_i16			(const par_name_t par_name, const int16_t i16_val);
+static par_status_t par_set_u32			(const par_name_t par_name, const uint32_t u32_val);
+static par_status_t par_set_i32			(const par_name_t par_name, const int32_t i32_val);
+static par_status_t par_set_f32			(const par_name_t par_name, const float32_t f32_val);
 
 
 
@@ -350,7 +349,7 @@ static uint8_t par_get_data_type_size(const par_type_list_t par_type)
 
 
 
-static par_status_t par_set_u8(const par_name_t par_name, uint8_t u8_val)
+static par_status_t par_set_u8(const par_name_t par_name, const uint8_t u8_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
@@ -377,7 +376,7 @@ static par_status_t par_set_u8(const par_name_t par_name, uint8_t u8_val)
 }
 
 
-static par_status_t par_set_i8(const par_name_t par_name, int8_t i8_val)
+static par_status_t par_set_i8(const par_name_t par_name, const int8_t i8_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
@@ -404,7 +403,7 @@ static par_status_t par_set_i8(const par_name_t par_name, int8_t i8_val)
 }
 
 
-static par_status_t par_set_u16(const par_name_t par_name, uint16_t u16_val)
+static par_status_t par_set_u16(const par_name_t par_name, const uint16_t u16_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
@@ -431,7 +430,7 @@ static par_status_t par_set_u16(const par_name_t par_name, uint16_t u16_val)
 }
 
 
-static par_status_t par_set_i16(const par_name_t par_name, int16_t i16_val)
+static par_status_t par_set_i16(const par_name_t par_name, const int16_t i16_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
@@ -458,7 +457,7 @@ static par_status_t par_set_i16(const par_name_t par_name, int16_t i16_val)
 }
 
 
-static par_status_t par_set_u32(const par_name_t par_name, uint32_t u32_val)
+static par_status_t par_set_u32(const par_name_t par_name, const uint32_t u32_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
@@ -485,7 +484,7 @@ static par_status_t par_set_u32(const par_name_t par_name, uint32_t u32_val)
 }
 
 
-static par_status_t par_set_i32(const par_name_t par_name, int32_t i32_val)
+static par_status_t par_set_i32(const par_name_t par_name, const int32_t i32_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
@@ -512,7 +511,7 @@ static par_status_t par_set_i32(const par_name_t par_name, int32_t i32_val)
 }
 
 
-static par_status_t par_set_f32(const par_name_t par_name, float32_t f32_val)
+static par_status_t par_set_f32(const par_name_t par_name, const float32_t f32_val)
 {
 	par_status_t status = par_set_check_validy( par_name );
 
