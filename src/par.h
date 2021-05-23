@@ -87,12 +87,12 @@ typedef union
  */
 typedef struct
 {
+	uint32_t			id;				/**<Variable ID */
+	char*				name;			/**<Name of variable */
  	par_type_t			min;			/**<Minimum value of parameter */
 	par_type_t			max;			/**<Maximum value of parameter */
 	par_type_t			def;			/**<Default value of parameter */
-	char*			name;			/**<Name of variable */
-	char*			unit;			/**<Unit of parameter */
-	uint16_t		id;				/**<Variable ID */
+	char*				unit;			/**<Unit of parameter */
 	par_type_list_t		type;			/**<Parameter type */
 	par_io_acess_t 		access;			/**<Parameter access from external device point-of-view */
  	bool			persistant;		/**<Parameter persistance flag */
