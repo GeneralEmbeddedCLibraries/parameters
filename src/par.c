@@ -133,8 +133,6 @@ par_status_t par_get_config(const par_name_t par_name, par_cfg_t * const p_par_c
 
 	*p_par_cfg = gp_par_table[ par_name ];
 
-	par_allocate_ram_space( gpu8_par_value );
-
 	return status;
 }
 
@@ -181,6 +179,54 @@ par_status_t par_set(const par_name_t par_name, const void * p_val)
 	return status;
 }
 
+par_status_t par_get(const par_name_t par_name, void * const p_val)
+{
+	par_status_t status = ePAR_OK;
+
+	if ( par_name < ePAR_NUM_OF )
+	{
+		switch ( gp_par_table[par_name].type )
+		{
+			case ePAR_TYPE_U8:
+				*(uint8_t*) p_val = *(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			case ePAR_TYPE_I8:
+				*(int8_t*) p_val = *(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			case ePAR_TYPE_U16:
+				*(uint16_t*) p_val = *(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			case ePAR_TYPE_I16:
+				*(int16_t*) p_val = *(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			case ePAR_TYPE_U32:
+				*(uint32_t*) p_val = *(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			case ePAR_TYPE_I32:
+				*(int32_t*) p_val = *(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			case ePAR_TYPE_F32:
+				*(float32_t*) p_val = *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+				break;
+
+			default:
+				PAR_ASSERT( 0 );
+				break;
+		}
+	}
+	else
+	{
+		status = ePAR_ERROR;
+	}
+
+	return status;
+}
 
 
 
