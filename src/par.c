@@ -49,6 +49,11 @@
  */
 static const par_cfg_t * p_par_table = NULL;
 
+/**
+ * 	Initialization guard
+ */
+static bool gb_is_init = false;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
@@ -69,6 +74,8 @@ par_status_t par_init(void)
 
 	PAR_ASSERT( NULL != p_par_table );
 
+	gb_is_init = true;
+
 	return status;
 }
 
@@ -77,6 +84,9 @@ par_status_t par_init(void)
 par_status_t par_get_config(const par_name_t par_name, par_cfg_t * const p_par_cfg)
 {
 	par_status_t status = ePAR_OK;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
 
 	// Check inputs
 	PAR_ASSERT( NULL != p_par_cfg );
