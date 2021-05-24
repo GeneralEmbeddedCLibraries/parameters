@@ -72,7 +72,6 @@ static par_status_t par_allocate_ram_space	(uint8_t * p_ram_space);
 static uint32_t 	par_calc_ram_usage		(void);
 static uint8_t 		par_get_data_type_size	(const par_type_list_t par_type);
 static par_status_t	par_check_table_validy	(const par_cfg_t * const p_par_cfg);
-static par_status_t par_set_check_validy	(const par_name_t par_name);
 static par_status_t par_set_u8				(const par_name_t par_name, const uint8_t u8_val);
 static par_status_t par_set_i8				(const par_name_t par_name, const int8_t i8_val);
 static par_status_t par_set_u16				(const par_name_t par_name, const uint16_t u16_val);
@@ -134,11 +133,14 @@ par_status_t par_set(const par_name_t par_name, const void * p_val)
 {
 	par_status_t status = ePAR_OK;
 
+	// Check input
+	PAR_ASSERT( par_name < ePAR_NUM_OF );
+	PAR_ASSERT( ePAR_ACCESS_RW == ( gp_par_table[ par_name ].access ));
+
 	#if ( 1 == PAR_CFG_MUTEX_EN )
 		if ( ePAR_OK == par_if_aquire_mutex())
-	#endif
 		{
-
+	#endif
 			switch ( gp_par_table[ par_name ].type )
 			{
 				case ePAR_TYPE_U8:
@@ -174,10 +176,16 @@ par_status_t par_set(const par_name_t par_name, const void * p_val)
 					break;
 			}
 
-		#if ( 1 == PAR_CFG_MUTEX_EN )
+	#if ( 1 == PAR_CFG_MUTEX_EN )
 			par_if_release_mutex();
-		#endif
 		}
+
+		// Mutex not acquire
+		else
+		{
+			status = ePAR_ERROR;
+		}
+	#endif
 
 	return status;
 }
@@ -186,47 +194,58 @@ par_status_t par_get(const par_name_t par_name, void * const p_val)
 {
 	par_status_t status = ePAR_OK;
 
-	if ( par_name < ePAR_NUM_OF )
-	{
-		switch ( gp_par_table[par_name].type )
+	// Check input
+	PAR_ASSERT( par_name < ePAR_NUM_OF );
+
+	#if ( 1 == PAR_CFG_MUTEX_EN )
+		if ( ePAR_OK == par_if_aquire_mutex())
 		{
-			case ePAR_TYPE_U8:
-				*(uint8_t*) p_val = *(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+	#endif
+			switch ( gp_par_table[par_name].type )
+			{
+				case ePAR_TYPE_U8:
+					*(uint8_t*) p_val = *(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			case ePAR_TYPE_I8:
-				*(int8_t*) p_val = *(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+				case ePAR_TYPE_I8:
+					*(int8_t*) p_val = *(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			case ePAR_TYPE_U16:
-				*(uint16_t*) p_val = *(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+				case ePAR_TYPE_U16:
+					*(uint16_t*) p_val = *(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			case ePAR_TYPE_I16:
-				*(int16_t*) p_val = *(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+				case ePAR_TYPE_I16:
+					*(int16_t*) p_val = *(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			case ePAR_TYPE_U32:
-				*(uint32_t*) p_val = *(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+				case ePAR_TYPE_U32:
+					*(uint32_t*) p_val = *(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			case ePAR_TYPE_I32:
-				*(int32_t*) p_val = *(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+				case ePAR_TYPE_I32:
+					*(int32_t*) p_val = *(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			case ePAR_TYPE_F32:
-				*(float32_t*) p_val = *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
-				break;
+				case ePAR_TYPE_F32:
+					*(float32_t*) p_val = *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_name] ];
+					break;
 
-			default:
-				PAR_ASSERT( 0 );
-				break;
+				default:
+					PAR_ASSERT( 0 );
+					break;
+			}
+
+	#if ( 1 == PAR_CFG_MUTEX_EN )
+			par_if_release_mutex();
 		}
-	}
-	else
-	{
-		status = ePAR_ERROR;
-	}
+
+		// Mutex not acquire
+		else
+		{
+			status = ePAR_ERROR;
+		}
+	#endif
 
 	return status;
 }
@@ -387,7 +406,7 @@ static par_status_t	par_check_table_validy(const par_cfg_t * const p_par_cfg)
 
 static par_status_t par_set_u8(const par_name_t par_name, const uint8_t u8_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -414,7 +433,7 @@ static par_status_t par_set_u8(const par_name_t par_name, const uint8_t u8_val)
 
 static par_status_t par_set_i8(const par_name_t par_name, const int8_t i8_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -441,7 +460,7 @@ static par_status_t par_set_i8(const par_name_t par_name, const int8_t i8_val)
 
 static par_status_t par_set_u16(const par_name_t par_name, const uint16_t u16_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -468,7 +487,7 @@ static par_status_t par_set_u16(const par_name_t par_name, const uint16_t u16_va
 
 static par_status_t par_set_i16(const par_name_t par_name, const int16_t i16_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -495,7 +514,7 @@ static par_status_t par_set_i16(const par_name_t par_name, const int16_t i16_val
 
 static par_status_t par_set_u32(const par_name_t par_name, const uint32_t u32_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -522,7 +541,7 @@ static par_status_t par_set_u32(const par_name_t par_name, const uint32_t u32_va
 
 static par_status_t par_set_i32(const par_name_t par_name, const int32_t i32_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -549,7 +568,7 @@ static par_status_t par_set_i32(const par_name_t par_name, const int32_t i32_val
 
 static par_status_t par_set_f32(const par_name_t par_name, const float32_t f32_val)
 {
-	par_status_t status = par_set_check_validy( par_name );
+	par_status_t status = ePAR_OK;
 
 	if ( ePAR_OK == status )
 	{
@@ -572,36 +591,6 @@ static par_status_t par_set_f32(const par_name_t par_name, const float32_t f32_v
 
 	return status;
 }
-
-
-static par_status_t par_set_check_validy(const par_name_t par_name)
-{
-	par_status_t status = ePAR_OK;
-
-	// Check if par listed
-	if ( par_name < ePAR_NUM_OF )
-	{
-		// Check access
-		if ( ePAR_ACCESS_RW == ( gp_par_table[ par_name ].access ))
-		{
-			status = ePAR_OK;
-		}
-		else
-		{
-			status = ePAR_ERROR;
-		}
-	}
-	else
-	{
-		status = ePAR_ERROR;
-	}
-
-	return status;
-}
-
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
