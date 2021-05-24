@@ -95,7 +95,7 @@ typedef struct
 	char*				unit;			/**<Unit of parameter */
 	par_type_list_t		type;			/**<Parameter type */
 	par_io_acess_t 		access;			/**<Parameter access from external device point-of-view */
- 	bool			persistant;		/**<Parameter persistance flag */
+ 	bool				persistant;		/**<Parameter persistance flag */
 } par_cfg_t;
 
 ////////////////////////////////////////////////////////////////////////////////

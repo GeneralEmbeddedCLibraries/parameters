@@ -70,16 +70,15 @@ static uint32_t 	gu32_par_addr_offset[ ePAR_NUM_OF ] = { 0 };
 static par_status_t par_allocate_ram_space	(uint8_t * p_ram_space);
 static uint32_t 	par_calc_ram_usage		(void);
 static uint8_t 		par_get_data_type_size	(const par_type_list_t par_type);
-
-
-static par_status_t par_set_check_validy(const par_name_t par_name);
-static par_status_t par_set_u8			(const par_name_t par_name, const uint8_t u8_val);
-static par_status_t par_set_i8			(const par_name_t par_name, const int8_t i8_val);
-static par_status_t par_set_u16			(const par_name_t par_name, const uint16_t u16_val);
-static par_status_t par_set_i16			(const par_name_t par_name, const int16_t i16_val);
-static par_status_t par_set_u32			(const par_name_t par_name, const uint32_t u32_val);
-static par_status_t par_set_i32			(const par_name_t par_name, const int32_t i32_val);
-static par_status_t par_set_f32			(const par_name_t par_name, const float32_t f32_val);
+static par_status_t	par_check_table_validy	(const par_cfg_t * const p_par_cfg);
+static par_status_t par_set_check_validy	(const par_name_t par_name);
+static par_status_t par_set_u8				(const par_name_t par_name, const uint8_t u8_val);
+static par_status_t par_set_i8				(const par_name_t par_name, const int8_t i8_val);
+static par_status_t par_set_u16				(const par_name_t par_name, const uint16_t u16_val);
+static par_status_t par_set_i16				(const par_name_t par_name, const int16_t i16_val);
+static par_status_t par_set_u32				(const par_name_t par_name, const uint32_t u32_val);
+static par_status_t par_set_i32				(const par_name_t par_name, const int32_t i32_val);
+static par_status_t par_set_f32				(const par_name_t par_name, const float32_t f32_val);
 
 
 
@@ -94,23 +93,19 @@ par_status_t par_init(void)
 
 	// Get parameter table
 	gp_par_table = par_cfg_get_table();
-
 	PAR_ASSERT( NULL != gp_par_table );
 
-	gb_is_init = true;
-
 	// Check if par table is defined correctly
-	// TODO: unique par ID ?
-	// TODO: min lower than max ?
-	// TODO: def within min & max value ?
-
+	status |= par_check_table_validy( gp_par_table );
 
 	// Allocate space in RAM
-	par_allocate_ram_space( gpu8_par_value );
+	status |= par_allocate_ram_space( gpu8_par_value );
 
-
-
-
+	// Init succeed
+	if ( ePAR_OK == status )
+	{
+		gb_is_init = true;
+	}
 
 	return status;
 }
@@ -120,9 +115,6 @@ par_status_t par_init(void)
 par_status_t par_get_config(const par_name_t par_name, par_cfg_t * const p_par_cfg)
 {
 	par_status_t status = ePAR_OK;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
 
 	// Check inputs
 	PAR_ASSERT( NULL != p_par_cfg );
@@ -347,6 +339,36 @@ static uint8_t par_get_data_type_size(const par_type_list_t par_type)
 	return type_size;
 }
 
+
+static par_status_t	par_check_table_validy(const par_cfg_t * const p_par_cfg)
+{
+	par_status_t status = ePAR_OK;
+
+	for ( uint32_t i = 0; i < ePAR_NUM_OF; i++ )
+	{
+		for ( uint32_t j = 0; j < ePAR_NUM_OF; j++ )
+		{
+			if ( i != j )
+			{
+				// Check for two identical IDs
+				if ( p_par_cfg[i].id == p_par_cfg[j].id )
+				{
+					status = ePAR_ERROR;
+					PAR_DBG_PRINT( "Parameter table error: Duplicate ID!" );
+					PAR_ASSERT( 0 );
+					break;
+				}
+			}
+		}
+
+		if ( ePAR_OK != status )
+		{
+			break;
+		}
+	}
+
+	return status;
+}
 
 
 static par_status_t par_set_u8(const par_name_t par_name, const uint8_t u8_val)
