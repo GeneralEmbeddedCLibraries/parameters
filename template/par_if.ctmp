@@ -20,45 +20,121 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "par_if.h"
 
+// USER INCLUDES BEGIN...
+
+#include "cmsis_os2.h"
+
+// USER INCLUDES END...
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
+
+// USER DEFINITIONS BEGIN...
+
+/**
+ * 	Parameter mutex timeout
+ *
+ * 	Unit: ms
+ */
+#define PAR_CFG_MUTEX_TIMEOUT_MS				( 10 )
+
+// USER DEFINITIONS END...
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
 
+// USER VARIABLES BEGIN...
+
+/**
+ * 	Parameters OS mutex
+ *
+ * 	@note	Mutext must be recursive in order to be called multiple times in same thread!
+ */
+static osMutexId_t	g_par_mutex_id = NULL;
+const osMutexAttr_t g_par_mutex_attr =
+{
+    .name 		= "par",
+    .attr_bits 	= ( osMutexPrioInherit | osMutexRecursive ),
+};
+
+// USER VARIABLES END...
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
+par_status_t  par_if_init(void)
+{
+	par_status_t status = ePAR_OK;
 
+	// USER CODE BEGIN...
 
-#if ( 1 == PAR_CFG_MUTEX_EN )
+	// Create mutex
+	g_par_mutex_id = osMutexNew( &g_par_mutex_attr );
 
-	par_status_t par_if_aquire_mutex(const uint32_t timeout)
+	if ( NULL == g_par_mutex_id )
 	{
-
+		status = ePAR_ERROR;
 	}
 
+	// USER CODE END...
 
 
-	par_status_t par_if_release_mutex(void)
+	return status;
+}
+
+
+par_status_t par_if_aquire_mutex(void)
+{
+	par_status_t status = ePAR_OK;
+
+	// USER CODE BEGIN...
+
+	if ( osOK == osMutexAcquire( g_par_mutex_id, PAR_CFG_MUTEX_TIMEOUT_MS ))
 	{
-
+		// No action
+	}
+	else
+	{
+		status = ePAR_ERROR;
 	}
 
-#endif
+	// USER CODE END...
 
-#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+	return status;
+}
 
-	const uint8_t * par_if_calc_sha256(const uint8_t * const p_data, const uint32_t size)
-	{
 
-	}
 
-#endif
+par_status_t par_if_release_mutex(void)
+{
+	par_status_t status = ePAR_OK;
+
+	// USER CODE BEGIN...
+
+	osMutexRelease( g_par_mutex_id );
+
+	// USER CODE END...
+
+	return status;
+}
+
+
+const uint8_t * par_if_calc_sha256(const uint8_t * const p_data, const uint32_t size)
+{
+	const uint8_t * p_sha = NULL;
+
+	// USER CODE BEGIN...
+
+
+	// USER CODE END...
+
+	return p_sha;
+}
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

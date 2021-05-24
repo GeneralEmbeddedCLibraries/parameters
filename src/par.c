@@ -31,6 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "par.h"
 #include "../../par_cfg.h"
+#include "../../par_if.h"
 
 #include <stdlib.h>
 
@@ -101,6 +102,9 @@ par_status_t par_init(void)
 	// Allocate space in RAM
 	status |= par_allocate_ram_space( gpu8_par_value );
 
+	// Initialize parameter interface
+	status |= par_if_init();
+
 	// Init succeed
 	if ( ePAR_OK == status )
 	{
@@ -128,42 +132,52 @@ par_status_t par_get_config(const par_name_t par_name, par_cfg_t * const p_par_c
 
 par_status_t par_set(const par_name_t par_name, const void * p_val)
 {
-	par_status_t status;
+	par_status_t status = ePAR_OK;
 
-	switch ( gp_par_table[ par_name ].type )
-	{
-		case ePAR_TYPE_U8:
-			status = par_set_u8( par_name, *(uint8_t*) p_val );
-			break;
+	#if ( 1 == PAR_CFG_MUTEX_EN )
+		if ( ePAR_OK == par_if_aquire_mutex())
+	#endif
+		{
 
-		case ePAR_TYPE_I8:
-			status = par_set_i8( par_name, *(int8_t*) p_val );
-			break;
+			switch ( gp_par_table[ par_name ].type )
+			{
+				case ePAR_TYPE_U8:
+					status = par_set_u8( par_name, *(uint8_t*) p_val );
+					break;
 
-		case ePAR_TYPE_U16:
-			status = par_set_u16( par_name, *(uint16_t*) p_val );
-			break;
+				case ePAR_TYPE_I8:
+					status = par_set_i8( par_name, *(int8_t*) p_val );
+					break;
 
-		case ePAR_TYPE_I16:
-			status = par_set_i16( par_name, *(int16_t*) p_val );
-			break;
+				case ePAR_TYPE_U16:
+					status = par_set_u16( par_name, *(uint16_t*) p_val );
+					break;
 
-		case ePAR_TYPE_U32:
-			status = par_set_u32( par_name, *(uint32_t*) p_val );
-			break;
+				case ePAR_TYPE_I16:
+					status = par_set_i16( par_name, *(int16_t*) p_val );
+					break;
 
-		case ePAR_TYPE_I32:
-			status = par_set_i32( par_name, *(int32_t*) p_val );
-			break;
+				case ePAR_TYPE_U32:
+					status = par_set_u32( par_name, *(uint32_t*) p_val );
+					break;
 
-		case ePAR_TYPE_F32:
-			status = par_set_f32( par_name, *(float32_t*) p_val );
-			break;
+				case ePAR_TYPE_I32:
+					status = par_set_i32( par_name, *(int32_t*) p_val );
+					break;
 
-		default:
-			PAR_ASSERT( 0 );
-			break;
-	}
+				case ePAR_TYPE_F32:
+					status = par_set_f32( par_name, *(float32_t*) p_val );
+					break;
+
+				default:
+					PAR_ASSERT( 0 );
+					break;
+			}
+
+		#if ( 1 == PAR_CFG_MUTEX_EN )
+			par_if_release_mutex();
+		#endif
+		}
 
 	return status;
 }
