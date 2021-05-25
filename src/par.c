@@ -149,6 +149,9 @@ par_status_t par_set(const par_name_t par_name, const void * p_val)
 {
 	par_status_t status = ePAR_OK;
 
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
 	// Check input
 	PAR_ASSERT( par_name < ePAR_NUM_OF );
 	PAR_ASSERT( ePAR_ACCESS_RW == ( gp_par_table[ par_name ].access ));
@@ -226,6 +229,9 @@ par_status_t par_get(const par_name_t par_name, void * const p_val)
 {
 	par_status_t status = ePAR_OK;
 
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
 	// Check input
 	PAR_ASSERT( par_name < ePAR_NUM_OF );
 
@@ -280,6 +286,30 @@ par_status_t par_get(const par_name_t par_name, void * const p_val)
 	#endif
 
 	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter data type
+*
+* @param[in]	par_name	- Name of parameter
+* @return		type 		- Data type of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_type_list_t	par_get_data_type(const par_name_t par_name)
+{
+	par_type_list_t type = ePAR_TYPE_U8;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_name < ePAR_NUM_OF );
+
+	// Get type
+	type = gp_par_table[ par_name ].type;
+
+	return type;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

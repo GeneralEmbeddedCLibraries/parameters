@@ -107,5 +107,6 @@ par_status_t 	par_set				(const par_name_t par, const void * p_val);
 par_status_t 	par_get				(const par_name_t par, void * const p_val);
 par_status_t 	par_set_to_default	(void);
 par_status_t 	par_get_config		(const par_name_t par_name, par_cfg_t * const p_par_cfg);
+par_type_list_t	par_get_data_type	(const par_name_t par_name);
 
 #endif // _PAR_H_
