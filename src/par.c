@@ -155,7 +155,6 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 
 	// Check input
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
-	PAR_ASSERT( ePAR_ACCESS_RW == ( gp_par_table[ par_num ].access ));
 
 	#if ( 1 == PAR_CFG_MUTEX_EN )
 		if ( ePAR_OK == par_if_aquire_mutex())
