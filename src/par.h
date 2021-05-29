@@ -106,8 +106,9 @@ const bool		par_is_init			(void);
 par_status_t 	par_set				(const par_num_t par, const void * p_val);
 par_status_t 	par_get				(const par_num_t par, void * const p_val);
 par_status_t 	par_set_to_default	(void);
-par_status_t 	par_get_config		(const par_num_t par_name, par_cfg_t * const p_par_cfg);
-par_type_list_t	par_get_data_type	(const par_num_t par_name);
-void		 	par_get_name		(const par_num_t par_name, uint8_t * const p_name);
+par_status_t 	par_get_config		(const par_num_t par_num, par_cfg_t * const p_par_cfg);
+par_type_list_t	par_get_data_type	(const par_num_t par_num);
+void		 	par_get_name		(const par_num_t par_num, uint8_t * const p_name);
+par_io_acess_t	par_get_access		(const par_num_t par_num);
 
 #endif // _PAR_H_

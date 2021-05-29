@@ -335,6 +335,30 @@ void par_get_name(const par_num_t par_num, uint8_t * const p_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*		Get access type of parameter from PC tool perspective
+*
+* @param[in]	par_num	- Name of parameter
+* @return		access 	- Access type
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_io_acess_t par_get_access(const par_num_t par_num)
+{
+	par_io_acess_t access = ePAR_ACCESS_RO;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	// Get access
+	access = gp_par_table[ par_num ].access;
+
+	return access;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 * @} <!-- END GROUP -->
 */
 ////////////////////////////////////////////////////////////////////////////////
