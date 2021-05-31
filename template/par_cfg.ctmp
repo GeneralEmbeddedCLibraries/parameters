@@ -38,28 +38,49 @@
  */
 static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 {
-	{	.id = 0, .name = "Test 1", .type = ePAR_TYPE_U8, .min.u8 = 0, .max.u8 = 255, .def.u8 = 0, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
-	{	.id = 1, .name = "Test 2", .type = ePAR_TYPE_U8, .min.u8 = 0, .max.u8 = 2, .def.u8 = 5, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
-	{	.id = 2, .name = "Test 3", .type = ePAR_TYPE_U8, .min.u8 = 0, .max.u8 = 3, .def.u8 = 6, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
 
-	{	.id = 12, .name = "Test 12", .type = ePAR_TYPE_I8, .min.i8 = -6, .max.i8 = 6, .def.i8 = -6, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
+	// USER CODE BEGIN...
 
-	{	.id = 120, .name = "Test 120", .type = ePAR_TYPE_I16, .min.i16 = -16, .max.i16 = 16, .def.i16 = -16, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
+	//
+	//	ID		Name			Min 			Max 			Def 				Unit		Data type		PC Access			Persistent
 
-	{	.id = 100, .name = "Test 100", .type = ePAR_TYPE_I32, .min.i32 = -70000, .max.i32 = 70000, .def.i32 = -69000, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
+	{	0, 		"Test_u8", 		.min.u8 = 0,	.max.u8 = 10,	.def.u8 = 0,		"n/a",		ePAR_TYPE_U8,	ePAR_ACCESS_RO, 	false },
+	{	1, 		"Test_i8", 		.min.i8 = -10,	.max.i8 = 100,	.def.i8 = 0,		"n/a",		ePAR_TYPE_I8,	ePAR_ACCESS_RW, 	false },
 
-	{	.id = 5210, .name = "Test 5210", .type = ePAR_TYPE_F32, .min.f32 = -70000.124, .max.f32 = 70000.123, .def.f32 = -69000.1235, .unit="mV", .access = ePAR_ACCESS_RW, .persistant = false },
+	{	2, 		"Test_u16", 	.min.u16 = 0,	.max.u16 = 10,	.def.u16 = 0,		"n/a",		ePAR_TYPE_U16,	ePAR_ACCESS_RW, 	false },
+	{	3, 		"Test_i16", 	.min.i16 = -10,	.max.i16 = 100,	.def.i16 = 0,		"n/a",		ePAR_TYPE_I16,	ePAR_ACCESS_RW, 	false },
+
+	{	4, 		"Test_u32", 	.min.u32 = 0,	.max.u32 = 10,	.def.u32 = 100,		"n/a",		ePAR_TYPE_U32,	ePAR_ACCESS_RW, 	false },
+	{	5, 		"Test_i32", 	.min.i32 = -10,	.max.i32 = 100,	.def.i32 = 0,		"n/a",		ePAR_TYPE_I32,	ePAR_ACCESS_RW, 	false },
+
+	{	6, 		"Test_f32", 	.min.f32 = -10,	.max.f32 = 100,	.def.f32 = -12.0,	"n/a",		ePAR_TYPE_F32,	ePAR_ACCESS_RO, 	false },
+
+	{	7, 	"Battery voltage", 	.min.f32 = 0,	.max.f32 = 5,	.def.f32 = 0.0,		"V",		ePAR_TYPE_F32,	ePAR_ACCESS_RO, 	false },
+	{	8, 	"System current", 	.min.f32 = 0,	.max.f32 = 10,	.def.f32 = 0.0,		"A",		ePAR_TYPE_F32,	ePAR_ACCESS_RO, 	false },
+
+
+	// USER CODE END...
+
 };
 
+/**
+ * 	Table size in bytes
+ */
+static const uint32_t gu32_par_table_size = sizeof( g_par_table );
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void * par_cfg_get_table(void)
+const void * par_cfg_get_table(void)
 {
-	return (par_cfg_t*) &g_par_table;
+	return (const par_cfg_t*) &g_par_table;
+}
+
+uint32_t par_cfg_get_table_size(void)
+{
+	return gu32_par_table_size;
 }
 
 

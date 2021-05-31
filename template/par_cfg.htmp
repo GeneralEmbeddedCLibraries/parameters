@@ -43,28 +43,48 @@ typedef enum
 {
 	// USER CODE START
 
-	ePAR_TEST_0 = 0,
-	ePAR_TEST_1,
-	ePAR_TEST_2,
+	ePAR_TEST_U8 = 0,
+	ePAR_TEST_I8,
 
-	ePAR_TEST_12,
+	ePAR_TEST_U16,
+	ePAR_TEST_I16,
 
-	ePAR_TEST_120,
+	ePAR_TEST_U32,
+	ePAR_TEST_I32,
 
-	ePAR_TEST_100,
+	ePAR_TEST_F32,
 
-	ePAR_TEST_5210,
+
+	ePAR_BAT_VOLTAGE,
+	ePAR_SYS_CURRENT,
 
 	// USER CODE END
 
 	ePAR_NUM_OF
-} par_name_t;
+} par_num_t;
 
 
 /**
  * 	Enable/Disable storing persistent parameters to NVM
  */
 #define PAR_CFG_NVM_EN							( 1 )
+
+/**
+ * 	Enable/Disable multiple access protection
+ */
+#define PAR_CFG_MUTEX_EN						( 1 )
+
+/**
+ * 	Enable/Disable parameter table unique ID checking
+ *
+ * @note	Base on SHA256 unique ID is being calculated with
+ * 			purpose to detect device and stored to NVM table
+ * 			difference.
+ *
+ * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
+ * 			not make sense to calculating ID at all.
+ */
+#define PAR_CFG_TABLE_ID_CHECK_EN				( 1 )
 
 /**
  * 	Enable/Disable debug mode
@@ -95,10 +115,19 @@ typedef enum
 	#define PAR_ASSERT(x)							{ ; }
 #endif
 
+/**
+ * 	Invalid configuration catcher
+ *
+ * 	@note	Shall be intact by end user!
+ */
+#if ( 0 == PAR_CFG_NVM_EN ) && ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+	#error "Parameter settings invalid: Disable table ID checking (PAR_CFG_TABLE_ID_CHECK_EN)!"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-void * par_cfg_get_table(void);
+const void * 	par_cfg_get_table		(void);
+uint32_t	 	par_cfg_get_table_size	(void);
 
 #endif // _PAR_CFG_H_
