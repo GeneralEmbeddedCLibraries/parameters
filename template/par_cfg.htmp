@@ -41,7 +41,7 @@
  */
 typedef enum
 {
-	// USER CODE START
+	// USER CODE START...
 
 	ePAR_TEST_U8 = 0,
 	ePAR_TEST_I8,
@@ -58,7 +58,7 @@ typedef enum
 	ePAR_BAT_VOLTAGE,
 	ePAR_SYS_CURRENT,
 
-	// USER CODE END
+	// USER CODE END...
 
 	ePAR_NUM_OF
 } par_num_t;
@@ -77,8 +77,8 @@ typedef enum
 /**
  * 	Enable/Disable parameter table unique ID checking
  *
- * @note	Base on SHA256 unique ID is being calculated with
- * 			purpose to detect device and stored to NVM table
+ * @note	Base on hash unique ID is being calculated with
+ * 			purpose to detect device and stored parameter table
  * 			difference.
  *
  * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does

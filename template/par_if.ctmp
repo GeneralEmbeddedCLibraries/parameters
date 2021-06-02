@@ -12,6 +12,9 @@
 * @{ <!-- BEGIN GROUP -->
 *
 * 	Interface layer for device parameters
+*
+* 	Put code that is platform depended inside code block start with
+* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -65,6 +68,15 @@ const osMutexAttr_t g_par_mutex_attr =
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize low level interface
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+* @return 		status - Status of initialization
+*/
+////////////////////////////////////////////////////////////////////////////////
 par_status_t  par_if_init(void)
 {
 	par_status_t status = ePAR_OK;
@@ -85,7 +97,20 @@ par_status_t  par_if_init(void)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Acquire mutex
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+*		If not being used leave empty.
+*
+*		This function does not have an affect if "PAR_CFG_MUTEX_EN"
+* 		is set to 0.
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 par_status_t par_if_aquire_mutex(void)
 {
 	par_status_t status = ePAR_OK;
@@ -106,8 +131,20 @@ par_status_t par_if_aquire_mutex(void)
 	return status;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Release mutex
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+*		If not being used leave empty.
+*
+*		This function does not have an affect if "PAR_CFG_MUTEX_EN"
+* 		is set to 0.
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 par_status_t par_if_release_mutex(void)
 {
 	par_status_t status = ePAR_OK;
@@ -121,21 +158,33 @@ par_status_t par_if_release_mutex(void)
 	return status;
 }
 
-
-const uint8_t * par_if_calc_sha256(const uint8_t * const p_data, const uint32_t size)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Calculate hash
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+* 		If not being used leave empty.
+*
+* 		This function does not have an affect if "PAR_CFG_TABLE_ID_CHECK_EN"
+* 		is set to 0.
+*
+* @param[in]	p_data	- Pointer to data for hash calculation
+* @param[in]	size	- Size of data in bytes
+* @return 		p_hash	- Pointer to calculated hash number
+*/
+////////////////////////////////////////////////////////////////////////////////
+const uint8_t * par_if_calc_hash(const uint8_t * const p_data, const uint32_t size)
 {
-	const uint8_t * p_sha = NULL;
+	const uint8_t * p_hash = NULL;
 
 	// USER CODE BEGIN...
 
 
 	// USER CODE END...
 
-	return p_sha;
+	return p_hash;
 }
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
