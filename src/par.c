@@ -94,6 +94,7 @@ par_status_t par_init(void)
 
 	// Allocate space in RAM
 	status |= par_allocate_ram_space( gpu8_par_value );
+	PAR_ASSERT( NULL != gpu8_par_value );
 
 	// Initialize parameter interface
 	status |= par_if_init();
@@ -103,6 +104,12 @@ par_status_t par_init(void)
 	{
 		gb_is_init = true;
 	}
+
+	// TODO: Check if NVM init, assert if not...
+	// TODO: Read parameter signature... If signature valid start copy from NVM to live variables
+	// TODO:
+
+	par_set_to_default();
 
 	return status;
 }
@@ -287,6 +294,26 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 	return status;
 }
 
+par_status_t par_set_to_default(void)
+{
+	par_status_t 	status 		= ePAR_OK;
+	uint32_t		par_num		= 0UL;
+	par_type_list_t	par_type 	= ePAR_TYPE_U8;
+
+	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+	{
+		//par_set( par_num, (uint32_t*) gp_par_table[par_num].def.u32 );
+
+		// Get par type
+		par_type = par_get_data_type( par_num );
+
+		// Copy default value to live space
+		memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
+	}
+
+	return status;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *		Get parameter data type
@@ -387,8 +414,9 @@ static par_status_t par_allocate_ram_space(uint8_t * p_ram_space)
 	ram_size = par_calc_ram_usage();
 
 	// Allocate space in RAM
-	p_ram_space = malloc( ram_size );
-	PAR_ASSERT( NULL != p_ram_space );
+	//p_ram_space = malloc( ram_size );
+	gpu8_par_value = malloc( ram_size );
+	//PAR_ASSERT( NULL != p_ram_space );
 
 	return status;
 }
