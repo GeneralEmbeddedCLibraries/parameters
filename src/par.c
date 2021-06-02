@@ -15,7 +15,6 @@
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
@@ -371,7 +370,14 @@ par_io_acess_t par_get_access(const par_num_t par_num)
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Allocate space for live parameter values
+*
+* @param[in]	p_ram_space	- Pointer to allocated space
+* @return		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_allocate_ram_space(uint8_t * p_ram_space)
 {
 	par_status_t 	status 		= ePAR_OK;
@@ -387,7 +393,13 @@ static par_status_t par_allocate_ram_space(uint8_t * p_ram_space)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Calculate total size for parameter live values
+*
+* @return		total_size - Size of all parameters in bytes
+*/
+////////////////////////////////////////////////////////////////////////////////
 static uint32_t par_calc_ram_usage(void)
 {
 	par_cfg_t 		par_cfg 	= { 0 };
@@ -433,7 +445,14 @@ static uint32_t par_calc_ram_usage(void)
 	return total_size;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get size of supported parameter data types
+*
+* @param[in]	par_type	- Data type of parameter
+* @return		type_size	- Size of data type in bytes
+*/
+////////////////////////////////////////////////////////////////////////////////
 static uint8_t par_get_data_type_size(const par_type_list_t par_type)
 {
 	uint8_t type_size = 0U;
@@ -476,13 +495,22 @@ static uint8_t par_get_data_type_size(const par_type_list_t par_type)
 	return type_size;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Check that parameter table is correctly defined
+*
+* @param[in]	p_par_cfg	- Pointer to parameters table
+* @return		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t	par_check_table_validy(const par_cfg_t * const p_par_cfg)
 {
 	par_status_t status = ePAR_OK;
 
+	// For each parameter
 	for ( uint32_t i = 0; i < ePAR_NUM_OF; i++ )
 	{
+		// Compare parameters IDs
 		for ( uint32_t j = 0; j < ePAR_NUM_OF; j++ )
 		{
 			if ( i != j )
@@ -502,12 +530,22 @@ static par_status_t	par_check_table_validy(const par_cfg_t * const p_par_cfg)
 		{
 			break;
 		}
+
+		// TODO: Check parameter that min is less than max, and init is in between!
 	}
 
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set unsigned 8-bit parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	u8_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_u8(const par_num_t par_num, const uint8_t u8_val)
 {
 	par_status_t status = ePAR_OK;
@@ -534,7 +572,15 @@ static par_status_t par_set_u8(const par_num_t par_num, const uint8_t u8_val)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set signed 8-bit parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	i8_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_i8(const par_num_t par_num, const int8_t i8_val)
 {
 	par_status_t status = ePAR_OK;
@@ -561,7 +607,15 @@ static par_status_t par_set_i8(const par_num_t par_num, const int8_t i8_val)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set unsigned 16-bit parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	u16_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_u16(const par_num_t par_num, const uint16_t u16_val)
 {
 	par_status_t status = ePAR_OK;
@@ -588,7 +642,15 @@ static par_status_t par_set_u16(const par_num_t par_num, const uint16_t u16_val)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set signed 16-bit parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	i16_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_i16(const par_num_t par_num, const int16_t i16_val)
 {
 	par_status_t status = ePAR_OK;
@@ -615,7 +677,15 @@ static par_status_t par_set_i16(const par_num_t par_num, const int16_t i16_val)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set unsigned 32-bit parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	u32_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_u32(const par_num_t par_num, const uint32_t u32_val)
 {
 	par_status_t status = ePAR_OK;
@@ -642,7 +712,15 @@ static par_status_t par_set_u32(const par_num_t par_num, const uint32_t u32_val)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set signed 32-bit parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	i32_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_i32(const par_num_t par_num, const int32_t i32_val)
 {
 	par_status_t status = ePAR_OK;
@@ -669,7 +747,15 @@ static par_status_t par_set_i32(const par_num_t par_num, const int32_t i32_val)
 	return status;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set floating value parameter
+*
+* @param[in]	par_num	- Name of parameter
+* @param[in]	f32_val	- Value of parameter
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_set_f32(const par_num_t par_num, const float32_t f32_val)
 {
 	par_status_t status = ePAR_OK;
@@ -695,7 +781,6 @@ static par_status_t par_set_f32(const par_num_t par_num, const float32_t f32_val
 
 	return status;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
