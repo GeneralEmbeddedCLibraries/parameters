@@ -110,7 +110,7 @@ par_status_t par_init(void)
 	// TODO:
 
 	// For know set parameters to default
-	par_set_to_default();
+	par_set_all_to_default();
 
 	return status;
 }
@@ -148,7 +148,7 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 * 			par_set( ePAR_MY_VAR, (float32_t*) &my_val );
 * @endcode
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num		- Name of parameter
 * @param[in]	p_value		- Pointer to value
 * @return		status 		- Status of operation
 */
@@ -227,7 +227,7 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 * 			par_get( ePAR_MY_VAR, (float32_t*) &my_val );
 * @endcode
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num		- Name of parameter
 * @param[out]	p_val		- Parameter value
 * @return		status 		- Status of operation
 */
@@ -297,34 +297,51 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get parameter value
+*		Set parameter to default value
 *
 * @pre	Parameters must be initialized before usage!
 *
-* @param[in]	par_num	- Name of parameter
-* @param[out]	p_val		- Parameter value
-* @return		status 		- Status of operation
+* @param[in]	par_num		- Name of parameter
+* @return		void
 */
 ////////////////////////////////////////////////////////////////////////////////
-par_status_t par_set_to_default(void)
+void par_set_to_default(const par_num_t par_num)
 {
-	par_status_t 	status 		= ePAR_OK;
-	uint32_t		par_num		= 0UL;
 	par_type_list_t	par_type 	= ePAR_TYPE_U8;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	// Get par type
+	par_type = par_get_data_type( par_num );
+
+	// Copy default value to live space
+	memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set all parameters to default value
+*
+* @pre	Parameters must be initialized before usage!
+*
+* @return	void
+*/
+////////////////////////////////////////////////////////////////////////////////
+void par_set_all_to_default(void)
+{
+	uint32_t par_num = 0UL;
 
 	// Is init
 	PAR_ASSERT( true == gb_is_init );
 
 	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 	{
-		// Get par type
-		par_type = par_get_data_type( par_num );
-
-		// Copy default value to live space
-		memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
+		par_set_to_default( par_num );
 	}
-
-	return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
