@@ -103,13 +103,20 @@ typedef struct
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t 	par_init				(void);
 const bool		par_is_init				(void);
+
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
 par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
 void 			par_set_to_default		(const par_num_t par_num);
 void		 	par_set_all_to_default	(void);
+
 par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par_cfg);
 par_type_list_t	par_get_data_type		(const par_num_t par_num);
 void		 	par_get_name			(const par_num_t par_num, uint8_t * const p_name);
 par_io_acess_t	par_get_access			(const par_num_t par_num);
+
+#if ( 1 == PAR_CFG_NVM_EN )
+	par_status_t	par_store_all_to_nvm	(void);
+	par_status_t	par_store_to_nvm		(const par_num_t par_num);
+#endif
 
 #endif // _PAR_H_

@@ -19,6 +19,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include "par.h"
+#include "par_nvm.h"
 #include "../../par_cfg.h"
 #include "../../par_if.h"
 
@@ -107,10 +108,21 @@ par_status_t par_init(void)
 
 	// TODO: Check if NVM init, assert if not...
 	// TODO: Read parameter signature... If signature valid start copy from NVM to live variables
-	// TODO:
+	// TODO: Calculate and read hash table
 
-	// For know set parameters to default
-	par_set_all_to_default();
+	#if ( 1 == PAR_CFG_NVM_EN )
+
+		// Init and load parameters from NVM
+		status |= par_nvm_init();
+
+	#else
+
+		// For know set parameters to default
+		par_set_all_to_default();
+
+	#endif
+
+	PAR_ASSERT( ePAR_OK == status );
 
 	return status;
 }
@@ -411,6 +423,57 @@ par_io_acess_t par_get_access(const par_num_t par_num)
 
 	return access;
 }
+
+#if ( 1 == PAR_CFG_NVM_EN )
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Store all parameters value to NVM
+	*
+	* @pre		NVM storage must be initialized first and "PAR_CFG_NVM_EN"
+	* 			settings must be enabled.
+	*
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_store_all_to_nvm(void)
+	{
+		par_status_t 	status 	= ePAR_OK;
+		uint32_t		par_num = 0UL;
+
+		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			if ( ePAR_OK != par_store_to_nvm( par_num ))
+			{
+				status = ePAR_ERROR_NVM;
+				break;
+			}
+		}
+
+		return status;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Store single parameter value to NVM
+	*
+	* @pre		NVM storage must be initialized first and "PAR_CFG_NVM_EN"
+	* 			settings must be enabled.
+	*
+	* @param[in]	par_num	- Name of parameter
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_store_to_nvm(const par_num_t par_num)
+	{
+		par_status_t status = ePAR_OK;
+
+		status = par_nvm_write( par_num );
+
+		return status;
+	}
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
