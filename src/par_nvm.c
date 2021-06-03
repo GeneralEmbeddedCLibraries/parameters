@@ -173,8 +173,18 @@
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t		par_nvm_check_signature	(void);
 	static par_status_t		par_nvm_write_signature	(void);
-	static par_status_t 	par_nvm_check_table_id	(void);
-	static uint32_t 		par_nvm_calc_crc32(const uint32_t val);
+	static par_status_t		par_nvm_clean_signature	(void);
+	static par_status_t 	par_nvm_check_header	(void);
+	static par_status_t 	par_nvm_write_header	(void);
+	static uint32_t 		par_nvm_calc_crc32		(const uint32_t val);
+	static par_status_t		par_nvm_load_all		(void);
+
+	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+		static par_status_t 	par_nvm_check_table_id	(void);
+		static par_status_t 	par_nvm_write_table_id	(void);
+	#endif
+
+
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Functions
@@ -183,27 +193,69 @@
 	par_status_t par_nvm_init(void)
 	{
 		par_status_t 	status 		= ePAR_OK;
-		par_cfg_t *		p_par_table = NULL;
-
-		// TODO: Check if NVM is initialized
 
 		// Check NVM signature
 		if ( ePAR_OK == par_nvm_check_signature())
 		{
-			// Rewrite everythink: signature, table ID,...
-			// NOTE: Signature must be written last!!! As this will reduces problems with interrupt of power supply in between NVM write operation!
+			#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+
+				// Same parameters table
+				if ( ePAR_OK == par_nvm_check_table_id())
+				{
+					// Load all parameters from NVM
+					status |= par_nvm_load_all();
+				}
+
+				// Parameters table change
+				else
+				{
+					// Clean signature
+					status |= par_nvm_clean_signature();
+
+					// Write new table
+					status |= par_nvm_write_table_id();
+
+					// Write new header
+					status |= par_nvm_write_header();
+
+					// Write signature
+					status |= par_nvm_write_signature();
+
+					// Set all parameters to default values
+					par_set_all_to_default();
+				}
+
+			#else
+
+				// Load all parameters from NVM
+				status |= par_nvm_load_all();
+
+			#endif
 		}
 
 		// No signature
 		else
 		{
-			par_nvm_write_signature();
+			#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+
+				// Write table ID
+				status |= par_nvm_write_table_id();
+
+			#endif
+
+			// Write header
+			status |= par_nvm_write_header();
+
+			// Lastly write signature
+			// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
+			//			Possible power lost during table ID or header write will not have any side effects!
+			status |= par_nvm_write_signature();
+
+			// Set all parameters to default values
+			par_set_all_to_default();
 		}
 
-		// TODO: Calculate and compare table ID
-
-
-		// TODO: Read & set individual paramter from NVM if signature is OK and table ID is the same
+		PAR_ASSERT( ePAR_OK == status );
 
 		return status;
 	}
@@ -212,9 +264,9 @@
 	{
 		par_status_t status = ePAR_OK;
 
+		// TODO: Get value from live "value"
 		// TODO: Assemble par nvm object
 		// TODO: Calculate CRC
-
 		// TODO: Write to NVM
 
 		return status;
@@ -227,6 +279,7 @@
 		// TODO: Read par nvm object
 		// TODO: Calculate CRC
 		// TODO: Validate CRC
+		// TODO: Store to live "value"
 
 
 		return status;
@@ -247,12 +300,95 @@
 	*/
 	////////////////////////////////////////////////////////////////////////////////
 
+	static par_status_t	par_nvm_check_signature(void)
+	{
+		par_status_t status = ePAR_OK;
+
+
+		return status;
+	}
+
+
+	static par_status_t	par_nvm_write_signature(void)
+	{
+		par_status_t status = ePAR_OK;
+
+
+		return status;
+	}
+
+
+	static par_status_t	par_nvm_clean_signature(void)
+	{
+		par_status_t status = ePAR_OK;
+
+
+		return status;
+	}
+
+	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+
+		static par_status_t par_nvm_check_table_id(void)
+		{
+			par_status_t status = ePAR_OK;
+
+
+			return status;
+		}
+
+
+		static par_status_t par_nvm_write_table_id(void)
+		{
+			par_status_t status = ePAR_OK;
+
+
+
+			return status;
+		}
+
+	#endif // 1 == PAR_CFG_TABLE_ID_CHECK_EN
+
+
+	static par_status_t par_nvm_check_header(void)
+	{
+		par_status_t status = ePAR_OK;
+
+
+		return status;
+	}
+
+
+	static par_status_t	par_nvm_write_header(void)
+	{
+		par_status_t status = ePAR_OK;
+
+
+		return status;
+	}
+
+
+
+
 	static uint32_t par_nvm_calc_crc32(const uint32_t val)
 	{
 		uint32_t crc32 = 0;
 
 
 		return crc32;
+	}
+
+	static par_status_t par_nvm_load_all(void)
+	{
+		par_status_t 	status 	= ePAR_OK;
+		uint32_t 		par_num = 0UL;
+
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			par_nvm_read( par_num );
+		}
+
+
+		return status;
 	}
 
 
