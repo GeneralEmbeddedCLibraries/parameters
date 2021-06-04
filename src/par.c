@@ -424,6 +424,30 @@ par_io_acess_t par_get_access(const par_num_t par_num)
 	return access;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get persistence flag
+*
+* @param[in]	par_num			- Name of parameter
+* @return		is_persistant 	- Persistence flag
+*/
+////////////////////////////////////////////////////////////////////////////////
+bool par_get_persistance(const par_num_t par_num)
+{
+	bool is_persistant = true;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	// Get persistance
+	is_persistant = gp_par_table[ par_num ].access;
+
+	return is_persistant;
+}
+
 #if ( 1 == PAR_CFG_NVM_EN )
 
 	////////////////////////////////////////////////////////////////////////////////
