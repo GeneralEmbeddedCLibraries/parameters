@@ -53,6 +53,10 @@
 * 				2. Header:
 * 			-----------------------------------------------------------------
 *
+*			Header contains number of stored parameters and it's checksum. Purpose of
+*			header is to tell how many parameters are currently stored inside NVM
+*			region "Parameters".
+*
 * 			HEADER DEFINITION:
 *
 * 			size:			4 bytes
@@ -135,6 +139,19 @@
 * 			detection after first release of SW. Adding new parameters to pre-existing
 * 			table has no harm at all nor does it have any side effects.
 *
+*
+* @brief	STARTUP SEQUENCE:
+*
+* 				check for signature --[invalid]--> complete rewrite of "Parameters" NVM region (signature, header, tableID & all parameters value)
+* 					|
+* 				  [ok]
+* 					|
+* 					-> check for table ID --[table diff]--> complete rewrite of "Parameters" NVM region (signature, header, tableID & all parameters value)
+* 							|
+* 						  [same]
+* 							|
+* 							-> load stored parameters values from NVM to live "RAM" space
+*
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -190,9 +207,12 @@
 	// Functions
 	////////////////////////////////////////////////////////////////////////////////
 
+
+
+
 	par_status_t par_nvm_init(void)
 	{
-		par_status_t 	status 		= ePAR_OK;
+		par_status_t status = ePAR_OK;
 
 		// Check NVM signature
 		if ( ePAR_OK == par_nvm_check_signature())
@@ -223,6 +243,9 @@
 
 					// Set all parameters to default values
 					par_set_all_to_default();
+
+					// Write default values to NVM
+					// TODO:
 				}
 
 			#else
@@ -253,12 +276,16 @@
 
 			// Set all parameters to default values
 			par_set_all_to_default();
+
+			// Write default values to NVM
+			// TODO:
 		}
 
 		PAR_ASSERT( ePAR_OK == status );
 
 		return status;
 	}
+
 
 	par_status_t par_nvm_write(const par_num_t par_num)
 	{
@@ -271,6 +298,7 @@
 
 		return status;
 	}
+
 
 	par_status_t par_nvm_read(const par_num_t par_num)
 	{
