@@ -1,10 +1,21 @@
-//============================================================
-// Version 1.0.0 (xx.xx.2021)
-//============================================================
-// Brief:
-// 	- 
-// 	- 
-// 
-//  Features:
-//   -  
-//============================================================
+============================================================
+ Version 1.0.0 (xx.xx.2021)
+============================================================
+ 
+ Brief:
+ 	- Parameters definitions via config table
+ 	- Live values inside RAM 
+ 	- Multiple configuration options
+ 	- Set/Get parameters functions
+ 	- NVM support
+ 	- Unique par table ID based on hash functions
+ 	- All platform/config dependent stuff are defined
+ 	by user via interface files
+ 
+ Features:
+   -  
+   
+ Todo:
+   - 
+   
+============================================================
