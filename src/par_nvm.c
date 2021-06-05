@@ -59,15 +59,22 @@
 *
 * 			HEADER DEFINITION:
 *
-* 			size:			4 bytes
-* 			base address*:	0x04
+*			size: 			8 bytes
+*			base address*:	0x04
 *
-*						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
+* 						| 	byte 3	  | 	byte 2	  | 	byte 1	 | 		byte 0	  |
 * 						---------------------------------------------------------------
-*						|par_num[15:8]| par_num[7:0]  |	  CRC[15:8]  | 		CRC[7:0]  |
+*						|				number of stored parameters				 	  |
 *						---------------------------------------------------------------
 *			address
-*			offset*:		0x07			0x06			0x05			0x04
+*			offset**:		0x03			0x02			0x01			0x00
+*
+						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
+* 						---------------------------------------------------------------
+*						|						32 - CRC							  |
+*						---------------------------------------------------------------
+*			address
+*			offset**:		0x07			0x06			0x05			0x04
 *
 *				where: 	par_num - is number of stored parameters
 *						CRC		- checksum of "par_num" value
@@ -172,6 +179,25 @@
 	// Definitions
 	////////////////////////////////////////////////////////////////////////////////
 
+	/**
+	 * 	Parameter signature NVM address offset
+	 */
+	#define PAR_NVM_SIGNATURE_ADDR_OFFSET			( 0x00 )
+
+	/**
+	 * 	Parameter signature
+	 */
+	#define PAR_NVM_SIGNATURE						( 0x55AA00FF )
+
+	/**
+	 * 	Parameter header NVM address offset
+	 */
+	#define PAR_NVM_HEADER_ADDR_OFFSET				( 0x04 )
+
+	/**
+	 * 	Parameter table ID NVM address offset
+	 */
+	#define PAR_NVM_TABLE_ID_ADDR_OFFSET			( 0x10 )
 
 	/**
 	 * 	Parameter object NVM address offset
@@ -182,6 +208,8 @@
 	 * 		Parameter NVM object
 	 *
 	 * 	@note 	Each parameter is protected with 32-CRC.
+	 *
+	 * 			Parameter header has same structure!
 	 */
 	typedef union
 	{
@@ -201,13 +229,14 @@
 	////////////////////////////////////////////////////////////////////////////////
 	// Function Prototypes
 	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t		par_nvm_check_signature	(void);
-	static par_status_t		par_nvm_write_signature	(void);
-	static par_status_t		par_nvm_clean_signature	(void);
-	static par_status_t 	par_nvm_check_header	(void);
-	static par_status_t 	par_nvm_write_header	(void);
-	static uint32_t 		par_nvm_calc_crc32		(const uint32_t val);
-	static par_status_t		par_nvm_load_all		(void);
+	static par_status_t		par_nvm_check_signature				(void);
+	static par_status_t		par_nvm_write_signature				(void);
+	static par_status_t		par_nvm_erase_signature				(void);
+	static par_status_t 	par_nvm_read_header					(uint32_t * const p_num_of_par);
+	static par_status_t 	par_nvm_write_header				(const uint32_t num_of_par);
+	static uint32_t 		par_nvm_calc_crc32					(const uint32_t val);
+	static par_status_t		par_nvm_load_all					(void);
+	static uint32_t			par_nvm_calc_num_of_per_par			(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t 	par_nvm_check_table_id	(void);
@@ -225,9 +254,10 @@
 
 	par_status_t par_nvm_init(void)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 			= ePAR_OK;
+		uint32_t		num_of_per_par 	= 0UL;
 
-		// Check prerequeirements
+		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
 
 		// Check NVM signature
@@ -246,13 +276,14 @@
 				else
 				{
 					// Clean signature
-					status |= par_nvm_clean_signature();
+					status |= par_nvm_erase_signature();
 
 					// Write new table
 					status |= par_nvm_write_table_id();
 
 					// Write new header
-					status |= par_nvm_write_header();
+					num_of_per_par = par_nvm_calc_num_of_per_par();
+					status |= par_nvm_write_header( num_of_per_par );
 
 					// Write signature
 					status |= par_nvm_write_signature();
@@ -283,7 +314,8 @@
 			#endif
 
 			// Write header
-			status |= par_nvm_write_header();
+			num_of_per_par = par_nvm_calc_num_of_per_par();
+			status |= par_nvm_write_header( num_of_per_par );
 
 			// Lastly write signature
 			// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
@@ -308,6 +340,9 @@
 		par_status_t 	status 		= ePAR_OK;
 		par_nvm_obj_t	par_obj		= { .u = 0ULL };
 		uint32_t		par_addr	= 0UL;
+
+		// Pre-condition
+		PAR_ASSERT( true == nvm_is_init());
 
 		// Legal call
 		PAR_ASSERT( true == par_is_init());
@@ -340,6 +375,9 @@
 		uint32_t		par_addr	= 0UL;
 		uint32_t		calc_crc	= 0UL;
 
+		// Pre-condition
+		PAR_ASSERT( true == nvm_is_init());
+
 		// Legal call
 		PAR_ASSERT( true == par_is_init());
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
@@ -349,24 +387,26 @@
 		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 4UL * par_num ));
 
 		// Read from NVM
-		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (uint8_t*) &par_obj.u ))
 		{
 			status = ePAR_ERROR_NVM;
 		}
-
-		// Calculate CRC
-		calc_crc = par_nvm_calc_crc32( par_obj.field.val );
-
-		// Validate CRC
-		if ( calc_crc == par_obj.field.crc )
-		{
-			par_set( par_num, (uint32_t*) &par_obj.field.val );
-		}
-
-		// CRC corrupt
 		else
 		{
-			status = ePAR_ERROR_NVM;
+			// Calculate CRC
+			calc_crc = par_nvm_calc_crc32( par_obj.field.val );
+
+			// Validate CRC
+			if ( calc_crc == par_obj.field.crc )
+			{
+				par_set( par_num, (uint32_t*) &par_obj.field.val );
+			}
+
+			// CRC corrupt
+			else
+			{
+				status = ePAR_ERROR_NVM;
+			}
 		}
 
 		return status;
@@ -405,7 +445,7 @@
 	}
 
 
-	static par_status_t	par_nvm_clean_signature(void)
+	static par_status_t	par_nvm_erase_signature(void)
 	{
 		par_status_t status = ePAR_OK;
 
@@ -436,19 +476,60 @@
 	#endif // 1 == PAR_CFG_TABLE_ID_CHECK_EN
 
 
-	static par_status_t par_nvm_check_header(void)
+	static par_status_t par_nvm_read_header(uint32_t * const p_num_of_par)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 		= ePAR_OK;
+		par_nvm_obj_t	par_obj		= { .u = 0ULL };
+		uint32_t		calc_crc	= 0UL;
 
+		// Pre-condition
+		PAR_ASSERT( true == nvm_is_init());
+
+		// Check inputs
+		PAR_ASSERT( NULL != p_num_of_par );
+
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEADER_ADDR_OFFSET, sizeof( par_nvm_obj_t ), (uint8_t*) &par_obj.u ))
+		{
+			status = ePAR_ERROR_NVM;
+		}
+		else
+		{
+			// Calculate CRC
+			calc_crc = par_nvm_calc_crc32( par_obj.field.val );
+
+			// Validate CRC
+			if ( calc_crc == par_obj.field.crc )
+			{
+				*p_num_of_par = par_obj.field.val;
+			}
+
+			// CRC corrupt
+			else
+			{
+				status = ePAR_ERROR_NVM;
+			}
+		}
 
 		return status;
 	}
 
 
-	static par_status_t	par_nvm_write_header(void)
+	static par_status_t	par_nvm_write_header(const uint32_t num_of_par)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 	= ePAR_OK;
+		par_nvm_obj_t	par_obj	= { .field.val = num_of_par, .field.crc = 0UL };
 
+		// Pre-condition
+		PAR_ASSERT( true == nvm_is_init());
+
+		// Calculate CRC
+		par_obj.field.crc = par_nvm_calc_crc32( num_of_par );
+
+		// Write to NVM
+		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEADER_ADDR_OFFSET, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+		{
+			status = ePAR_ERROR_NVM;
+		}
 
 		return status;
 	}
@@ -478,6 +559,23 @@
 		return status;
 	}
 
+	static uint32_t	par_nvm_calc_num_of_per_par(void)
+	{
+		uint32_t num_of_per_par = 0UL;
+		uint32_t par_num 		= 0UL;
+
+		PAR_ASSERT( true == par_is_init());
+
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			if ( true == par_get_persistance( par_num ))
+			{
+				num_of_per_par++;
+			}
+		}
+
+		return num_of_per_par;
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
