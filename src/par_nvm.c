@@ -162,9 +162,11 @@
 #include "par_nvm.h"
 #include "../../par_cfg.h"
 #include "../../par_if.h"
-#include "middleware/nvm/nvm/src/nvm.h"
+
 
 #if ( 1 == PAR_CFG_NVM_EN )
+
+	#include "middleware/nvm/nvm/src/nvm.h"
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Definitions
@@ -304,10 +306,12 @@
 	par_status_t par_nvm_write(const par_num_t par_num)
 	{
 		par_status_t 	status 		= ePAR_OK;
-		par_nvm_obj_t	par_obj		= { .u = 0 };
+		par_nvm_obj_t	par_obj		= { .u = 0ULL };
 		uint32_t		par_addr	= 0UL;
 
-		// Check invalid input
+		// Legal call
+		PAR_ASSERT( true == par_is_init());
+		PAR_ASSERT( par_num < ePAR_NUM_OF )
 		PAR_ASSERT( true == par_get_persistance( par_num ))
 
 		// Get current par value
@@ -320,7 +324,7 @@
 		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 4UL * par_num ));
 
 		// Write to NVM
-		if ( eNVM_OK != nvm_write( eNVM_MEM_DRV_EEPROM, eNVM_REGION_RUN_PAR, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
 		{
 			status = ePAR_ERROR_NVM;
 		}
@@ -331,13 +335,39 @@
 
 	par_status_t par_nvm_read(const par_num_t par_num)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 		= ePAR_OK;
+		par_nvm_obj_t	par_obj		= { .u = 0ULL };
+		uint32_t		par_addr	= 0UL;
+		uint32_t		calc_crc	= 0UL;
 
-		// TODO: Read par nvm object
-		// TODO: Calculate CRC
-		// TODO: Validate CRC
-		// TODO: Store to live "value"
+		// Legal call
+		PAR_ASSERT( true == par_is_init());
+		PAR_ASSERT( par_num < ePAR_NUM_OF )
+		PAR_ASSERT( true == par_get_persistance( par_num ))
 
+		// Calculate parameter NVM address
+		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 4UL * par_num ));
+
+		// Read from NVM
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+		{
+			status = ePAR_ERROR_NVM;
+		}
+
+		// Calculate CRC
+		calc_crc = par_nvm_calc_crc32( par_obj.field.val );
+
+		// Validate CRC
+		if ( calc_crc == par_obj.field.crc )
+		{
+			par_set( par_num, (uint32_t*) &par_obj.field.val );
+		}
+
+		// CRC corrupt
+		else
+		{
+			status = ePAR_ERROR_NVM;
+		}
 
 		return status;
 	}
