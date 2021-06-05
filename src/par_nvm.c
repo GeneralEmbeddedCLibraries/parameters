@@ -175,6 +175,13 @@
 
 	#include "middleware/nvm/nvm/src/nvm.h"
 
+	/**
+	 * 	Check NVM module compatibility
+	 */
+	static_assert( 1 == NVM_VER_MAJOR );
+	static_assert( 0 == NVM_VER_MINOR );
+	static_assert( 0 == NVM_VER_DEVELOP );
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Definitions
 	////////////////////////////////////////////////////////////////////////////////
@@ -259,6 +266,7 @@
 
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
+		PAR_ASSERT( true == par_is_init());
 
 		// Check NVM signature
 		if ( ePAR_OK == par_nvm_check_signature())
@@ -292,7 +300,7 @@
 					par_set_all_to_default();
 
 					// Write default values to NVM
-					// TODO:
+					status |= par_store_all_to_nvm();
 				}
 
 			#else
@@ -326,7 +334,7 @@
 			par_set_all_to_default();
 
 			// Write default values to NVM
-			// TODO:
+			status |= par_store_all_to_nvm();
 		}
 
 		PAR_ASSERT( ePAR_OK == status );
@@ -429,8 +437,20 @@
 
 	static par_status_t	par_nvm_check_signature(void)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 	= ePAR_OK;
+		uint32_t 		sign	= 0UL;
 
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U, (uint8_t*) &sign ))
+		{
+			status = ePAR_ERROR_NVM;
+		}
+		else
+		{
+			if ( PAR_NVM_SIGNATURE != sign )
+			{
+				status = ePAR_ERROR;
+			}
+		}
 
 		return status;
 	}
@@ -440,6 +460,7 @@
 	{
 		par_status_t status = ePAR_OK;
 
+		status = nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U, (uint8_t*) PAR_NVM_SIGNATURE );
 
 		return status;
 	}
@@ -449,6 +470,7 @@
 	{
 		par_status_t status = ePAR_OK;
 
+		status = nvm_erase( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U );
 
 		return status;
 	}
@@ -535,8 +557,6 @@
 	}
 
 
-
-
 	static uint32_t par_nvm_calc_crc32(const uint32_t val)
 	{
 		uint32_t crc32 = 0;
@@ -554,7 +574,6 @@
 		{
 			par_nvm_read( par_num );
 		}
-
 
 		return status;
 	}
