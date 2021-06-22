@@ -30,6 +30,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * 	Module version
+ */
+#define PAR_VER_MAJOR		( 1 )
+#define PAR_VER_MINOR		( 0 )
+#define PAR_VER_DEVELOP		( 0 )
+
+/**
  *   Parameter status
  */
 typedef enum

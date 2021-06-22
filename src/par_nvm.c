@@ -57,30 +57,30 @@
 *			header is to tell how many parameters are currently stored inside NVM
 *			region "Parameters".
 *
+*			Based on "number of stored parameter" value read logic is being limited.
+*
+*			IMPORTANT: 	Header CRC-16 is being calculated only on "number of stored
+*						parameters" value.
+*
 * 			HEADER DEFINITION:
 *
 *			size: 			8 bytes
 *			base address*:	0x04
 *
+*
 * 						| 	byte 3	  | 	byte 2	  | 	byte 1	 | 		byte 0	  |
 * 						---------------------------------------------------------------
-*						|				number of stored parameters				 	  |
+*						|					number of stored parameters			      |
 *						---------------------------------------------------------------
 *			address
 *			offset**:		0x03			0x02			0x01			0x00
 *
-						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
+*						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
 * 						---------------------------------------------------------------
-*						|						32 - CRC							  |
+*						|			CRC-16			  |	 	       reserved		  	  |
 *						---------------------------------------------------------------
 *			address
 *			offset**:		0x07			0x06			0x05			0x04
-*
-*				where: 	par_num - is number of stored parameters
-*						CRC		- checksum of "par_num" value
-*
-*			*relative to "Parameters" NVM region
-*
 *
 *			-----------------------------------------------------------------
 * 				3. Table ID:
@@ -105,9 +105,29 @@
 *				4. Parameters NVM objects
 *			-----------------------------------------------------------------
 *
-*			NVM object consist of parameter value and its 32-CRC checksum. Every
-*			time parameter is being read data integrity is being check based
-*			on it's checksum.
+*			NVM object consist of parameter value, parameter ID and its CRC-16
+*			checksum. Every time parameter is being read data integrity is being
+*			check based	on it's checksum.
+*
+*			TODO: This logic shall be implemented in future:
+*
+*				Persistence parameters are being stored into consecutive sequence
+*				starting from top of a parameter table to bottom. Therefore first
+*				parameters will be stored in lower address space relative to the
+*				bottom defined one.
+*
+*				For now parameters NVM memory storage is only defined by its
+*				ID as following funtion:
+*
+*					NVM_address = (8 * parameter ID) + base address
+*
+*			TODO END:
+*
+*
+*			IMPORTANT: 	After release is done, parameters from table shall not
+*						be removed or changed but only new parameters definitions
+*						is allowed to be append to existing table.
+*
 *
 *			size: 			8 bytes
 *			base address*:	0x100
@@ -119,9 +139,9 @@
 *			address
 *			offset**:		0x03			0x02			0x01			0x00
 *
-						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
+*						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
 * 						---------------------------------------------------------------
-*						|						32 - CRC							  |
+*						|			CRC-16			  |	 	    parameter ID		  |
 *						---------------------------------------------------------------
 *			address
 *			offset**:		0x07			0x06			0x05			0x04
@@ -170,6 +190,7 @@
 #include "../../par_cfg.h"
 #include "../../par_if.h"
 
+#include <assert.h>
 
 #if ( 1 == PAR_CFG_NVM_EN )
 
@@ -214,16 +235,18 @@
 	/**
 	 * 		Parameter NVM object
 	 *
-	 * 	@note 	Each parameter is protected with 32-CRC.
+	 * 	@note 	Each parameter is protected with CRC-16.
 	 *
-	 * 			Parameter header has same structure!
+	 * 			Parameter header has same structure but only
+	 * 			ID field is not being used!
 	 */
 	typedef union
 	{
 		struct
 		{
 			uint32_t 	val;	/**<4-byte storage for parameter value */
-			uint32_t	crc;	/**<32-CRC of parameter value */
+			uint16_t	id;		/**<Parameter ID */
+			uint16_t	crc;	/**<CRC-16 of parameter value */
 		} field;
 		uint64_t u;
 	}par_nvm_obj_t;
@@ -241,7 +264,7 @@
 	static par_status_t		par_nvm_erase_signature				(void);
 	static par_status_t 	par_nvm_read_header					(uint32_t * const p_num_of_par);
 	static par_status_t 	par_nvm_write_header				(const uint32_t num_of_par);
-	static uint32_t 		par_nvm_calc_crc32					(const uint32_t val);
+	static uint16_t 		par_nvm_calc_crc					(const uint8_t * const p_data, const uint8_t size);
 	static par_status_t		par_nvm_load_all					(void);
 	static uint32_t			par_nvm_calc_num_of_per_par			(void);
 
@@ -361,7 +384,7 @@
 		par_get( par_num, (uint32_t*) &par_obj.field.val );
 
 		// Calculate CRC
-		par_obj.field.crc = par_nvm_calc_crc32( par_obj.field.val );
+		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
 
 		// Calculate parameter NVM address
 		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 4UL * par_num ));
@@ -402,7 +425,7 @@
 		else
 		{
 			// Calculate CRC
-			calc_crc = par_nvm_calc_crc32( par_obj.field.val );
+			calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
 
 			// Validate CRC
 			if ( calc_crc == par_obj.field.crc )
@@ -517,7 +540,7 @@
 		else
 		{
 			// Calculate CRC
-			calc_crc = par_nvm_calc_crc32( par_obj.field.val );
+			calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 4U );
 
 			// Validate CRC
 			if ( calc_crc == par_obj.field.crc )
@@ -539,13 +562,13 @@
 	static par_status_t	par_nvm_write_header(const uint32_t num_of_par)
 	{
 		par_status_t 	status 	= ePAR_OK;
-		par_nvm_obj_t	par_obj	= { .field.val = num_of_par, .field.crc = 0UL };
+		par_nvm_obj_t	par_obj	= { .field.val = num_of_par, .field.id = 0U, .field.crc = 0U };
 
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
 
 		// Calculate CRC
-		par_obj.field.crc = par_nvm_calc_crc32( num_of_par );
+		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.id, 4U );
 
 		// Write to NVM
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEADER_ADDR_OFFSET, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
@@ -557,12 +580,12 @@
 	}
 
 
-	static uint32_t par_nvm_calc_crc32(const uint32_t val)
+	static uint16_t par_nvm_calc_crc(const uint8_t * const p_data, const uint8_t size)
 	{
-		uint32_t crc32 = 0;
+		uint16_t crc16 = 0;
 
 
-		return crc32;
+		return crc16;
 	}
 
 	static par_status_t par_nvm_load_all(void)

@@ -106,10 +106,6 @@ par_status_t par_init(void)
 		gb_is_init = true;
 	}
 
-	// TODO: Check if NVM init, assert if not...
-	// TODO: Read parameter signature... If signature valid start copy from NVM to live variables
-	// TODO: Calculate and read hash table
-
 	#if ( 1 == PAR_CFG_NVM_EN )
 
 		// Init and load parameters from NVM
@@ -455,7 +451,7 @@ bool par_get_persistance(const par_num_t par_num)
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
 	// Get persistance
-	is_persistant = gp_par_table[ par_num ].access;
+	is_persistant = gp_par_table[ par_num ].persistant;
 
 	return is_persistant;
 }
