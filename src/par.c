@@ -487,7 +487,7 @@ bool par_get_persistance(const par_num_t par_num)
 			}
 		}
 
-		PAR_DBG_PRINT( "PAR: Storing all parameters to NVM. Status: %u", status );
+		PAR_DBG_PRINT( "PAR: Storing all persistent parameters to NVM. Status: %u", status );
 
 		return status;
 	}

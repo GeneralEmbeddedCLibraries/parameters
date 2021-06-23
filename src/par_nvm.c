@@ -367,8 +367,6 @@
 				// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
 				//			Possible power lost during table ID or header write will not have any side effects!
 				status |= par_nvm_write_signature();
-
-				PAR_DBG_PRINT( "PAR_NVM: Storing %u parameters to NVM", num_of_per_par );
 			}
 
 			// None of the persistent parameter
@@ -442,7 +440,7 @@
 		}
 		else
 		{
-/*			// Calculate CRC
+			// Calculate CRC
 			calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
 
 			// Validate CRC
@@ -456,10 +454,7 @@
 			{
 				par_set_to_default( par_num );
 				status = ePAR_ERROR_NVM;
-			}*/
-
-			// TODO: Remove only testing
-			par_set( par_num, (uint32_t*) &par_obj.field.val );
+			}
 		}
 
 		return status;
@@ -606,6 +601,7 @@
 	static uint16_t par_nvm_calc_crc(const uint8_t * const p_data, const uint8_t size)
 	{
 		uint16_t crc16 = 0;
+
 
 
 		return crc16;
