@@ -399,11 +399,14 @@
 		// Get current par value
 		par_get( par_num, (uint32_t*) &par_obj.field.val );
 
+		// Get parameter ID
+		par_obj.field.id = par_get_id( par_num );
+
 		// Calculate CRC
 		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
 
 		// Calculate parameter NVM address
-		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 4UL * par_num ));
+		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_num ));
 
 		// Write to NVM
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
@@ -431,7 +434,7 @@
 		PAR_ASSERT( true == par_get_persistance( par_num ))
 
 		// Calculate parameter NVM address
-		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 4UL * par_num ));
+		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_num ));
 
 		// Read from NVM
 		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (uint8_t*) &par_obj.u ))
@@ -600,9 +603,30 @@
 
 	static uint16_t par_nvm_calc_crc(const uint8_t * const p_data, const uint8_t size)
 	{
-		uint16_t crc16 = 0;
+		const 	uint16_t poly 	= 0x1021U;	// CRC-16-CCITT
+		const 	uint16_t seed 	= 0x1234U;	// Custom seed
+				uint16_t crc16 	= seed;
 
+		// Check input
+		PAR_ASSERT( NULL != p_data );
+		PAR_ASSERT( size > 0 );
 
+	    for (uint8_t i = 0; i < size; i++)
+	    {
+	    	crc16 = ( crc16 ^ ( p_data[i] << 8U ));
+
+	        for (uint8_t j = 0U; j < 8U; j++)
+	        {
+	        	if (crc16 & 0x8000)
+	        	{
+	        		crc16 = (( crc16 << 1U ) ^ poly );
+	            }
+	        	else
+	            {
+	        		crc16 = ( crc16 << 1U );
+	            }
+	        }
+	    }
 
 		return crc16;
 	}
@@ -616,11 +640,7 @@
 		{
 			if ( true == par_get_persistance( par_num ))
 			{
-				if ( ePAR_OK != par_nvm_read( par_num ))
-				{
-					status = ePAR_ERROR_NVM;
-					break;
-				}
+				par_nvm_read( par_num );
 			}
 		}
 

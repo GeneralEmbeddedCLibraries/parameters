@@ -458,6 +458,30 @@ bool par_get_persistance(const par_num_t par_num)
 	return is_persistant;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter ID
+*
+* @param[in]	par_num		- Name of parameter
+* @return		id 			- Parameter ID
+*/
+////////////////////////////////////////////////////////////////////////////////
+uint16_t par_get_id(const par_num_t par_num)
+{
+	uint16_t id = 0;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	// Get persistance
+	id = gp_par_table[ par_num ].id;
+
+	return id;
+}
+
 #if ( 1 == PAR_CFG_NVM_EN )
 
 	////////////////////////////////////////////////////////////////////////////////
