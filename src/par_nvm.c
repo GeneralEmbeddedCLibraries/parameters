@@ -215,7 +215,7 @@
 	/**
 	 * 	Parameter signature
 	 */
-	#define PAR_NVM_SIGNATURE						( 0x55AA00FF )
+	#define PAR_NVM_SIGNATURE						( 0xFF00AA55 )
 
 	/**
 	 * 	Parameter header NVM address offset
@@ -352,16 +352,16 @@
 				// Write header
 				status |= par_nvm_write_header( num_of_per_par );
 
+				// Write default values to NVM
+				status |= par_store_all_to_nvm();
+
 				// Lastly write signature
 				// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
 				//			Possible power lost during table ID or header write will not have any side effects!
 				status |= par_nvm_write_signature();
-
-				// Write default values to NVM
-				status |= par_store_all_to_nvm();
 			}
 
-			// None of the persistant parameter
+			// None of the persistent parameter
 			else
 			{
 				// No actions..
@@ -489,9 +489,10 @@
 
 	static par_status_t	par_nvm_write_signature(void)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 	= ePAR_OK;
+		uint32_t 		sign	= PAR_NVM_SIGNATURE;
 
-		status = nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U, (uint8_t*) PAR_NVM_SIGNATURE );
+		status = nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U, (uint8_t*) &sign );
 
 		return status;
 	}
@@ -603,7 +604,10 @@
 
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
-			par_nvm_read( par_num );
+			if ( true == par_get_persistance( par_num ))
+			{
+				par_nvm_read( par_num );
+			}
 		}
 
 		return status;
