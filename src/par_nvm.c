@@ -294,11 +294,15 @@
 		// Check NVM signature
 		if ( ePAR_OK == par_nvm_check_signature())
 		{
+			PAR_DBG_PRINT( "PAR_NVM: Signature OK" );
+
 			#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 
 				// Same parameters table
 				if ( ePAR_OK == par_nvm_check_table_id())
 				{
+					PAR_DBG_PRINT( "PAR_NVM: Unique table ID OK" )
+
 					// Load all parameters from NVM
 					status |= par_nvm_load_all();
 				}
@@ -306,6 +310,8 @@
 				// Parameters table change
 				else
 				{
+					PAR_DBG_PRINT( "PAR_NVM: Unique table ID invalid. Rewrite complete NVM memory..." )
+
 					// Clean signature
 					status |= par_nvm_erase_signature();
 
@@ -337,6 +343,8 @@
 		// No signature
 		else
 		{
+			PAR_DBG_PRINT( "PAR_NVM: Signature missing" );
+
 			// Set all parameters to default values
 			par_set_all_to_default();
 
@@ -359,6 +367,8 @@
 				// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
 				//			Possible power lost during table ID or header write will not have any side effects!
 				status |= par_nvm_write_signature();
+
+				PAR_DBG_PRINT( "PAR_NVM: Storing %u parameters to NVM", num_of_per_par );
 			}
 
 			// None of the persistent parameter
@@ -432,7 +442,7 @@
 		}
 		else
 		{
-			// Calculate CRC
+/*			// Calculate CRC
 			calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
 
 			// Validate CRC
@@ -444,8 +454,12 @@
 			// CRC corrupt
 			else
 			{
+				par_set_to_default( par_num );
 				status = ePAR_ERROR_NVM;
-			}
+			}*/
+
+			// TODO: Remove only testing
+			par_set( par_num, (uint32_t*) &par_obj.field.val );
 		}
 
 		return status;
@@ -606,9 +620,15 @@
 		{
 			if ( true == par_get_persistance( par_num ))
 			{
-				par_nvm_read( par_num );
+				if ( ePAR_OK != par_nvm_read( par_num ))
+				{
+					status = ePAR_ERROR_NVM;
+					break;
+				}
 			}
 		}
+
+		PAR_DBG_PRINT( "PAR: Loading all parameters from NVM. Status: %u", status );
 
 		return status;
 	}

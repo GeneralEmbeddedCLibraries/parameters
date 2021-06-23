@@ -327,7 +327,7 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 ////////////////////////////////////////////////////////////////////////////////
 void par_set_to_default(const par_num_t par_num)
 {
-	par_type_list_t	par_type 	= ePAR_TYPE_U8;
+	par_type_list_t	par_type = ePAR_TYPE_U8;
 
 	// Is init
 	PAR_ASSERT( true == gb_is_init );
@@ -362,6 +362,8 @@ void par_set_all_to_default(void)
 	{
 		par_set_to_default( par_num );
 	}
+
+	PAR_DBG_PRINT( "PAR: Setting all parameters to default" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -484,6 +486,8 @@ bool par_get_persistance(const par_num_t par_num)
 				}
 			}
 		}
+
+		PAR_DBG_PRINT( "PAR: Storing all parameters to NVM. Status: %u", status );
 
 		return status;
 	}
