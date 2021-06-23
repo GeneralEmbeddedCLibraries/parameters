@@ -475,10 +475,13 @@ bool par_get_persistance(const par_num_t par_num)
 
 		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
 		{
-			if ( ePAR_OK != par_store_to_nvm( par_num ))
+			if ( true == par_get_persistance( par_num ))
 			{
-				status = ePAR_ERROR_NVM;
-				break;
+				if ( ePAR_OK != par_store_to_nvm( par_num ))
+				{
+					status = ePAR_ERROR_NVM;
+					break;
+				}
 			}
 		}
 

@@ -337,27 +337,35 @@
 		// No signature
 		else
 		{
-			#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-
-				// Write table ID
-				status |= par_nvm_write_table_id();
-
-			#endif
-
-			// Write header
-			num_of_per_par = par_nvm_calc_num_of_per_par();
-			status |= par_nvm_write_header( num_of_per_par );
-
-			// Lastly write signature
-			// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
-			//			Possible power lost during table ID or header write will not have any side effects!
-			status |= par_nvm_write_signature();
-
 			// Set all parameters to default values
 			par_set_all_to_default();
 
-			// Write default values to NVM
-			status |= par_store_all_to_nvm();
+			// Get how many persistant parameters there are
+			num_of_per_par = par_nvm_calc_num_of_per_par();
+
+			if ( num_of_per_par > 0 )
+			{
+				#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+					status |= par_nvm_write_table_id();
+				#endif
+
+				// Write header
+				status |= par_nvm_write_header( num_of_per_par );
+
+				// Lastly write signature
+				// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
+				//			Possible power lost during table ID or header write will not have any side effects!
+				status |= par_nvm_write_signature();
+
+				// Write default values to NVM
+				status |= par_store_all_to_nvm();
+			}
+
+			// None of the persistant parameter
+			else
+			{
+				// No actions..
+			}
 		}
 
 		PAR_ASSERT( ePAR_OK == status );
