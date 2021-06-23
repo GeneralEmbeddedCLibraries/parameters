@@ -417,6 +417,12 @@
 		return status;
 	}
 
+	par_status_t par_nvm_write_all(void)
+	{
+		par_status_t status = ePAR_OK;
+
+		return status;
+	}
 
 	par_status_t par_nvm_read(const par_num_t par_num)
 	{
@@ -459,6 +465,13 @@
 				status = ePAR_ERROR_NVM;
 			}
 		}
+
+		return status;
+	}
+
+	par_status_t par_nvm_read_all(void)
+	{
+		par_status_t status = ePAR_OK;
 
 		return status;
 	}
@@ -589,7 +602,7 @@
 		PAR_ASSERT( true == nvm_is_init());
 
 		// Calculate CRC
-		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.id, 4U );
+		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 4U );
 
 		// Write to NVM
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEADER_ADDR_OFFSET, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
@@ -633,18 +646,33 @@
 
 	static par_status_t par_nvm_load_all(void)
 	{
-		par_status_t 	status 	= ePAR_OK;
-		uint32_t 		par_num = 0UL;
+		par_status_t 	status 			= ePAR_OK;
+		uint32_t 		par_num 		= 0UL;
+		uint32_t		stored_par_num	= 0UL;
 
-		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		// Get number of stored parameters
+		if ( ePAR_OK == par_nvm_read_header( &stored_par_num ))
 		{
-			if ( true == par_get_persistance( par_num ))
+			// Read first
+			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 			{
-				par_nvm_read( par_num );
+				// Read first "stored_par_num" number of parameters
+				if 	(	( true == par_get_persistance( par_num ))
+					&& 	( par_num < stored_par_num ))
+				{
+						status |= par_nvm_read( par_num );
+				}
 			}
+
+			PAR_DBG_PRINT( "PAR_NVM: Loading %u parameters from NVM. Status: %u", stored_par_num, status );
+		}
+		else
+		{
+			status = ePAR_ERROR_NVM;
+
+			PAR_DBG_PRINT( "PAR_NVM: Reading header error!" );
 		}
 
-		PAR_DBG_PRINT( "PAR: Loading all parameters from NVM. Status: %u", status );
 
 		return status;
 	}

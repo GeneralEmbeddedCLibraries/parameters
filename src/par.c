@@ -503,11 +503,7 @@ uint16_t par_get_id(const par_num_t par_num)
 		{
 			if ( true == par_get_persistance( par_num ))
 			{
-				if ( ePAR_OK != par_store_to_nvm( par_num ))
-				{
-					status = ePAR_ERROR_NVM;
-					break;
-				}
+				status |= par_store_to_nvm( par_num );
 			}
 		}
 

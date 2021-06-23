@@ -32,9 +32,11 @@
 	////////////////////////////////////////////////////////////////////////////////
 	// Functions Prototypes
 	////////////////////////////////////////////////////////////////////////////////
-	par_status_t par_nvm_init	(void);
-	par_status_t par_nvm_write	(const par_num_t par_num);
-	par_status_t par_nvm_read	(const par_num_t par_num);
+	par_status_t par_nvm_init		(void);
+	par_status_t par_nvm_write		(const par_num_t par_num);
+	par_status_t par_nvm_write_all	(void);
+	par_status_t par_nvm_read		(const par_num_t par_num);
+	par_status_t par_nvm_read_all	(void);
 
 #endif // 1 == PAR_CFG_NVM_EN
 
