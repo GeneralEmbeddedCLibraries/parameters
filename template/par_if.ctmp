@@ -59,7 +59,8 @@ static osMutexId_t	g_par_mutex_id = NULL;
 const osMutexAttr_t g_par_mutex_attr =
 {
     .name 		= "par",
-    .attr_bits 	= ( osMutexPrioInherit | osMutexRecursive ),	// TODO: Check if really needs a recursive one!
+    //.attr_bits 	= ( osMutexPrioInherit | osMutexRecursive ),	// TODO: Check if really needs a recursive one!
+    .attr_bits 	= ( osMutexPrioInherit ),
 };
 
 // USER VARIABLES END...

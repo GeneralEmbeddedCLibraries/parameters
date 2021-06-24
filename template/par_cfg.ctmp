@@ -72,14 +72,6 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 
 	{	.id = 6, 	.name = "Test_f32", 		.min.f32 = -10,		.max.f32 = 100,		.def.f32 = -1.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
 
-	{	.id = 15, 	.name = "Test_f32_15", 		.min.f32 = -100, 	.max.f32 = 100,		.def.f32 = -12.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
-	{	.id = 16, 	.name = "Test_f32_16", 		.min.f32 = -100, 	.max.f32 = 100,		.def.f32 = -12.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
-
-	{	.id = 20, 	.name = "Test_i8_20", 		.min.i8 = -100, 	.max.i8 = 100,		.def.i8 = -31,			.unit = "n/a",		.type = ePAR_TYPE_I8,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
-
-	{	.id = 10, 	.name = "Battery voltage", 	.min.f32 = 0,		.max.f32 = 5,		.def.f32 = 0.0,			.unit = "V",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 9, 	.name = "System current", 	.min.f32 = 0,		.max.f32 = 10,		.def.f32 = 0.0,			.unit = "A",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-
 	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

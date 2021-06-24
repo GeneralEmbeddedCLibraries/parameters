@@ -61,14 +61,6 @@ typedef enum
 	ePAR_TEST_I32,
 
 	ePAR_TEST_F32,
-	ePAR_TEST_F32_15,
-	ePAR_TEST_F32_16,
-
-	ePAR_TEST_I8_20,
-
-
-	ePAR_BAT_VOLTAGE,
-	ePAR_SYS_CURRENT,
 
 	// USER CODE END...
 

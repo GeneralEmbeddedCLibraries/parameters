@@ -182,7 +182,6 @@
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
@@ -190,10 +189,10 @@
 #include "../../par_cfg.h"
 #include "../../par_if.h"
 
-#include <assert.h>
-#include <string.h>
-
 #if ( 1 == PAR_CFG_NVM_EN )
+
+	#include <assert.h>
+	#include <string.h>
 
 	#include "middleware/nvm/nvm/src/nvm.h"
 
@@ -256,10 +255,10 @@
 	// Variables
 	////////////////////////////////////////////////////////////////////////////////
 
-
 	////////////////////////////////////////////////////////////////////////////////
 	// Function Prototypes
 	////////////////////////////////////////////////////////////////////////////////
+	static par_status_t 	par_nvm_read						(const par_num_t par_num);
 	static par_status_t		par_nvm_check_signature				(void);
 	static par_status_t		par_nvm_write_signature				(void);
 
@@ -279,8 +278,17 @@
 	// Functions
 	////////////////////////////////////////////////////////////////////////////////
 
-
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Initialize parameter NVM handling
+	*
+	* @brief 	Based on settings in "par_cfg.h" initialization phase is done.
+	* 			Settings such as "PAR_CFG_TABLE_ID_CHECK_EN" will affect checking
+	* 			for table ID.
+	*
+	* @return	status - Status of initialization
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	par_status_t par_nvm_init(void)
 	{
 		par_status_t 	status 			= ePAR_OK;
@@ -389,7 +397,14 @@
 		return status;
 	}
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Store parameter value to NVM
+	*
+	* @param[in]	par_num	- Parameter enumeration number
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	par_status_t par_nvm_write(const par_num_t par_num)
 	{
 		par_status_t 	status 		= ePAR_OK;
@@ -425,6 +440,13 @@
 		return status;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Store all parameter value to NVM
+	*
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	par_status_t par_nvm_write_all(void)
 	{
 		par_status_t 	status 		= ePAR_OK;
@@ -445,7 +467,33 @@
 		return status;
 	}
 
-	par_status_t par_nvm_read(const par_num_t par_num)
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	* @} <!-- END GROUP -->
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*@addtogroup KERNEL_PAR_NVM_FUNCTIONS
+	* @{ <!-- BEGIN GROUP -->
+	*
+	* 	Kernel functions of device parameters NVM handling
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Read parameter value from NVM
+	*
+	* @note		This function is being part of a API as it is only needed at init
+	* 			phase.
+	*
+	* @param[in]	par_num	- Parameter enumeration number
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	static par_status_t par_nvm_read(const par_num_t par_num)
 	{
 		par_status_t 	status 		= ePAR_OK;
 		par_nvm_obj_t	par_obj		= { .u = 0ULL };
@@ -494,28 +542,13 @@
 		return status;
 	}
 
-	par_status_t par_nvm_read_all(void)
-	{
-		par_status_t status = ePAR_OK;
-
-		return status;
-	}
-
 	////////////////////////////////////////////////////////////////////////////////
 	/**
-	* @} <!-- END GROUP -->
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*@addtogroup KERNEL_PAR_NVM_FUNCTIONS
-	* @{ <!-- BEGIN GROUP -->
+	*		Check for parameter NVM signature
 	*
-	* 	Kernel functions of device parameters NVM handling
+	* @return		status 	- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-
 	static par_status_t	par_nvm_check_signature(void)
 	{
 		par_status_t 	status 	= ePAR_OK;
@@ -536,7 +569,13 @@
 		return status;
 	}
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Write parameter signature to NVM
+	*
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t	par_nvm_write_signature(void)
 	{
 		par_status_t 	status 	= ePAR_OK;
@@ -547,11 +586,15 @@
 		return status;
 	}
 
-
-
-
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 
+		////////////////////////////////////////////////////////////////////////////////
+		/**
+		*		Erase parameter signature from NVM
+		*
+		* @return		status 	- Status of operation
+		*/
+		////////////////////////////////////////////////////////////////////////////////
 		static par_status_t	par_nvm_erase_signature(void)
 		{
 			par_status_t status = ePAR_OK;
@@ -561,6 +604,21 @@
 			return status;
 		}
 
+		////////////////////////////////////////////////////////////////////////////////
+		/**
+		*		Check unique parameter table ID
+		*
+		* @brief	This function check for parameter configuration table change while
+		* 			some parameters are already stored in NVM. First it read stored
+		* 			table ID from NVM and then compare it with current table ID (live
+		* 			from RAM). In case of mismatched it return error.
+		*
+		* 			Table ID is being calculated based on hash algorithm (SHA-256).
+		*
+		* @param[in]	p_table_id	- Pointer to reference table ID (in "RAM")
+		* @return		status 		- Status of operation
+		*/
+		////////////////////////////////////////////////////////////////////////////////
 		static par_status_t par_nvm_check_table_id(const uint8_t * const p_table_id)
 		{
 			par_status_t 	status 				= ePAR_OK;
@@ -588,7 +646,14 @@
 			return status;
 		}
 
-
+		////////////////////////////////////////////////////////////////////////////////
+		/**
+		*		Write unique parameter table ID to NVM
+		*
+		* @param[in]	p_table_id	- Pointer to reference table ID (in "RAM")
+		* @return		status 		- Status of operation
+		*/
+		////////////////////////////////////////////////////////////////////////////////
 		static par_status_t par_nvm_write_table_id(const uint8_t * const p_table_id)
 		{
 			par_status_t status = ePAR_OK;
@@ -603,7 +668,14 @@
 
 	#endif // 1 == PAR_CFG_TABLE_ID_CHECK_EN
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Read parameter NVM header
+	*
+	* @param[in]	p_num_of_par	- Pointer to number of stored parameters in NVM
+	* @return		status 			- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_read_header(uint32_t * const p_num_of_par)
 	{
 		par_status_t 	status 		= ePAR_OK;
@@ -641,7 +713,14 @@
 		return status;
 	}
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Write parameter NVM header
+	*
+	* @param[in]	num_of_par	- Number of persistant parameters that are stored in NVM
+	* @return		status 		- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t	par_nvm_write_header(const uint32_t num_of_par)
 	{
 		par_status_t 	status 	= ePAR_OK;
@@ -662,7 +741,15 @@
 		return status;
 	}
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Calculate CRC-16
+	*
+	* @param[in]	p_data	- Pointer to data
+	* @param[in]	size	- Size of data to calc crc
+	* @return		crc16	- Calculated CRC
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static uint16_t par_nvm_calc_crc(const uint8_t * const p_data, const uint8_t size)
 	{
 		const 	uint16_t poly 	= 0x1021U;	// CRC-16-CCITT
@@ -693,6 +780,16 @@
 		return crc16;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Load all parameters value from NVM
+	*
+	*
+	*	TODO: Shall be defined what is the action of corrupted CRC detection on top level!
+	*
+	* @return		status 		- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_load_all(void)
 	{
 		par_status_t 	status 			= ePAR_OK;
@@ -726,6 +823,13 @@
 		return status;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Calculate total number of persistent parameters
+	*
+	* @return	num_of_per_par - Number of persistent parameters
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static uint32_t	par_nvm_calc_num_of_per_par(void)
 	{
 		uint32_t num_of_per_par = 0UL;

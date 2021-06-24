@@ -1,5 +1,5 @@
 ============================================================
- Version 1.0.0 (xx.xx.2021)
+ Version 1.0.0 (24.06.2021)
 ============================================================
  
  Brief:
@@ -14,8 +14,7 @@
  	- Parameter storing into fixed predefined NVM memory 
  	based only on its ID. 
  
- Features:
-   -  
+ Features: 
    
  Todo:
  
