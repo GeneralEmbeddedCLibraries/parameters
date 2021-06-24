@@ -390,9 +390,9 @@
 
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
+		PAR_ASSERT( true == par_is_init());
 
 		// Legal call
-		PAR_ASSERT( true == par_is_init());
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
 		PAR_ASSERT( true == par_get_persistance( par_num ))
 
@@ -421,6 +421,8 @@
 	{
 		par_status_t status = ePAR_OK;
 
+		// TODO: Move from par -> par_nvm
+
 		return status;
 	}
 
@@ -433,9 +435,9 @@
 
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
+		PAR_ASSERT( true == par_is_init());
 
 		// Legal call
-		PAR_ASSERT( true == par_is_init());
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
 		PAR_ASSERT( true == par_get_persistance( par_num ))
 

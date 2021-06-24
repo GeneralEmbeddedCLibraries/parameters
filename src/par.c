@@ -51,6 +51,7 @@ static bool gb_is_init = false;
 static uint8_t * 	gpu8_par_value 						= NULL;
 static uint32_t 	gu32_par_addr_offset[ ePAR_NUM_OF ] = { 0 };
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
@@ -135,27 +136,23 @@ const bool par_is_init(void)
 	return (const bool) gb_is_init;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter configurations
-*
-* @param[in]	par_num	- Name of parameter
-* @param[in]	p_par_cfg	- Pointer to parameter configurations
-* @return		status 		- Status of operation
-*/
-////////////////////////////////////////////////////////////////////////////////
-par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg)
+par_num_t par_get_num_by_id(const uint16_t id)
 {
-	par_status_t status = ePAR_OK;
+	uint32_t par_num = 0UL;
 
-	// Check inputs
-	PAR_ASSERT( NULL != p_par_cfg );
+	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+	{
+		if ( gp_par_table[par_num].id == id )
+		{
+			break;
+		}
+	}
+
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
-	*p_par_cfg = gp_par_table[ par_num ];
-
-	return status;
+	return par_num;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -368,15 +365,37 @@ void par_set_all_to_default(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get parameter data type
+*		Get parameter configurations
 *
 * @param[in]	par_num	- Name of parameter
-* @return		type 	- Data type of parameter
+* @param[in]	p_par_cfg	- Pointer to parameter configurations
+* @return		status 		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-par_type_list_t	par_get_data_type(const par_num_t par_num)
+par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg)
 {
-	par_type_list_t type = ePAR_TYPE_U8;
+	par_status_t status = ePAR_OK;
+
+	// Check inputs
+	PAR_ASSERT( NULL != p_par_cfg );
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	*p_par_cfg = gp_par_table[ par_num ];
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter ID
+*
+* @param[in]	par_num		- Name of parameter
+* @return		id 			- Parameter ID
+*/
+////////////////////////////////////////////////////////////////////////////////
+uint16_t par_get_id(const par_num_t par_num)
+{
+	uint16_t id = 0;
 
 	// Is init
 	PAR_ASSERT( true == gb_is_init );
@@ -384,10 +403,34 @@ par_type_list_t	par_get_data_type(const par_num_t par_num)
 	// Check input
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
-	// Get type
-	type = gp_par_table[ par_num ].type;
+	// Get persistance
+	id = gp_par_table[ par_num ].id;
 
-	return type;
+	return id;
+}
+
+void par_get_min_max_def(const par_num_t par_num, void * const p_min, void * const p_max, void * const p_def)
+{
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	if ( NULL != p_min )
+	{
+		*(uint32_t*) p_min = *(uint32_t*) &gp_par_table[par_num].min.u32;
+	}
+
+	if ( NULL != p_max )
+	{
+		*(uint32_t*) p_max = *(uint32_t*) &gp_par_table[par_num].max.u32;
+	}
+
+	if ( NULL != p_def )
+	{
+		*(uint32_t*) p_def = *(uint32_t*) &gp_par_table[par_num].def.u32;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -408,6 +451,43 @@ void par_get_name(const par_num_t par_num, uint8_t * const p_name)
 
 	// Copy name
 	strncpy((char*) p_name, gp_par_table[ par_num ].name, 32 );
+	//strncpy((char*) p_name, gp_par_table[ par_num ].name, strlen( gp_par_table[ par_num ].name ));
+}
+
+void par_get_unit(const par_num_t par_num, uint8_t * const p_unit)
+{
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	// Copy name
+	strncpy((char*) p_unit, gp_par_table[ par_num ].unit, strlen( gp_par_table[ par_num ].unit ));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter data type
+*
+* @param[in]	par_num	- Name of parameter
+* @return		type 	- Data type of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_type_list_t	par_get_data_type(const par_num_t par_num)
+{
+	par_type_list_t type = ePAR_TYPE_U8;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// Check input
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	// Get type
+	type = gp_par_table[ par_num ].type;
+
+	return type;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -458,29 +538,6 @@ bool par_get_persistance(const par_num_t par_num)
 	return is_persistant;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter ID
-*
-* @param[in]	par_num		- Name of parameter
-* @return		id 			- Parameter ID
-*/
-////////////////////////////////////////////////////////////////////////////////
-uint16_t par_get_id(const par_num_t par_num)
-{
-	uint16_t id = 0;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Get persistance
-	id = gp_par_table[ par_num ].id;
-
-	return id;
-}
 
 #if ( 1 == PAR_CFG_NVM_EN )
 
