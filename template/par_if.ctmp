@@ -26,7 +26,7 @@
 // USER INCLUDES BEGIN...
 
 #include "cmsis_os2.h"
-
+#include "middleware/misc/sha256.h"
 // USER INCLUDES END...
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ static osMutexId_t	g_par_mutex_id = NULL;
 const osMutexAttr_t g_par_mutex_attr =
 {
     .name 		= "par",
-    .attr_bits 	= ( osMutexPrioInherit | osMutexRecursive ),
+    .attr_bits 	= ( osMutexPrioInherit | osMutexRecursive ),	// TODO: Check if really needs a recursive one!
 };
 
 // USER VARIABLES END...
@@ -77,7 +77,7 @@ const osMutexAttr_t g_par_mutex_attr =
 * @return 		status - Status of initialization
 */
 ////////////////////////////////////////////////////////////////////////////////
-par_status_t  par_if_init(void)
+par_status_t par_if_init(void)
 {
 	par_status_t status = ePAR_OK;
 
@@ -174,16 +174,17 @@ par_status_t par_if_release_mutex(void)
 * @return 		p_hash	- Pointer to calculated hash number
 */
 ////////////////////////////////////////////////////////////////////////////////
-const uint8_t * par_if_calc_hash(const uint8_t * const p_data, const uint32_t size)
+void par_if_calc_hash(const uint8_t * const p_data, const uint32_t size, uint8_t * const p_hash)
 {
-	const uint8_t * p_hash = NULL;
+	PAR_ASSERT( NULL != p_data );
+	PAR_ASSERT( NULL != p_hash );
+	PAR_ASSERT( size > 0 );
 
 	// USER CODE BEGIN...
 
+	sha256( p_data, size, p_hash );
 
 	// USER CODE END...
-
-	return p_hash;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

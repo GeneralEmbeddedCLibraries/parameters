@@ -27,13 +27,12 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_if_init			(void);
 par_status_t par_if_aquire_mutex	(void);
 par_status_t par_if_release_mutex	(void);
-const uint8_t * par_if_calc_hash	(const uint8_t * const p_data, const uint32_t size);
+void 		par_if_calc_hash		(const uint8_t * const p_data, const uint32_t size, uint8_t * const p_hash);
 
 #endif // _PAR_IF_H_

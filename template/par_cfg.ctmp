@@ -12,6 +12,9 @@
 * @{ <!-- BEGIN GROUP -->
 *
 * 	Configuration for device parameters
+*
+* 	User shall put code inside inside code block start with
+* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -32,6 +35,21 @@
 /**
  *	Parameters definitions
  *
+ *	@brief
+ *
+ *	Each defined parameter has following properties:
+ *
+ *		i) 		Parameter ID: 	Unique parameter identification number. ID shall not be duplicated.
+ *		ii) 	Name:			Parameter name. Max. length of 32 chars.
+ *		iii)	Min:			Parameter minimum value. Min value must be less than max value.
+ *		iv)		Max:			Parameter maximum value. Max value must be more than min value.
+ *		v)		Def:			Parameter default value. Default value must lie between interval: [min, max]
+ *		vi)		Unit:			In case parameter shows physical value. Max. length of 32 chars.
+ *		vii)	Data type:		Parameter data type. Supported types: uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t and float32_t
+ *		viii)	Access:			Access type visible from external device such as PC. Either ReadWrite or ReadOnly.
+ *		ix)		Persistence:	Tells if parameter value is being written into NVM.
+ *
+ *
  *	@note	User shall fill up wanted parameter definitions!
  */
 static const par_cfg_t g_par_table[ePAR_NUM_OF] =
@@ -39,22 +57,30 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 
 	// USER CODE BEGIN...
 
-	//
-	//	ID	Name				Min 			Max 			Def 				Unit		Data type		PC Access			Persistent
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	//	ID			Name						Min 				Max 				Def 					Unit				Data type				PC Access					Persistent
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	{	0, 	"Test_u8",	 		.min.u8 = 0,	.max.u8 = 10,	.def.u8 = 8,		"n/a",		ePAR_TYPE_U8,	ePAR_ACCESS_RO, 	false },
-	{	1, 	"Test_i8", 			.min.i8 = -10,	.max.i8 = 100,	.def.i8 = -8,		"n/a",		ePAR_TYPE_I8,	ePAR_ACCESS_RW, 	false },
+	{	.id = 0, 	.name = "Test_u8",	 		.min.u8 = 0,		.max.u8 = 10,		.def.u8 = 8,			.unit = "n/a",		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
+	{	.id = 1, 	.name = "Test_i8", 			.min.i8 = -10,		.max.i8 = 100,		.def.i8 = -8,			.unit = "n/a",		.type = ePAR_TYPE_I8,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
 
-	{	2, 	"Test_u16",	 		.min.u16 = 0,	.max.u16 = 10,	.def.u16 = 1,		"n/a",		ePAR_TYPE_U16,	ePAR_ACCESS_RW, 	false },
-	{	3, 	"Test_i16", 		.min.i16 = -10,	.max.i16 = 100,	.def.i16 = -12,		"n/a",		ePAR_TYPE_I16,	ePAR_ACCESS_RW, 	false },
+	{	.id = 2, 	.name = "Test_u16",	 		.min.u16 = 0,		.max.u16 = 10,		.def.u16 = 3,			.unit = "n/a",		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
+	{	.id = 3, 	.name = "Test_i16", 		.min.i16 = -10,		.max.i16 = 100,		.def.i16 = -5,			.unit = "n/a",		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
 
-	{	4, 	"Test_u32", 		.min.u32 = 0,	.max.u32 = 10,	.def.u32 = 100,		"n/a",		ePAR_TYPE_U32,	ePAR_ACCESS_RW, 	false },
-	{	5, 	"Test_i32", 		.min.i32 = -10,	.max.i32 = 100,	.def.i32 = 0,		"n/a",		ePAR_TYPE_I32,	ePAR_ACCESS_RW, 	false },
+	{	.id = 4, 	.name = "Test_u32", 		.min.u32 = 0,		.max.u32 = 10,		.def.u32 = 10,			.unit = "n/a",		.type = ePAR_TYPE_U32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
+	{	.id = 5, 	.name = "Test_i32", 		.min.i32 = -10,		.max.i32 = 100,		.def.i32 = -10,			.unit = "n/a",		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
 
-	{	6, 	"Test_f32", 		.min.f32 = -10,	.max.f32 = 100,	.def.f32 = -12.123,	"n/a",		ePAR_TYPE_F32,	ePAR_ACCESS_RO, 	false },
+	{	.id = 6, 	.name = "Test_f32", 		.min.f32 = -10,		.max.f32 = 100,		.def.f32 = -1.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
 
-	{	7, 	"Battery voltage", 	.min.f32 = 0,	.max.f32 = 5,	.def.f32 = 0.0,		"V",		ePAR_TYPE_F32,	ePAR_ACCESS_RO, 	false },
-	{	8, 	"System current", 	.min.f32 = 0,	.max.f32 = 10,	.def.f32 = 0.0,		"A",		ePAR_TYPE_F32,	ePAR_ACCESS_RO, 	false },
+	{	.id = 15, 	.name = "Test_f32_15", 		.min.f32 = -100, 	.max.f32 = 100,		.def.f32 = -12.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
+	{	.id = 16, 	.name = "Test_f32_16", 		.min.f32 = -100, 	.max.f32 = 100,		.def.f32 = -12.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
+
+	{	.id = 20, 	.name = "Test_i8_20", 		.min.i8 = -100, 	.max.i8 = 100,		.def.i8 = -31,			.unit = "n/a",		.type = ePAR_TYPE_I8,	.access = ePAR_ACCESS_RW, 	.persistant = true 		},
+
+	{	.id = 10, 	.name = "Battery voltage", 	.min.f32 = 0,		.max.f32 = 5,		.def.f32 = 0.0,			.unit = "V",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
+	{	.id = 9, 	.name = "System current", 	.min.f32 = 0,		.max.f32 = 10,		.def.f32 = 0.0,			.unit = "A",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
+
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 	// USER CODE END...

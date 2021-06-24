@@ -20,9 +20,10 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdint.h>
-#include "project_config.h"
 
 // USER CODE BEGIN...
+
+#include "project_config.h"
 
 // Debug communication port
 #include "middleware/debug_comm_port/com_dbg.h"
@@ -60,6 +61,10 @@ typedef enum
 	ePAR_TEST_I32,
 
 	ePAR_TEST_F32,
+	ePAR_TEST_F32_15,
+	ePAR_TEST_F32_16,
+
+	ePAR_TEST_I8_20,
 
 
 	ePAR_BAT_VOLTAGE,
@@ -100,6 +105,9 @@ typedef enum
  * 			purpose to detect device and stored parameter table
  * 			difference.
  *
+ * 			Must be disabled once the device is release in order
+ * 			to prevent loss of calibrated data stored in NVM.
+ *
  * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
  * 			not make sense to calculating ID at all.
  */
@@ -119,7 +127,7 @@ typedef enum
  * 	Debug communication port macros
  */
 #if ( 1 == PAR_CFG_DEBUG_EN )
-	#define PAR_DBG_PRINT( ... )				( com_dbg_print( eCOM_DBG_CH_ERR, (const char*) __VA_ARGS__ ))
+	#define PAR_DBG_PRINT( ... )				( com_dbg_print( eCOM_DBG_CH_NONE, (const char*) __VA_ARGS__ ))
 #else
 	#define PAR_DBG_PRINT( ... )				{ ; }
 

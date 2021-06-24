@@ -11,11 +11,21 @@
  	- Unique par table ID based on hash functions
  	- All platform/config dependent stuff are defined
  	by user via interface files
+ 	- Parameter storing into fixed predefined NVM memory 
+ 	based only on its ID. 
  
  Features:
    -  
    
  Todo:
-   - 
+ 
+   - Change parameter store policy. Now it is fixed with ID
+   in future shall be more sofisticated. Idea is to store 
+   parameters consecutive, each by each, compressed in order
+   not to consume to many space. 
+   
+   - Ability to append new parameters to table. For know this
+   is handled with checking unique table ID, but for release
+   this mechanism will not work.
    
 ============================================================
