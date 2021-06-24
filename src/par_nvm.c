@@ -262,7 +262,7 @@
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t		par_nvm_check_signature				(void);
 	static par_status_t		par_nvm_write_signature				(void);
-	static par_status_t		par_nvm_erase_signature				(void);
+
 	static par_status_t 	par_nvm_read_header					(uint32_t * const p_num_of_par);
 	static par_status_t 	par_nvm_write_header				(const uint32_t num_of_par);
 	static uint16_t 		par_nvm_calc_crc					(const uint8_t * const p_data, const uint8_t size);
@@ -270,16 +270,14 @@
 	static uint32_t			par_nvm_calc_num_of_per_par			(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+		static par_status_t	par_nvm_erase_signature	(void);
 		static par_status_t par_nvm_check_table_id	(const uint8_t * const p_table_id);
 		static par_status_t par_nvm_write_table_id	(const uint8_t * const p_table_id);
 	#endif
 
-
-
 	////////////////////////////////////////////////////////////////////////////////
 	// Functions
 	////////////////////////////////////////////////////////////////////////////////
-
 
 
 
@@ -550,17 +548,18 @@
 	}
 
 
-	static par_status_t	par_nvm_erase_signature(void)
-	{
-		par_status_t status = ePAR_OK;
 
-		status = nvm_erase( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U );
-
-		return status;
-	}
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 
+		static par_status_t	par_nvm_erase_signature(void)
+		{
+			par_status_t status = ePAR_OK;
+
+			status = nvm_erase( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U );
+
+			return status;
+		}
 
 		static par_status_t par_nvm_check_table_id(const uint8_t * const p_table_id)
 		{
