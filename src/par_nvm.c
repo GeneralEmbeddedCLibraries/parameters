@@ -191,6 +191,7 @@
 #include "../../par_if.h"
 
 #include <assert.h>
+#include <string.h>
 
 #if ( 1 == PAR_CFG_NVM_EN )
 
@@ -225,7 +226,7 @@
 	/**
 	 * 	Parameter table ID NVM address offset
 	 */
-	#define PAR_NVM_TABLE_ID_ADDR_OFFSET			( 0x10 )
+	#define PAR_NVM_TABLE_ID_ADDR_OFFSET			( 0x20 )
 
 	/**
 	 * 	Parameter object NVM address offset
@@ -269,8 +270,8 @@
 	static uint32_t			par_nvm_calc_num_of_per_par			(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-		static par_status_t 	par_nvm_check_table_id	(void);
-		static par_status_t 	par_nvm_write_table_id	(void);
+		static par_status_t par_nvm_check_table_id	(const uint8_t * const p_table_id);
+		static par_status_t par_nvm_write_table_id	(const uint8_t * const p_table_id);
 	#endif
 
 
@@ -287,6 +288,15 @@
 		par_status_t 	status 			= ePAR_OK;
 		uint32_t		num_of_per_par 	= 0UL;
 
+		#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
+
+			static uint8_t par_table_id[32] = { 0 };
+
+			// Calculate parameter table unique ID
+			par_if_calc_hash( par_cfg_get_table(), par_cfg_get_table_size(), (uint8_t*) &par_table_id );
+
+		#endif
+
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
 		PAR_ASSERT( true == par_is_init());
@@ -299,9 +309,9 @@
 			#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 
 				// Same parameters table
-				if ( ePAR_OK == par_nvm_check_table_id())
+				if ( ePAR_OK == par_nvm_check_table_id((uint8_t*) &par_table_id ))
 				{
-					PAR_DBG_PRINT( "PAR_NVM: Unique table ID OK" )
+					PAR_DBG_PRINT( "PAR_NVM: Unique table ID OK" );
 
 					// Load all parameters from NVM
 					status |= par_nvm_load_all();
@@ -310,13 +320,13 @@
 				// Parameters table change
 				else
 				{
-					PAR_DBG_PRINT( "PAR_NVM: Unique table ID invalid. Rewrite complete NVM memory..." )
+					PAR_DBG_PRINT( "PAR_NVM: Unique table ID invalid. Rewrite complete NVM memory..." );
 
 					// Clean signature
 					status |= par_nvm_erase_signature();
 
 					// Write new table
-					status |= par_nvm_write_table_id();
+					status |= par_nvm_write_table_id((uint8_t*) &par_table_id );
 
 					// Write new header
 					num_of_per_par = par_nvm_calc_num_of_per_par();
@@ -354,7 +364,7 @@
 			if ( num_of_per_par > 0 )
 			{
 				#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-					status |= par_nvm_write_table_id();
+					status |= par_nvm_write_table_id((uint8_t*) &par_table_id );
 				#endif
 
 				// Write header
@@ -551,20 +561,43 @@
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 
-		static par_status_t par_nvm_check_table_id(void)
-		{
-			par_status_t status = ePAR_OK;
 
+		static par_status_t par_nvm_check_table_id(const uint8_t * const p_table_id)
+		{
+			par_status_t 	status 				= ePAR_OK;
+			uint8_t 		nvm_table_id[32] 	= { 0 };
+
+			if ( eNVM_OK != nvm_read( eNVM_REGION_EEPROM_RUN_PAR, PAR_NVM_TABLE_ID_ADDR_OFFSET, 32U, (uint8_t*) &nvm_table_id ))
+			{
+				status = ePAR_ERROR_NVM;
+			}
+			else
+			{
+				// Table ID is the same in "RAM" and in NVM
+				if ( 0 == memcmp( &nvm_table_id, p_table_id, 32U ))
+				{
+					status = ePAR_OK;
+				}
+
+				// Different table ID found
+				else
+				{
+					status = ePAR_ERROR;
+				}
+			}
 
 			return status;
 		}
 
 
-		static par_status_t par_nvm_write_table_id(void)
+		static par_status_t par_nvm_write_table_id(const uint8_t * const p_table_id)
 		{
 			par_status_t status = ePAR_OK;
 
-
+			if ( eNVM_OK != nvm_write( eNVM_REGION_EEPROM_RUN_PAR, PAR_NVM_TABLE_ID_ADDR_OFFSET, 32U, p_table_id ))
+			{
+				status = ePAR_ERROR_NVM;
+			}
 
 			return status;
 		}
