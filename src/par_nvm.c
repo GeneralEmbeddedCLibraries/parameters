@@ -406,7 +406,7 @@
 		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
 
 		// Calculate parameter NVM address
-		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_num ));
+		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_obj.field.id ));
 
 		// Write to NVM
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
@@ -443,6 +443,7 @@
 		par_nvm_obj_t	par_obj		= { .u = 0ULL };
 		uint32_t		par_addr	= 0UL;
 		uint32_t		calc_crc	= 0UL;
+		uint16_t		par_id		= 0UL;
 
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
@@ -452,8 +453,11 @@
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
 		PAR_ASSERT( true == par_get_persistance( par_num ))
 
+		// Get parameter ID
+		par_id = par_get_id( par_num );
+
 		// Calculate parameter NVM address
-		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_num ));
+		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_id ));
 
 		// Read from NVM
 		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (uint8_t*) &par_obj.u ))

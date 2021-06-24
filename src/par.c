@@ -151,7 +151,7 @@ const bool par_is_init(void)
 ////////////////////////////////////////////////////////////////////////////////
 par_num_t par_get_num_by_id(const uint16_t id)
 {
-	uint32_t par_num = 0UL;
+	uint16_t par_num = 0UL;
 
 	// Is init
 	PAR_ASSERT( true == gb_is_init );
