@@ -30,6 +30,13 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * 		Maximum size of string in bytes
+ *
+ * 	@note	Used for memcpy of name and unit get API functions.
+ */
+#define PAR_MAX_STRING_SIZE				( 32 )
+
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +58,6 @@ static bool gb_is_init = false;
 static uint8_t * 	gpu8_par_value 						= NULL;
 static uint32_t 	gu32_par_addr_offset[ ePAR_NUM_OF ] = { 0 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +76,6 @@ static par_status_t par_set_f32				(const par_num_t par_num, const float32_t f32
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -136,11 +141,23 @@ const bool par_is_init(void)
 	return (const bool) gb_is_init;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter number (enumeration) by ID
+*
+* @param[in]	id 		- Parameter ID
+* @return		par_num	- Parameter enumeration number
+*/
+////////////////////////////////////////////////////////////////////////////////
 par_num_t par_get_num_by_id(const uint16_t id)
 {
 	uint32_t par_num = 0UL;
 
-	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// TRICK: Loop one time more in order to catch invalid ID number!
+	for ( par_num = 0; par_num < ( ePAR_NUM_OF + 1 ); par_num++ )
 	{
 		if ( gp_par_table[par_num].id == id )
 		{
@@ -148,11 +165,11 @@ par_num_t par_get_num_by_id(const uint16_t id)
 		}
 	}
 
+	// Invalid ID request
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
 	return par_num;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -165,9 +182,12 @@ par_num_t par_get_num_by_id(const uint16_t id)
 * 			par_set( ePAR_MY_VAR, (float32_t*) &my_val );
 * @endcode
 *
-* @param[in]	par_num		- Name of parameter
-* @param[in]	p_value		- Pointer to value
-* @return		status 		- Status of operation
+* @note		Input is parameter number (enumeration) defined in par_cfg.h and not
+* 			parameter ID number!
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @param[in]	p_value	- Pointer to value
+* @return		status 	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_set(const par_num_t par_num, const void * p_val)
@@ -244,9 +264,12 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 * 			par_get( ePAR_MY_VAR, (float32_t*) &my_val );
 * @endcode
 *
-* @param[in]	par_num		- Name of parameter
-* @param[out]	p_val		- Parameter value
-* @return		status 		- Status of operation
+* @note		Input is parameter number (enumeration) defined in par_cfg.h and not
+* 			parameter ID number!
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @param[out]	p_val	- Parameter value
+* @return		status 	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_get(const par_num_t par_num, void * const p_val)
@@ -318,7 +341,7 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 *
 * @pre	Parameters must be initialized before usage!
 *
-* @param[in]	par_num		- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @return		void
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -367,7 +390,7 @@ void par_set_all_to_default(void)
 /**
 *		Get parameter configurations
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num		- Parameter number (enumeration)
 * @param[in]	p_par_cfg	- Pointer to parameter configurations
 * @return		status 		- Status of operation
 */
@@ -389,8 +412,8 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 /**
 *		Get parameter ID
 *
-* @param[in]	par_num		- Name of parameter
-* @return		id 			- Parameter ID
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		id 		- Parameter ID
 */
 ////////////////////////////////////////////////////////////////////////////////
 uint16_t par_get_id(const par_num_t par_num)
@@ -409,6 +432,19 @@ uint16_t par_get_id(const par_num_t par_num)
 	return id;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter minimum, maximum and default value
+*
+* @note 	Mandatory to cast input argument to appropriate type.
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @param[in]	p_min	- Pointer to minimum value
+* @param[in]	p_max	- Pointer to maximum value
+* @param[in]	p_def	- Pointer to default value
+* @return		void
+*/
+////////////////////////////////////////////////////////////////////////////////
 void par_get_min_max_def(const par_num_t par_num, void * const p_min, void * const p_max, void * const p_def)
 {
 	// Is init
@@ -437,8 +473,8 @@ void par_get_min_max_def(const par_num_t par_num, void * const p_min, void * con
 /**
 *		Get parameter name
 *
-* @param[in]	par_num	- Name of parameter
-* @return		name 	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		p_name 	- Name of parameter
 */
 ////////////////////////////////////////////////////////////////////////////////
 void par_get_name(const par_num_t par_num, uint8_t * const p_name)
@@ -450,10 +486,17 @@ void par_get_name(const par_num_t par_num, uint8_t * const p_name)
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
 	// Copy name
-	strncpy((char*) p_name, gp_par_table[ par_num ].name, 32 );
-	//strncpy((char*) p_name, gp_par_table[ par_num ].name, strlen( gp_par_table[ par_num ].name ));
+	strncpy((char*) p_name, gp_par_table[ par_num ].name, PAR_MAX_STRING_SIZE );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter unit
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		p_unit 	- Unit of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
 void par_get_unit(const par_num_t par_num, uint8_t * const p_unit)
 {
 	// Is init
@@ -463,14 +506,14 @@ void par_get_unit(const par_num_t par_num, uint8_t * const p_unit)
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
 	// Copy name
-	strncpy((char*) p_unit, gp_par_table[ par_num ].unit, strlen( gp_par_table[ par_num ].unit ));
+	strncpy((char*) p_unit, gp_par_table[ par_num ].unit, PAR_MAX_STRING_SIZE );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *		Get parameter data type
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @return		type 	- Data type of parameter
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -494,7 +537,7 @@ par_type_list_t	par_get_data_type(const par_num_t par_num)
 /**
 *		Get access type of parameter from PC tool perspective
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @return		access 	- Access type
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -518,7 +561,7 @@ par_io_acess_t par_get_access(const par_num_t par_num)
 /**
 *		Get persistence flag
 *
-* @param[in]	par_num			- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @return		is_persistant 	- Persistence flag
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -537,7 +580,6 @@ bool par_get_persistance(const par_num_t par_num)
 
 	return is_persistant;
 }
-
 
 #if ( 1 == PAR_CFG_NVM_EN )
 
@@ -576,7 +618,7 @@ bool par_get_persistance(const par_num_t par_num)
 	* @pre		NVM storage must be initialized first and "PAR_CFG_NVM_EN"
 	* 			settings must be enabled.
 	*
-	* @param[in]	par_num	- Name of parameter
+	* @param[in]	par_num	- Parameter number (enumeration)
 	* @return		status 	- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
@@ -633,46 +675,53 @@ static par_status_t par_allocate_ram_space(uint8_t ** pp_ram_space)
 /**
 *		Calculate total size for parameter live values
 *
+* @note 	This function may not be compatible with other microcontroller
+* 			architectures as it is based on STM32 with its data alignment policy!
+*
 * @return		total_size - Size of all parameters in bytes
 */
 ////////////////////////////////////////////////////////////////////////////////
 static uint32_t par_calc_ram_usage(void)
 {
 	par_cfg_t 		par_cfg 	= { 0 };
-	uint32_t 		i 			= 0UL;
+	uint32_t 		par_num		= 0UL;
 	uint32_t		total_size	= 0UL;
 
 	// For every parameter
-	for ( i = 0; i < ePAR_NUM_OF; i++ )
+	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 	{
 		// Get parameter configs
-		par_get_config( i, &par_cfg );
+		par_get_config( par_num, &par_cfg );
 
         // Align addresses
         if	(	( par_cfg.type == ePAR_TYPE_U16 )
         	|| 	( par_cfg.type == ePAR_TYPE_I16 ))
         {
+        	// 2 bytes alignment
             while(( total_size % 2 ) != 0 )
             {
             	total_size++;
             }
         }
+
         else if (	( par_cfg.type == ePAR_TYPE_U32 )
         		|| 	( par_cfg.type == ePAR_TYPE_I32 )
 				|| 	( par_cfg.type == ePAR_TYPE_F32 ))
         {
+        	// 4 bytes alignment
             while(( total_size % 4 ) != 0 )
             {
             	total_size++;
             }
         }
+
         else
         {
         	// No actions...
         }
 
         // Store par RAM address offset
-        gu32_par_addr_offset[i] = total_size;
+        gu32_par_addr_offset[par_num] = total_size;
 
         // Accumulate total RAM space
         total_size += par_get_data_type_size( par_cfg.type );
@@ -777,7 +826,7 @@ static par_status_t	par_check_table_validy(const par_cfg_t * const p_par_cfg)
 /**
 *		Set unsigned 8-bit parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	u8_val	- Value of parameter
 * @return		status	- Status of operation
 */
@@ -812,7 +861,7 @@ static par_status_t par_set_u8(const par_num_t par_num, const uint8_t u8_val)
 /**
 *		Set signed 8-bit parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	i8_val	- Value of parameter
 * @return		status	- Status of operation
 */
@@ -847,7 +896,7 @@ static par_status_t par_set_i8(const par_num_t par_num, const int8_t i8_val)
 /**
 *		Set unsigned 16-bit parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	u16_val	- Value of parameter
 * @return		status	- Status of operation
 */
@@ -882,7 +931,7 @@ static par_status_t par_set_u16(const par_num_t par_num, const uint16_t u16_val)
 /**
 *		Set signed 16-bit parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	i16_val	- Value of parameter
 * @return		status	- Status of operation
 */
@@ -917,7 +966,7 @@ static par_status_t par_set_i16(const par_num_t par_num, const int16_t i16_val)
 /**
 *		Set unsigned 32-bit parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	u32_val	- Value of parameter
 * @return		status	- Status of operation
 */
@@ -952,7 +1001,7 @@ static par_status_t par_set_u32(const par_num_t par_num, const uint32_t u32_val)
 /**
 *		Set signed 32-bit parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	i32_val	- Value of parameter
 * @return		status	- Status of operation
 */
@@ -987,7 +1036,7 @@ static par_status_t par_set_i32(const par_num_t par_num, const int32_t i32_val)
 /**
 *		Set floating value parameter
 *
-* @param[in]	par_num	- Name of parameter
+* @param[in]	par_num	- Parameter number (enumeration)
 * @param[in]	f32_val	- Value of parameter
 * @return		status	- Status of operation
 */

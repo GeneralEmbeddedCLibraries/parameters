@@ -126,9 +126,6 @@ par_type_list_t	par_get_data_type		(const par_num_t par_num);
 par_io_acess_t	par_get_access			(const par_num_t par_num);
 bool			par_get_persistance		(const par_num_t par_num);
 
-
-
-
 #if ( 1 == PAR_CFG_NVM_EN )
 	par_status_t	par_store_all_to_nvm	(void);
 	par_status_t	par_store_to_nvm		(const par_num_t par_num);
