@@ -816,7 +816,20 @@ static par_status_t	par_check_table_validy(const par_cfg_t * const p_par_cfg)
 			break;
 		}
 
-		// TODO: Check parameter that min is less than max, and init is in between!
+		/**
+		 * 	Check for correct MIN, MAX and DEF value definitions
+		 *
+		 *	1. Check that MAX is larger than MIN
+		 *	2. Check that DEF is equal or less than MAX
+		 *	3. Check that DEF is equal or more than MIN
+		 */
+		PAR_ASSERT(( ePAR_TYPE_U8 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.u8 < p_par_cfg[i].max.u8 ) && ( p_par_cfg[i].def.u8 <= p_par_cfg[i].max.u8 )) && (  p_par_cfg[i].min.u8 <= p_par_cfg[i].def.u8 )) : ( 1 ));
+		PAR_ASSERT(( ePAR_TYPE_I8 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.i8 < p_par_cfg[i].max.i8 ) && ( p_par_cfg[i].def.i8 <= p_par_cfg[i].max.i8 )) && (  p_par_cfg[i].min.i8 <= p_par_cfg[i].def.i8 )) : ( 1 ));
+		PAR_ASSERT(( ePAR_TYPE_U16 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.u16 < p_par_cfg[i].max.u16 ) && ( p_par_cfg[i].def.u16 <= p_par_cfg[i].max.u16 )) && (  p_par_cfg[i].min.u16 <= p_par_cfg[i].def.u16 )) : ( 1 ));
+		PAR_ASSERT(( ePAR_TYPE_I16 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.i16 < p_par_cfg[i].max.i16 ) && ( p_par_cfg[i].def.i16 <= p_par_cfg[i].max.i16 )) && (  p_par_cfg[i].min.i16 <= p_par_cfg[i].def.i16 )) : ( 1 ));
+		PAR_ASSERT(( ePAR_TYPE_U32 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.u32 < p_par_cfg[i].max.u32 ) && ( p_par_cfg[i].def.u32 <= p_par_cfg[i].max.u32 )) && (  p_par_cfg[i].min.u32 <= p_par_cfg[i].def.u32 )) : ( 1 ));
+		PAR_ASSERT(( ePAR_TYPE_I32 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.i32 < p_par_cfg[i].max.i32 ) && ( p_par_cfg[i].def.i32 <= p_par_cfg[i].max.i32 )) && (  p_par_cfg[i].min.i32 <= p_par_cfg[i].def.i32 )) : ( 1 ));
+		PAR_ASSERT(( ePAR_TYPE_F32 == p_par_cfg[i].type ) 	? ((( p_par_cfg[i].min.f32 < p_par_cfg[i].max.f32 ) && ( p_par_cfg[i].def.f32 <= p_par_cfg[i].max.f32 )) && (  p_par_cfg[i].min.f32 <= p_par_cfg[i].def.f32 )) : ( 1 ));
 	}
 
 	return status;
