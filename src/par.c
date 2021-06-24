@@ -35,7 +35,7 @@
  *
  * 	@note	Used for memcpy of name and unit get API functions.
  */
-#define PAR_MAX_STRING_SIZE				( 32 )
+#define PAR_MAX_STRING_SIZE							( 32 )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -596,17 +596,8 @@ bool par_get_persistance(const par_num_t par_num)
 	par_status_t par_store_all_to_nvm(void)
 	{
 		par_status_t 	status 	= ePAR_OK;
-		uint32_t		par_num = 0UL;
 
-		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
-		{
-			if ( true == par_get_persistance( par_num ))
-			{
-				status |= par_store_to_nvm( par_num );
-			}
-		}
-
-		PAR_DBG_PRINT( "PAR: Storing all persistent parameters to NVM. Status: %u", status );
+		status = par_nvm_write_all();
 
 		return status;
 	}

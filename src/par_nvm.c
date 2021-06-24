@@ -419,9 +419,20 @@
 
 	par_status_t par_nvm_write_all(void)
 	{
-		par_status_t status = ePAR_OK;
+		par_status_t 	status 		= ePAR_OK;
+		uint32_t		par_num 	= 0UL;
+		uint32_t		per_par_num	= 0UL;
 
-		// TODO: Move from par -> par_nvm
+		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			if ( true == par_get_persistance( par_num ))
+			{
+				status |= par_nvm_write( par_num );
+				per_par_num++;
+			}
+		}
+
+		PAR_DBG_PRINT( "PAR_NVM: Storing %u persistent parameters to NVM. Status: %u", per_par_num, status );
 
 		return status;
 	}
