@@ -189,7 +189,7 @@ par_num_t par_get_num_by_id(const uint16_t id)
 * 			parameter ID number!
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_value	- Pointer to value
+* @param[in]	p_val	- Pointer to value
 * @return		status 	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -477,7 +477,8 @@ void par_get_min_max_def(const par_num_t par_num, void * const p_min, void * con
 *		Get parameter name
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @return		p_name 	- Name of parameter
+* @param[in]	p_name 	- Name of parameter
+* @return		void
 */
 ////////////////////////////////////////////////////////////////////////////////
 void par_get_name(const par_num_t par_num, uint8_t * const p_name)
@@ -497,7 +498,8 @@ void par_get_name(const par_num_t par_num, uint8_t * const p_name)
 *		Get parameter unit
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @return		p_unit 	- Unit of parameter
+* @param[in]	p_unit 	- Unit of parameter
+* @return		void
 */
 ////////////////////////////////////////////////////////////////////////////////
 void par_get_unit(const par_num_t par_num, uint8_t * const p_unit)
