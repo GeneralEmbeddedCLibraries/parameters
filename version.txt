@@ -1,4 +1,28 @@
 ============================================================
+ Version 1.0.1 (25.06.2021)
+============================================================
+ 
+ Brief:
+ 	- Added copyright notice
+ 
+ Features: 
+   
+ Todo:
+ 
+   - Change parameter store policy. Now it is fixed with ID
+   in future shall be more sofisticated. Idea is to store 
+   parameters consecutive, each by each, compressed in order
+   not to consume to many space. 
+   
+   - Ability to append new parameters to table. For know this
+   is handled with checking unique table ID, but for release
+   this mechanism will not work.
+   
+   - API function shall return statuses
+   
+============================================================
+
+============================================================
  Version 1.0.0 (24.06.2021)
 ============================================================
  

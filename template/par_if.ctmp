@@ -1,10 +1,13 @@
+// Copyright (c) 2021 Ziga Miklosic
+// All Rights Reserved
+// This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *@file      par_if.c
 *@brief     Interface with device parameters
 *@author    Ziga Miklosic
 *@date      24.05.2021
-*@version	V1.0.0
+*@version	V1.0.1
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -59,7 +62,6 @@ static osMutexId_t	g_par_mutex_id = NULL;
 const osMutexAttr_t g_par_mutex_attr =
 {
     .name 		= "par",
-    //.attr_bits 	= ( osMutexPrioInherit | osMutexRecursive ),	// TODO: Check if really needs a recursive one!
     .attr_bits 	= ( osMutexPrioInherit ),
 };
 
