@@ -798,22 +798,27 @@
 		par_status_t 	status 			= ePAR_OK;
 		uint32_t 		par_num 		= 0UL;
 		uint32_t		stored_par_num	= 0UL;
+		uint32_t		loaded_par_num	= 0UL;
 
 		// Get number of stored parameters
 		if ( ePAR_OK == par_nvm_read_header( &stored_par_num ))			// TODO: FIx this !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		{
-			// Read first
+			// Loop thru par table
 			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 			{
 				// Read first "stored_par_num" number of parameters
-				if 	(	( true == par_get_persistance( par_num ))
-					&& 	( par_num < stored_par_num ))
+				//if 	(	( true == par_get_persistance( par_num ))
+				//	&& 	( par_num < stored_par_num ))
+
+				// Load all persistant parameters
+				if ( true == par_get_persistance( par_num ))
 				{
 						status |= par_nvm_read( par_num );
+						loaded_par_num++;
 				}
 			}
 
-			PAR_DBG_PRINT( "PAR_NVM: Loading %u parameters from NVM. Status: %u", stored_par_num, status );
+			PAR_DBG_PRINT( "PAR_NVM: Loading %u of %u stored parameters from NVM. Status: %u", loaded_par_num, stored_par_num, status );
 		}
 		else
 		{
