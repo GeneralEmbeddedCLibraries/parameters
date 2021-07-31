@@ -800,7 +800,7 @@
 		uint32_t		stored_par_num	= 0UL;
 
 		// Get number of stored parameters
-		if ( ePAR_OK == par_nvm_read_header( &stored_par_num ))
+		if ( ePAR_OK == par_nvm_read_header( &stored_par_num ))			// TODO: FIx this !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		{
 			// Read first
 			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
