@@ -204,7 +204,7 @@
 	 */
 	static_assert( 1 == NVM_VER_MAJOR );
 	static_assert( 0 == NVM_VER_MINOR );
-	static_assert( 0 == NVM_VER_DEVELOP );
+	//static_assert( 0 == NVM_VER_DEVELOP );
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Definitions
