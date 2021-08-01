@@ -125,7 +125,7 @@ par_status_t par_init(void)
 
 	#endif
 
-	PAR_ASSERT( ePAR_OK == status );
+	//PAR_ASSERT( ePAR_OK == status );
 
 	return status;
 }

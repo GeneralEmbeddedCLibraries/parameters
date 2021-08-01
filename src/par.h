@@ -49,6 +49,7 @@ typedef enum
 	ePAR_WAR_LIM_TO_MIN		= 0x02,		/**<Parameter limited to min value warning */
 	ePAR_ERROR				= 0x04,		/**<General parameter error */
 	ePAR_ERROR_NVM			= 0x08,		/**<Parameter storage to NMV error */
+	ePAR_ERROR_CRC			= 0x10,		/**<Parameter CRC corrupted */
 }par_status_t;
 
 /**

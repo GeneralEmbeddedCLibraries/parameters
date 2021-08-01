@@ -395,7 +395,7 @@
 			}
 		}
 
-		PAR_ASSERT( ePAR_OK == status );
+		//PAR_ASSERT( ePAR_OK == status );
 
 		return status;
 	}
@@ -464,6 +464,9 @@
 				per_par_num++;
 			}
 		}
+
+		// Rewrite header
+		status |= par_nvm_write_header( per_par_num );
 
 		PAR_DBG_PRINT( "PAR_NVM: Storing %u persistent parameters to NVM. Status: %u", per_par_num, status );
 
@@ -538,7 +541,7 @@
 			else
 			{
 				par_set_to_default( par_num );
-				status = ePAR_ERROR_NVM;
+				status = ePAR_ERROR_CRC;
 			}
 		}
 
@@ -806,10 +809,6 @@
 			// Loop thru par table
 			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 			{
-				// Read first "stored_par_num" number of parameters
-				//if 	(	( true == par_get_persistance( par_num ))
-				//	&& 	( par_num < stored_par_num ))
-
 				// Load all persistant parameters
 				if ( true == par_get_persistance( par_num ))
 				{
@@ -826,7 +825,6 @@
 
 			PAR_DBG_PRINT( "PAR_NVM: Reading header error!" );
 		}
-
 
 		return status;
 	}
