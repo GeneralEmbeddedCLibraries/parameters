@@ -115,7 +115,7 @@ par_status_t par_init(void)
 		gb_is_init = true;
 	}
 
-	// Set all parameters to defualt
+	// Set all parameters to default
 	par_set_all_to_default();
 
 	#if ( 1 == PAR_CFG_NVM_EN )
