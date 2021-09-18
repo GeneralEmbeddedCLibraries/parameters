@@ -49,6 +49,8 @@
  *
  * @note 	User shall change code only inside section of "USER_CODE_BEGIN"
  * 			ans "USER_CODE_END".
+ *
+ * 			Must be started with 0!
  */
 typedef enum
 {
@@ -108,15 +110,34 @@ typedef enum
  */
 #define PAR_CFG_TABLE_ID_CHECK_EN				( 1 )
 
+#ifndef DEBUG
+	#undef PAR_CFG_TABLE_ID_CHECK_EN
+	#define PAR_CFG_TABLE_ID_CHECK_EN 	( 0 )
+#endif
+
 /**
  * 	Enable/Disable debug mode
+ *
+ * 	@note Disable in release!
  */
 #define PAR_CFG_DEBUG_EN						( 1 )
 
+#ifndef DEBUG
+	#undef PAR_CFG_DEBUG_EN
+	#define PAR_CFG_DEBUG_EN 	( 0 )
+#endif
+
 /**
  * 	Enable/Disable assertions
+ *
+ * 	@note Disable in release!
  */
 #define PAR_CFG_ASSERT_EN						( 1 )
+
+#ifndef DEBUG
+	#undef PAR_CFG_ASSERT_EN
+	#define PAR_CFG_ASSERT_EN 	( 0 )
+#endif
 
 /**
  * 	Debug communication port macros
