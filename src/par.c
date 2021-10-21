@@ -109,12 +109,6 @@ par_status_t par_init(void)
 	// Initialize parameter interface
 	status |= par_if_init();
 
-	// Init succeed
-	if ( ePAR_OK == status )
-	{
-		gb_is_init = true;
-	}
-
 	// Set all parameters to default
 	par_set_all_to_default();
 
@@ -125,6 +119,12 @@ par_status_t par_init(void)
 
 	#endif
 
+	// Init succeed
+	if ( ePAR_OK == status )
+	{
+		gb_is_init = true;
+	}
+
 	//PAR_ASSERT( ePAR_OK == status );
 
 	return status;
@@ -132,44 +132,17 @@ par_status_t par_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get initialization done flag
+*		Get initialisation done flag
 *
-* @return		is_init	- Status of initializatio
+* @param[in]	p_is_init 	- Initialisation flag
+* @return		status 		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-const bool par_is_init(void)
+par_status_t par_is_init(bool * const p_is_init)
 {
-	return (const bool) gb_is_init;
-}
+	par_status_t status = ePAR_OK;
 
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter number (enumeration) by ID
-*
-* @param[in]	id 		- Parameter ID
-* @return		par_num	- Parameter enumeration number
-*/
-////////////////////////////////////////////////////////////////////////////////
-par_num_t par_get_num_by_id(const uint16_t id)
-{
-	uint16_t par_num = 0UL;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// TRICK: Loop one time more in order to catch invalid ID number!
-	for ( par_num = 0; par_num < ( ePAR_NUM_OF + 1 ); par_num++ )
-	{
-		if ( gp_par_table[par_num].id == id )
-		{
-			break;
-		}
-	}
-
-	// Invalid ID request
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	return par_num;
+	return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,6 +229,110 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*		Set parameter to default value
+*
+* @pre	Parameters must be initialized before usage!
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_set_to_default(const par_num_t par_num)
+{
+	par_status_t 	status 		= ePAR_OK;
+	par_type_list_t	par_type 	= ePAR_TYPE_U8;
+
+	PAR_ASSERT( true == gb_is_init );
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	if ( true == gb_is_init )
+	{
+		if ( par_num < ePAR_NUM_OF )
+		{
+			// Get par type
+			par_type = par_get_data_type( par_num );
+
+			// Copy default value to live space
+			memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
+		}
+		else
+		{
+			status = ePAR_ERROR;
+		}
+	}
+	else
+	{
+		status = ePAR_ERROR_INIT;
+	}
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Set all parameters to default value
+*
+* @pre	Parameters must be initialized before usage!
+*
+* @return	void
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_set_all_to_default(void)
+{
+	par_status_t	status 	= ePAR_OK;
+	uint32_t 		par_num = 0UL;
+
+	PAR_ASSERT( true == gb_is_init );
+
+	if ( true == gb_is_init )
+	{
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			par_set_to_default( par_num );
+		}
+
+		PAR_DBG_PRINT( "PAR: Setting all parameters to default" );
+	}
+	else
+	{
+		status = ePAR_ERROR_INIT;
+	}
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter number (enumeration) by ID
+*
+* @param[in]	id 		- Parameter ID
+* @return		par_num	- Parameter enumeration number
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_num_t par_get_num_by_id(const uint16_t id)
+{
+	uint16_t par_num = 0UL;
+
+	// Is init
+	PAR_ASSERT( true == gb_is_init );
+
+	// TRICK: Loop one time more in order to catch invalid ID number!
+	for ( par_num = 0; par_num < ( ePAR_NUM_OF + 1 ); par_num++ )
+	{
+		if ( gp_par_table[par_num].id == id )
+		{
+			break;
+		}
+	}
+
+	// Invalid ID request
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+	return par_num;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *		Get parameter value
 *
 * @note 	Mandatory to cast input argument to appropriate type. E.g.:
@@ -334,57 +411,6 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 	#endif
 
 	return status;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Set parameter to default value
-*
-* @pre	Parameters must be initialized before usage!
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @return		void
-*/
-////////////////////////////////////////////////////////////////////////////////
-void par_set_to_default(const par_num_t par_num)
-{
-	par_type_list_t	par_type = ePAR_TYPE_U8;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Get par type
-	par_type = par_get_data_type( par_num );
-
-	// Copy default value to live space
-	memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Set all parameters to default value
-*
-* @pre	Parameters must be initialized before usage!
-*
-* @return	void
-*/
-////////////////////////////////////////////////////////////////////////////////
-void par_set_all_to_default(void)
-{
-	uint32_t par_num = 0UL;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
-	{
-		par_set_to_default( par_num );
-	}
-
-	PAR_DBG_PRINT( "PAR: Setting all parameters to default" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -847,17 +873,14 @@ static par_status_t par_set_u8(const par_num_t par_num, const uint8_t u8_val)
 		if ( u8_val > ( gp_par_table[ par_num ].max.u8 ))
 		{
 			*(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.u8;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( u8_val < ( gp_par_table[ par_num ].min.u8 ))
 		{
 			*(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.u8;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (uint8_t) ( u8_val );
-			status = ePAR_OK;
 		}
 	}
 
@@ -882,17 +905,14 @@ static par_status_t par_set_i8(const par_num_t par_num, const int8_t i8_val)
 		if ( i8_val > ( gp_par_table[ par_num ].max.i8 ))
 		{
 			*(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.i8;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( i8_val < ( gp_par_table[ par_num ].min.i8 ))
 		{
 			*(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.i8;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (int8_t) ( i8_val );
-			status = ePAR_OK;
 		}
 	}
 
@@ -917,17 +937,14 @@ static par_status_t par_set_u16(const par_num_t par_num, const uint16_t u16_val)
 		if ( u16_val > ( gp_par_table[ par_num ].max.u16 ))
 		{
 			*(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.u16;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( u16_val < ( gp_par_table[ par_num ].min.u16 ))
 		{
 			*(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.u16;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (uint16_t) ( u16_val );
-			status = ePAR_OK;
 		}
 	}
 
@@ -952,17 +969,14 @@ static par_status_t par_set_i16(const par_num_t par_num, const int16_t i16_val)
 		if ( i16_val > ( gp_par_table[ par_num ].max.i16 ))
 		{
 			*(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.i16;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( i16_val < ( gp_par_table[ par_num ].min.i16 ))
 		{
 			*(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.i16;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (int16_t) ( i16_val );
-			status = ePAR_OK;
 		}
 	}
 
@@ -987,17 +1001,14 @@ static par_status_t par_set_u32(const par_num_t par_num, const uint32_t u32_val)
 		if ( u32_val > ( gp_par_table[ par_num ].max.u32 ))
 		{
 			*(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.u32;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( u32_val < ( gp_par_table[ par_num ].min.u32 ))
 		{
 			*(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.u32;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (uint32_t) ( u32_val );
-			status = ePAR_OK;
 		}
 	}
 
@@ -1022,17 +1033,14 @@ static par_status_t par_set_i32(const par_num_t par_num, const int32_t i32_val)
 		if ( i32_val > ( gp_par_table[ par_num ].max.i32 ))
 		{
 			*(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.i32;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( i32_val < ( gp_par_table[ par_num ].min.i32 ))
 		{
 			*(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.i32;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (int32_t) ( i32_val );
-			status = ePAR_OK;
 		}
 	}
 
@@ -1057,17 +1065,14 @@ static par_status_t par_set_f32(const par_num_t par_num, const float32_t f32_val
 		if ( f32_val > ( gp_par_table[ par_num ].max.f32 ))
 		{
 			*(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].max.f32;
-			status = ePAR_WAR_LIM_TO_MAX;
 		}
 		else if ( f32_val < ( gp_par_table[ par_num ].min.f32 ))
 		{
 			*(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = gp_par_table[ par_num ].min.f32;
-			status = ePAR_WAR_LIM_TO_MIN;
 		}
 		else
 		{
 			*(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ] = (float32_t) ( f32_val );
-			status = ePAR_OK;
 		}
 	}
 

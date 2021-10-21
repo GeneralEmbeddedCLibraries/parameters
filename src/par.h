@@ -45,11 +45,10 @@
 typedef enum
 {
 	ePAR_OK 				= 0x00,		/**<Normal operation */
-	ePAR_WAR_LIM_TO_MAX		= 0x01,		/**<Parameter limited to max value warning */
-	ePAR_WAR_LIM_TO_MIN		= 0x02,		/**<Parameter limited to min value warning */
-	ePAR_ERROR				= 0x04,		/**<General parameter error */
-	ePAR_ERROR_NVM			= 0x08,		/**<Parameter storage to NMV error */
-	ePAR_ERROR_CRC			= 0x10,		/**<Parameter CRC corrupted */
+	ePAR_ERROR				= 0x01,		/**<General parameter error */
+	ePAR_ERROR_INIT			= 0x02,		/**<Parameter initialisation error or used before initialisation */
+	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NMV error */
+	ePAR_ERROR_CRC			= 0x08,		/**<Parameter CRC corrupted */
 }par_status_t;
 
 /**
@@ -98,11 +97,11 @@ typedef union
  */
 typedef struct
 {
-	char*				name;			/**<Name of variable */
+	const char *		name;			/**<Name of variable */
  	par_type_t			min;			/**<Minimum value of parameter */
 	par_type_t			max;			/**<Maximum value of parameter */
 	par_type_t			def;			/**<Default value of parameter */
-	char*				unit;			/**<Unit of parameter */
+	const char *		unit;			/**<Unit of parameter */
 	uint16_t			id;				/**<Variable ID */
 	par_type_list_t		type;			/**<Parameter type */
 	par_io_acess_t 		access;			/**<Parameter access from external device point-of-view */
@@ -113,13 +112,17 @@ typedef struct
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t 	par_init				(void);
-const bool		par_is_init				(void);
-par_num_t		par_get_num_by_id		(const uint16_t id);
+par_status_t	par_is_init				(bool * const p_is_init);
 
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
+par_status_t	par_set_to_default		(const par_num_t par_num);
+par_status_t 	par_set_all_to_default	(void);
+
 par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
-void 			par_set_to_default		(const par_num_t par_num);
-void		 	par_set_all_to_default	(void);
+par_num_t		par_get_num_by_id		(const uint16_t id);
+
+
+
 
 par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par_cfg);
 uint16_t 		par_get_id				(const par_num_t par_num);

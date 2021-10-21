@@ -271,6 +271,8 @@
 	static par_status_t		par_nvm_load_all					(void);
 	static uint32_t			par_nvm_calc_num_of_per_par			(void);
 
+	static bool				par_nvm_precondition_check			(void);
+
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
 		static par_status_t par_nvm_check_table_id	(const uint8_t * const p_table_id);
@@ -307,8 +309,7 @@
 		#endif
 
 		// Pre-condition
-		PAR_ASSERT( true == nvm_is_init());
-		PAR_ASSERT( true == par_is_init());
+		PAR_ASSERT( true == par_nvm_precondition_check() );
 
 		// Check NVM signature
 		if ( ePAR_OK == par_nvm_check_signature())
@@ -415,8 +416,7 @@
 		uint32_t		par_addr	= 0UL;
 
 		// Pre-condition
-		PAR_ASSERT( true == nvm_is_init());
-		PAR_ASSERT( true == par_is_init());
+		PAR_ASSERT( true == par_nvm_precondition_check() );
 
 		// Legal call
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
@@ -508,8 +508,7 @@
 		uint16_t		par_id		= 0UL;
 
 		// Pre-condition
-		PAR_ASSERT( true == nvm_is_init());
-		PAR_ASSERT( true == par_is_init());
+		PAR_ASSERT( true == par_nvm_precondition_check() );
 
 		// Legal call
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
@@ -689,7 +688,7 @@
 		uint32_t		calc_crc	= 0UL;
 
 		// Pre-condition
-		PAR_ASSERT( true == nvm_is_init());
+		PAR_ASSERT( true == par_nvm_precondition_check() );
 
 		// Check inputs
 		PAR_ASSERT( NULL != p_num_of_par );
@@ -723,7 +722,7 @@
 	/**
 	*		Write parameter NVM header
 	*
-	* @param[in]	num_of_par	- Number of persistant parameters that are stored in NVM
+	* @param[in]	num_of_par	- Number of persistent parameters that are stored in NVM
 	* @return		status 		- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
@@ -841,8 +840,6 @@
 		uint32_t num_of_per_par = 0UL;
 		uint32_t par_num 		= 0UL;
 
-		PAR_ASSERT( true == par_is_init());
-
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
 			if ( true == par_get_persistance( par_num ))
@@ -852,6 +849,30 @@
 		}
 
 		return num_of_per_par;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Get precondition state before par NVM fnc can be used
+	*
+	* @return	pre_cond - Precondition state
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	static bool	par_nvm_precondition_check(void)
+	{
+		bool nvm_init 	= false;
+		bool par_init 	= false;
+		bool pre_cond	= false;
+
+		// Get NVM init flag
+		nvm_init = nvm_is_init();
+
+		// Get parameters init
+		par_is_init( &par_init );
+
+		pre_cond = ( nvm_init && par_init );
+
+		return pre_cond;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
