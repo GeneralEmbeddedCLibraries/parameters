@@ -381,7 +381,7 @@
 				status |= par_nvm_write_header( num_of_per_par );
 
 				// Write default values to NVM
-				status |= par_store_all_to_nvm();
+				status |= par_save_all();
 
 				// Lastly write signature
 				// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
