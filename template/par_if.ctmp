@@ -55,8 +55,6 @@
 
 /**
  * 	Parameters OS mutex
- *
- * 	@note	Mutext must be recursive in order to be called multiple times in same thread!
  */
 static osMutexId_t	g_par_mutex_id = NULL;
 const osMutexAttr_t g_par_mutex_attr =

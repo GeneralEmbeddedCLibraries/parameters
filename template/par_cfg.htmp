@@ -56,16 +56,32 @@ typedef enum
 {
 	// USER CODE START...
 
-	ePAR_TEST_U8 = 0,
-	ePAR_TEST_I8,
+	// Touch
+	ePAR_TOUCH_CONTROL = 0,
+	ePAR_TOUCH_STATUS,
+	ePAR_TOUCH_CAL_C0,
+	ePAR_TOUCH_CAL_C1,
+	ePAR_TOUCH_CAL_C2,
+	ePAR_TOUCH_CAL_C3,
+	ePAR_TOUCH_CAL_C4,
+	ePAR_TOUCH_CAL_C5,
+	ePAR_TOUCH_CAL_C6,
+	ePAR_TOUCH_BEEP_EN,
+	ePAR_TOUCH_TRACE_EN,
 
-	ePAR_TEST_U16,
-	ePAR_TEST_I16,
+	// Power management
+	ePAR_BAT_VOLTAGE,
+	ePAR_BAT_SOC,
+	ePAR_BAT_CHARGER_STATUS,
+	ePAR_SYS_CUR,
+	ePAR_USB_VOL,
+	ePAR_USB_SW_STATUS,
+	ePAR_EXT_VOL,
+	ePAR_EXT_SW_STATUS,
+	ePAR_5V_EN_STATUS,
+	ePAR_3V3LP_EN_STATUS,
+	ePAR_USBC_PD_ATTACHED,
 
-	ePAR_TEST_U32,
-	ePAR_TEST_I32,
-
-	ePAR_TEST_F32,
 
 	// USER CODE END...
 
@@ -85,59 +101,42 @@ typedef enum
  */
 #define PAR_CFG_NVM_EN							( 1 )
 
-/**
- * 	NVM parameter region option
- *
- * 	@note 	User shall select region based on nvm_cfg.h region
- * 			definitions "nvm_region_name_t"
- *
- * 			Don't care if "PAR_CFG_NVM_EN" set to 0
- */
-#define PAR_CFG_NVM_REGION						( eNVM_REGION_EEPROM_RUN_PAR )
+#if ( 1 == PAR_CFG_NVM_EN )
+	/**
+	 * 	NVM parameter region option
+	 *
+	 * 	@note 	User shall select region based on nvm_cfg.h region
+	 * 			definitions "nvm_region_name_t"
+	 *
+	 * 			Don't care if "PAR_CFG_NVM_EN" set to 0
+	 */
+	#define PAR_CFG_NVM_REGION						( eNVM_REGION_EEPROM_RUN_PAR )
 
-/**
- * 	Enable/Disable parameter table unique ID checking
- *
- * @note	Base on hash unique ID is being calculated with
- * 			purpose to detect device and stored parameter table
- * 			difference.
- *
- * 			Must be disabled once the device is release in order
- * 			to prevent loss of calibrated data stored in NVM.
- *
- * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
- * 			not make sense to calculating ID at all.
- */
-#define PAR_CFG_TABLE_ID_CHECK_EN				( 1 )
-
-#ifndef DEBUG
-	#undef PAR_CFG_TABLE_ID_CHECK_EN
-	#define PAR_CFG_TABLE_ID_CHECK_EN 	( 0 )
+	/**
+	 * 	Enable/Disable parameter table unique ID checking
+	 *
+	 * @note	Base on hash unique ID is being calculated with
+	 * 			purpose to detect device and stored parameter table
+	 * 			difference.
+	 *
+	 * 			Must be disabled once the device is release in order
+	 * 			to prevent loss of calibrated data stored in NVM.
+	 *
+	 * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
+	 * 			not make sense to calculating ID at all.
+	 */
+	#define PAR_CFG_TABLE_ID_CHECK_EN				( 0 )
 #endif
 
 /**
  * 	Enable/Disable debug mode
- *
- * 	@note Disable in release!
  */
 #define PAR_CFG_DEBUG_EN						( 1 )
 
-#ifndef DEBUG
-	#undef PAR_CFG_DEBUG_EN
-	#define PAR_CFG_DEBUG_EN 	( 0 )
-#endif
-
 /**
  * 	Enable/Disable assertions
- *
- * 	@note Disable in release!
  */
 #define PAR_CFG_ASSERT_EN						( 1 )
-
-#ifndef DEBUG
-	#undef PAR_CFG_ASSERT_EN
-	#define PAR_CFG_ASSERT_EN 	( 0 )
-#endif
 
 /**
  * 	Debug communication port macros
