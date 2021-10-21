@@ -95,6 +95,8 @@ par_status_t par_init(void)
 {
 	par_status_t status = ePAR_OK;
 
+	// TODO: Omit asserts...
+
 	// Get parameter table
 	gp_par_table = par_cfg_get_table();
 	PAR_ASSERT( NULL != gp_par_table );
@@ -241,6 +243,7 @@ par_status_t par_set_to_default(const par_num_t par_num)
 {
 	par_status_t 	status 		= ePAR_OK;
 	par_type_list_t	par_type 	= ePAR_TYPE_U8;
+	par_cfg_t		par_cfg		= {0};
 
 	PAR_ASSERT( true == gb_is_init );
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
@@ -250,7 +253,9 @@ par_status_t par_set_to_default(const par_num_t par_num)
 		if ( par_num < ePAR_NUM_OF )
 		{
 			// Get par type
-			par_type = par_get_data_type( par_num );
+			//par_type = par_get_data_type( par_num );
+			par_get_config( par_num, &par_cfg );
+			par_type = par_cfg.type;
 
 			// Copy default value to live space
 			memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
@@ -385,6 +390,42 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*		Get parameter ID
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		id 		- Parameter ID
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_get_id(const par_num_t par_num, uint16_t * const p_id)
+{
+	par_status_t 	status 	= ePAR_OK;
+
+	PAR_ASSERT( true == gb_is_init );
+	PAR_ASSERT( par_num < ePAR_NUM_OF );
+	PAR_ASSERT( NULL != p_id )
+
+	if ( true == gb_is_init )
+	{
+		if ( 	( par_num < ePAR_NUM_OF )
+			&&	( NULL != p_id  ))
+		{
+			*p_id = gp_par_table[ par_num ].id;
+		}
+		else
+		{
+			status = ePAR_ERROR;
+		}
+	}
+	else
+	{
+		status = ePAR_ERROR_INIT;
+	}
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *		Get parameter number (enumeration) by ID
 *
 * @param[in]	id 		- Parameter ID
@@ -404,8 +445,7 @@ par_status_t par_get_num_by_id(const uint16_t id, par_num_t * const p_par_num)
 	{
 		if ( NULL != p_par_num )
 		{
-			// TRICK: Loop one time more in order to catch invalid ID number!
-			for ( par_num = 0; par_num < ( ePAR_NUM_OF + 1 ); par_num++ )
+			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 			{
 				if ( gp_par_table[par_num].id == id )
 				{
@@ -445,190 +485,25 @@ par_status_t par_get_num_by_id(const uint16_t id, par_num_t * const p_par_num)
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg)
 {
-	par_status_t status = ePAR_OK;
+			par_status_t 	status 		= ePAR_OK;
+	const 	par_cfg_t * 	p_cfg_table	= par_cfg_get_table();
 
-	// Check inputs
+	PAR_ASSERT( NULL != p_cfg_table );
 	PAR_ASSERT( NULL != p_par_cfg );
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
-	*p_par_cfg = gp_par_table[ par_num ];
+	if ( 	( NULL != p_par_cfg )
+		&& 	( NULL != p_cfg_table )
+		&&	( par_num < ePAR_NUM_OF ))
+	{
+		*p_par_cfg = p_cfg_table[ par_num ];
+	}
+	else
+	{
+		status = ePAR_ERROR;
+	}
 
 	return status;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter ID
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @return		id 		- Parameter ID
-*/
-////////////////////////////////////////////////////////////////////////////////
-uint16_t par_get_id(const par_num_t par_num)
-{
-	uint16_t id = 0;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Get persistance
-	id = gp_par_table[ par_num ].id;
-
-	return id;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter minimum, maximum and default value
-*
-* @note 	Mandatory to cast input argument to appropriate type.
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_min	- Pointer to minimum value
-* @param[in]	p_max	- Pointer to maximum value
-* @param[in]	p_def	- Pointer to default value
-* @return		void
-*/
-////////////////////////////////////////////////////////////////////////////////
-void par_get_min_max_def(const par_num_t par_num, void * const p_min, void * const p_max, void * const p_def)
-{
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	if ( NULL != p_min )
-	{
-		*(uint32_t*) p_min = *(uint32_t*) &gp_par_table[par_num].min.u32;
-	}
-
-	if ( NULL != p_max )
-	{
-		*(uint32_t*) p_max = *(uint32_t*) &gp_par_table[par_num].max.u32;
-	}
-
-	if ( NULL != p_def )
-	{
-		*(uint32_t*) p_def = *(uint32_t*) &gp_par_table[par_num].def.u32;
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter name
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_name 	- Name of parameter
-* @return		void
-*/
-////////////////////////////////////////////////////////////////////////////////
-void par_get_name(const par_num_t par_num, uint8_t * const p_name)
-{
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Copy name
-	strncpy((char*) p_name, gp_par_table[ par_num ].name, PAR_MAX_STRING_SIZE );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter unit
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_unit 	- Unit of parameter
-* @return		void
-*/
-////////////////////////////////////////////////////////////////////////////////
-void par_get_unit(const par_num_t par_num, uint8_t * const p_unit)
-{
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Copy name
-	strncpy((char*) p_unit, gp_par_table[ par_num ].unit, PAR_MAX_STRING_SIZE );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter data type
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @return		type 	- Data type of parameter
-*/
-////////////////////////////////////////////////////////////////////////////////
-par_type_list_t	par_get_data_type(const par_num_t par_num)
-{
-	par_type_list_t type = ePAR_TYPE_U8;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Get type
-	type = gp_par_table[ par_num ].type;
-
-	return type;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get access type of parameter from PC tool perspective
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @return		access 	- Access type
-*/
-////////////////////////////////////////////////////////////////////////////////
-par_io_acess_t par_get_access(const par_num_t par_num)
-{
-	par_io_acess_t access = ePAR_ACCESS_RO;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Get access
-	access = gp_par_table[ par_num ].access;
-
-	return access;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get persistence flag
-*
-* @param[in]	par_num	- Parameter number (enumeration)
-* @return		is_persistant 	- Persistence flag
-*/
-////////////////////////////////////////////////////////////////////////////////
-bool par_get_persistance(const par_num_t par_num)
-{
-	bool is_persistant = true;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// Check input
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	// Get persistance
-	is_persistant = gp_par_table[ par_num ].persistant;
-
-	return is_persistant;
 }
 
 #if ( 1 == PAR_CFG_NVM_EN )

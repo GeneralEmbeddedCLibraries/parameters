@@ -414,30 +414,45 @@
 		par_status_t 	status 		= ePAR_OK;
 		par_nvm_obj_t	par_obj		= { .u = 0ULL };
 		uint32_t		par_addr	= 0UL;
+		par_cfg_t		par_cfg		= {0};
 
-		// Pre-condition
-		PAR_ASSERT( true == par_nvm_precondition_check() );
-
-		// Legal call
+		PAR_ASSERT( true == par_nvm_precondition_check());
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
-		PAR_ASSERT( true == par_get_persistance( par_num ))
 
-		// Get current par value
-		par_get( par_num, (uint32_t*) &par_obj.field.val );
-
-		// Get parameter ID
-		par_obj.field.id = par_get_id( par_num );
-
-		// Calculate CRC
-		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
-
-		// Calculate parameter NVM address
-		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_obj.field.id ));
-
-		// Write to NVM
-		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+		if ( par_num < ePAR_NUM_OF )
 		{
-			status = ePAR_ERROR_NVM;
+			// Get configuration
+			par_get_config( par_num, &par_cfg );
+
+			// Is that parameter persistent
+			if ( true == par_cfg.persistant )
+			{
+				// Get current par value
+				par_get( par_num, (uint32_t*) &par_obj.field.val );
+
+				// Get parameter ID
+				par_get_id( par_num, &par_obj.field.id );
+
+				// Calculate CRC
+				par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
+
+				// Calculate parameter NVM address
+				par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_obj.field.id ));
+
+				// Write to NVM
+				if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+				{
+					status = ePAR_ERROR_NVM;
+				}
+			}
+			else
+			{
+				status = ePAR_ERROR;
+			}
+		}
+		else
+		{
+			status = ePAR_ERROR;
 		}
 
 		return status;
@@ -458,11 +473,8 @@
 
 		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
 		{
-			if ( true == par_get_persistance( par_num ))
-			{
-				status |= par_nvm_write( par_num );
-				per_par_num++;
-			}
+			status |= par_nvm_write( par_num );
+			per_par_num++;
 		}
 
 		// Rewrite header
@@ -507,15 +519,13 @@
 		uint32_t		calc_crc	= 0UL;
 		uint16_t		par_id		= 0UL;
 
-		// Pre-condition
 		PAR_ASSERT( true == par_nvm_precondition_check() );
-
-		// Legal call
-		PAR_ASSERT( par_num < ePAR_NUM_OF )
-		PAR_ASSERT( true == par_get_persistance( par_num ))
+		PAR_ASSERT( par_num < ePAR_NUM_OF );
+		//PAR_ASSERT( true == par_get_persistance( par_num ))
 
 		// Get parameter ID
-		par_id = par_get_id( par_num );
+		//par_id = par_get_id( par_num );
+		par_get_id( par_num, &par_obj.field.id );
 
 		// Calculate parameter NVM address
 		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_id ));
@@ -808,12 +818,8 @@
 			// Loop thru par table
 			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 			{
-				// Load all persistant parameters
-				if ( true == par_get_persistance( par_num ))
-				{
-						status |= par_nvm_read( par_num );
-						loaded_par_num++;
-				}
+				status |= par_nvm_read( par_num );
+				loaded_par_num++;
 			}
 
 			PAR_DBG_PRINT( "PAR_NVM: Loading %u of %u stored parameters from NVM. Status: %u", loaded_par_num, stored_par_num, status );
@@ -837,12 +843,15 @@
 	////////////////////////////////////////////////////////////////////////////////
 	static uint32_t	par_nvm_calc_num_of_per_par(void)
 	{
-		uint32_t num_of_per_par = 0UL;
-		uint32_t par_num 		= 0UL;
+		uint32_t 	num_of_per_par 	= 0UL;
+		uint32_t 	par_num 		= 0UL;
+		par_cfg_t	par_cfg			= {0};
 
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
-			if ( true == par_get_persistance( par_num ))
+			par_get_config( par_num, &par_cfg );
+
+			if ( true == par_cfg.persistant )
 			{
 				num_of_per_par++;
 			}
