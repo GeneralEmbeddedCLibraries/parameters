@@ -124,8 +124,9 @@ par_status_t	par_get_num_by_id		(const uint16_t id, par_num_t * const p_par_num)
 par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par_cfg);
 
 #if ( 1 == PAR_CFG_NVM_EN )
-	par_status_t	par_store_all_to_nvm	(void);
-	par_status_t	par_store_to_nvm		(const par_num_t par_num);
+	par_status_t	par_save_all		(void);
+	par_status_t	par_save			(const par_num_t par_num);
+	par_status_t	par_save_by_id		(const uint16_t par_id);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

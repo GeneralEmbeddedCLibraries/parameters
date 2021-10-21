@@ -518,7 +518,7 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 	* @return		status 	- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	par_status_t par_store_all_to_nvm(void)
+	par_status_t par_save_all(void)
 	{
 		par_status_t 	status 	= ePAR_OK;
 
@@ -538,11 +538,49 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 	* @return		status 	- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	par_status_t par_store_to_nvm(const par_num_t par_num)
+	par_status_t par_save(const par_num_t par_num)
 	{
 		par_status_t status = ePAR_OK;
 
 		status = par_nvm_write( par_num );
+
+		return status;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Store single parameter value to NVM by its ID value
+	*
+	* @pre		NVM storage must be initialized first and "PAR_CFG_NVM_EN"
+	* 			settings must be enabled.
+	*
+	* @code
+	* 			// Use case
+	* 			// Store par from ID 10 to 32
+	* 			uint8_t par_id;
+	*
+	* 			for ( par_id = 10; par_id < 32; par_id++ )
+	* 			{
+	* 			 	status |= par_save_by_id( par_id )
+	* 			}
+	*
+	* @endcode
+	*
+	* @param[in]	par_id	- Parameter ID number
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_save_by_id(const uint16_t par_id)
+	{
+		par_status_t 	status 	= ePAR_OK;
+		par_num_t		par_num	= 0;
+
+		status = par_get_num_by_id( par_id, &par_num );
+
+		if ( ePAR_OK == status )
+		{
+			status = par_save( par_num );
+		}
 
 		return status;
 	}
