@@ -231,10 +231,10 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 /**
 *		Set parameter to default value
 *
-* @pre	Parameters must be initialized before usage!
+* @pre	Parameters must be initialised before usage!
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @return		void
+* @return		status 	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_set_to_default(const par_num_t par_num)
@@ -272,9 +272,9 @@ par_status_t par_set_to_default(const par_num_t par_num)
 /**
 *		Set all parameters to default value
 *
-* @pre	Parameters must be initialized before usage!
+* @pre	Parameters must be initialised before usage!
 *
-* @return	void
+* @return	status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_set_all_to_default(void)
@@ -299,36 +299,6 @@ par_status_t par_set_all_to_default(void)
 	}
 
 	return status;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get parameter number (enumeration) by ID
-*
-* @param[in]	id 		- Parameter ID
-* @return		par_num	- Parameter enumeration number
-*/
-////////////////////////////////////////////////////////////////////////////////
-par_num_t par_get_num_by_id(const uint16_t id)
-{
-	uint16_t par_num = 0UL;
-
-	// Is init
-	PAR_ASSERT( true == gb_is_init );
-
-	// TRICK: Loop one time more in order to catch invalid ID number!
-	for ( par_num = 0; par_num < ( ePAR_NUM_OF + 1 ); par_num++ )
-	{
-		if ( gp_par_table[par_num].id == id )
-		{
-			break;
-		}
-	}
-
-	// Invalid ID request
-	PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-	return par_num;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -409,6 +379,57 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 			status = ePAR_ERROR;
 		}
 	#endif
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter number (enumeration) by ID
+*
+* @param[in]	id 		- Parameter ID
+* @return		par_num	- Parameter enumeration number
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_get_num_by_id(const uint16_t id, par_num_t * const p_par_num)
+{
+	par_status_t 	status 	= ePAR_OK;
+	uint16_t 		par_num = 0UL;
+	bool			found	= false;
+
+	PAR_ASSERT( true == gb_is_init );
+	PAR_ASSERT( NULL != p_par_num );
+
+	if ( true == gb_is_init )
+	{
+		if ( NULL != p_par_num )
+		{
+			// TRICK: Loop one time more in order to catch invalid ID number!
+			for ( par_num = 0; par_num < ( ePAR_NUM_OF + 1 ); par_num++ )
+			{
+				if ( gp_par_table[par_num].id == id )
+				{
+					*p_par_num = par_num;
+					found = true;
+					break;
+				}
+			}
+
+			// Does parameter with requested ID even exist
+			if ( false == found )
+			{
+				status = ePAR_ERROR;
+			}
+		}
+		else
+		{
+			status = ePAR_ERROR;
+		}
+	}
+	else
+	{
+		status = ePAR_ERROR_INIT;
+	}
 
 	return status;
 }

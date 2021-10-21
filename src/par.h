@@ -119,7 +119,7 @@ par_status_t	par_set_to_default		(const par_num_t par_num);
 par_status_t 	par_set_all_to_default	(void);
 
 par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
-par_num_t		par_get_num_by_id		(const uint16_t id);
+par_status_t	par_get_num_by_id		(const uint16_t id, par_num_t * const p_par_num);
 
 
 
