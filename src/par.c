@@ -81,7 +81,6 @@ static uint32_t 	gu32_par_addr_offset[ ePAR_NUM_OF ] = { 0 };
 ////////////////////////////////////////////////////////////////////////////////
 static par_status_t par_allocate_ram_space	(uint8_t ** pp_ram_space);
 static uint32_t 	par_calc_ram_usage		(void);
-static uint8_t 		par_get_data_type_size	(const par_type_list_t par_type);
 static par_status_t	par_check_table_validy	(const par_cfg_t * const p_par_cfg);
 static par_status_t par_set_u8				(const par_num_t par_num, const uint8_t u8_val);
 static par_status_t par_set_i8				(const par_num_t par_num, const int8_t i8_val);
@@ -251,9 +250,9 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_set_to_default(const par_num_t par_num)
 {
-	par_status_t 	status 		= ePAR_OK;
-	par_type_list_t	par_type 	= ePAR_TYPE_U8;
-	par_cfg_t		par_cfg		= {0};
+	par_status_t 	status 			= ePAR_OK;
+	par_cfg_t		par_cfg			= {0};
+	uint8_t			par_type_size	= 0;
 
 	PAR_ASSERT( true == gb_is_init );
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
@@ -263,12 +262,13 @@ par_status_t par_set_to_default(const par_num_t par_num)
 		if ( par_num < ePAR_NUM_OF )
 		{
 			// Get par type
-			//par_type = par_get_data_type( par_num );
 			par_get_config( par_num, &par_cfg );
-			par_type = par_cfg.type;
+
+			// Get size of data type
+			par_get_type_size( par_cfg.type, &par_type_size );
 
 			// Copy default value to live space
-			memcpy( &gpu8_par_value[ gu32_par_addr_offset[par_num] ], &gp_par_table[par_num].def.u8, par_get_data_type_size( par_type ));
+			memcpy( &gpu8_par_value[gu32_par_addr_offset[par_num]], &gp_par_table[par_num].def.u8, par_type_size );
 		}
 		else
 		{
@@ -516,6 +516,68 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 	return status;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter type size
+*
+* @param[in]	type		- Data type of parameter
+* @param[out]	p_size		- Pointer to parameter data type size
+* @return		status 		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_size)
+{
+	par_status_t status = ePAR_OK;
+
+	PAR_ASSERT( type < ePAR_TYPE_NUM_OF );
+	PAR_ASSERT( NULL != p_size );
+
+	if ( 	( type < ePAR_TYPE_NUM_OF )
+		&&	( NULL != p_size ))
+	{
+		switch ( type )
+		{
+			case ePAR_TYPE_U8:
+				*p_size = sizeof( uint8_t );
+				break;
+
+			case ePAR_TYPE_I8:
+				*p_size = sizeof( int8_t );
+				break;
+
+			case ePAR_TYPE_U16:
+				*p_size = sizeof( uint16_t );
+				break;
+
+			case ePAR_TYPE_I16:
+				*p_size = sizeof( int16_t );
+				break;
+
+			case ePAR_TYPE_U32:
+				*p_size = sizeof( uint32_t );
+				break;
+
+			case ePAR_TYPE_I32:
+				*p_size = sizeof( int32_t );
+				break;
+
+			case ePAR_TYPE_F32:
+				*p_size = sizeof( float32_t );
+				break;
+
+			default:
+				status = ePAR_ERROR;
+				break;
+		}
+	}
+	else
+	{
+		status = ePAR_ERROR;
+	}
+
+	return status;
+}
+
 #if ( 1 == PAR_CFG_NVM_EN )
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -599,14 +661,22 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 
 #if ( PAR_CFG_DEBUG_EN )
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Get status string description
+	*
+	* @param[in]	status	- Parameter status
+	* @return		str		- Parameter status description
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	const char * par_get_status_str(const par_status_t status)
 	{
 		uint8_t i = 0;
+		const char * str = "N/A";
 
 		if ( ePAR_OK == status  )
 		{
-			return &gs_status[0];
+			str = (const char*) gs_status[0];
 		}
 		else
 		{
@@ -614,10 +684,12 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 			{
 				if ( status & ( 1<<i ))
 				{
-					return &gs_status[i+1];
+					str =  (const char*) gs_status[i+1];
 				}
 			}
 		}
+
+		return str;
 	}
 #endif
 
@@ -671,9 +743,10 @@ static par_status_t par_allocate_ram_space(uint8_t ** pp_ram_space)
 ////////////////////////////////////////////////////////////////////////////////
 static uint32_t par_calc_ram_usage(void)
 {
-	par_cfg_t 		par_cfg 	= { 0 };
-	uint32_t 		par_num		= 0UL;
-	uint32_t		total_size	= 0UL;
+	par_cfg_t 	par_cfg 		= { 0 };
+	uint32_t 	par_num			= 0UL;
+	uint32_t	total_size		= 0UL;
+	uint8_t		par_type_size	= 0;
 
 	// For every parameter
 	for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
@@ -711,61 +784,14 @@ static uint32_t par_calc_ram_usage(void)
         // Store par RAM address offset
         gu32_par_addr_offset[par_num] = total_size;
 
+		// Get size of data type
+		par_get_type_size( par_cfg.type, &par_type_size );
+
         // Accumulate total RAM space
-        total_size += par_get_data_type_size( par_cfg.type );
+        total_size += par_type_size;
 	}
 
 	return total_size;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Get size of supported parameter data types
-*
-* @param[in]	par_type	- Data type of parameter
-* @return		type_size	- Size of data type in bytes
-*/
-////////////////////////////////////////////////////////////////////////////////
-static uint8_t par_get_data_type_size(const par_type_list_t par_type)
-{
-	uint8_t type_size = 0U;
-
-	switch ( par_type )
-	{
-		case ePAR_TYPE_U8:
-			type_size = sizeof( uint8_t );
-			break;
-
-		case ePAR_TYPE_I8:
-			type_size = sizeof( int8_t );
-			break;
-
-		case ePAR_TYPE_U16:
-			type_size = sizeof( uint16_t );
-			break;
-
-		case ePAR_TYPE_I16:
-			type_size = sizeof( int16_t );
-			break;
-
-		case ePAR_TYPE_U32:
-			type_size = sizeof( uint32_t );
-			break;
-
-		case ePAR_TYPE_I32:
-			type_size = sizeof( int32_t );
-			break;
-
-		case ePAR_TYPE_F32:
-			type_size = sizeof( float32_t );
-			break;
-
-		default:
-			// No actions...
-			break;
-	}
-
-	return type_size;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

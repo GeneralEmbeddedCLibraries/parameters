@@ -122,6 +122,7 @@ par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
 par_status_t	par_get_id				(const par_num_t par_num, uint16_t * const p_id);
 par_status_t	par_get_num_by_id		(const uint16_t id, par_num_t * const p_par_num);
 par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par_cfg);
+par_status_t	par_get_type_size		(const par_type_list_t type, uint8_t * const p_size);
 
 #if ( 1 == PAR_CFG_NVM_EN )
 	par_status_t	par_save_all		(void);

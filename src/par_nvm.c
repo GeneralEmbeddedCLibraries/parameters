@@ -143,6 +143,11 @@
 		par_type_t 	val;	/**<4-byte storage for parameter value */
 	} par_nvm_data_obj_t;
 
+	typedef struct
+	{
+		uint32_t addr;
+		uint16_t id;
+	} par_nvm_lut_t;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Variables
@@ -151,7 +156,7 @@
 	/**
 	 * 	Parameter NVM lut
 	 */
-	static uint32_t g_par_nvm_data_obj_addr[ePAR_NUM_OF] = {0};
+	static par_nvm_lut_t g_par_nvm_data_obj_addr[ePAR_NUM_OF] = {0};
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Function Prototypes
@@ -171,6 +176,7 @@
 	static uint16_t 		par_nvm_calc_crc					(const uint8_t * const p_data, const uint8_t size);
 	static uint16_t			par_nvm_get_per_par					(void);
 
+	static void 			par_nvm_build_nvm_lut				(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
@@ -245,7 +251,7 @@
 		// No persistent parameters
 		else
 		{
-			PAR_DBG_PRINT( "No persistent parameters..." );
+			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
 		}
 
 
@@ -461,7 +467,7 @@
 		// Write header
 		status |= par_nvm_write_header( per_par_nb );
 
-		PAR_DBG_PRINT( "Storing to NVM status: %s. \nStored %d parameters.", par_get_status_str(status), per_par_nb );
+		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
 
 		return status;
 	}
@@ -562,16 +568,19 @@
 		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
 		{
 			status = ePAR_ERROR_NVM;
+			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature read!" );
 		}
 		else
 		{
 			if ( PAR_NVM_SIGN == sign )
 			{
 				status = ePAR_OK;
+				PAR_DBG_PRINT( "PAR_NVM: Signature OK!" );
 			}
 			else
 			{
 				status = ePAR_ERROR;
+				PAR_DBG_PRINT( "PAR_NVM: Signature corrupted!" );
 			}
 		}
 
@@ -596,6 +605,7 @@
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
 		{
 			status = ePAR_ERROR_NVM;
+			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature write!" );
 		}
 
 		return status;
@@ -618,7 +628,7 @@
 		if ( eNVM_OK != nvm_erase( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE ))
 		{
 			status = ePAR_ERROR_NVM;
-			PAR_DBG_PRINT( "NVM error during signature corruption!" );
+			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature corruption!" );
 		}
 
 		return status;
@@ -726,6 +736,7 @@
 		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (uint8_t*) &head_obj ))
 		{
 			status = ePAR_ERROR_NVM;
+			PAR_DBG_PRINT( "PAR_NVM: NVM error during header read!" );
 		}
 		else
 		{
@@ -742,6 +753,7 @@
 			else
 			{
 				status = ePAR_ERROR_CRC;
+				PAR_DBG_PRINT( "PAR_NVM: Header CRC corrupted!" );
 			}
 		}
 
@@ -774,6 +786,7 @@
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (const uint8_t*) &head_obj ))
 		{
 			status = ePAR_ERROR_NVM;
+			PAR_DBG_PRINT( "PAR_NVM: NVM error during header write!" );
 		}
 
 		// Write signature
@@ -793,7 +806,7 @@
 		// NVM error
 		if ( ePAR_ERROR_NVM == status )
 		{
-			PAR_DBG_PRINT( "Header validation NVM error!" );
+			// No actions...
 		}
 		else
 		{
@@ -921,12 +934,24 @@
 		return num_of_per_par;
 	}
 
-
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Reset total section of parameters NVM
+	*
+	* @brief	This function completely re-write whole NVM section.
+	*
+	* 			It first corrupt signature in order to raise "working in progress"
+	* 			flag.
+	*
+	* @return	num_of_per_par - Number of persistent parameters
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_reset_all(void)
 	{
-		par_status_t 	status 	= ePAR_OK;
+		par_status_t status = ePAR_OK;
 
-		PAR_DBG_PRINT( "Reseting par NVM section..." );
+		// Build NVM lut
+		par_nvm_build_nvm_lut();
 
 		// Corrupt header
 		status |= par_nvm_corrupt_signature();
@@ -937,6 +962,39 @@
 		return status;
 	}
 
+	static void par_nvm_build_nvm_lut(void)
+	{
+		uint16_t 	per_par_nb 	= 0;
+		par_num_t	par_num		= 0;
+		par_cfg_t	par_cfg		= {0};
+
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			par_get_config( par_num, &par_cfg );
+
+			if ( true == par_cfg.persistant )
+			{
+				// First parameter
+				if ( 0 == per_par_nb )
+				{
+					g_par_nvm_data_obj_addr[per_par_nb].addr = PAR_NVM_FIRST_DATA_OBJ_ADDR;
+				}
+
+				// Build consecutive address space
+				// NOTE: For know each NVM data object is fixed in size (4 bytes)
+				else
+				{
+					g_par_nvm_data_obj_addr[per_par_nb].addr = ( g_par_nvm_data_obj_addr[per_par_nb-1].addr + sizeof( par_nvm_data_obj_t ));
+				}
+
+				// Store parameter ID
+				g_par_nvm_data_obj_addr[per_par_nb].id = par_cfg.id;
+
+				// Next persistent parameter
+				per_par_nb++;
+			}
+		}
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
