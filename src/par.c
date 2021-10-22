@@ -95,8 +95,6 @@ par_status_t par_init(void)
 {
 	par_status_t status = ePAR_OK;
 
-	// TODO: Omit asserts...
-
 	// Get parameter table
 	gp_par_table = par_cfg_get_table();
 	PAR_ASSERT( NULL != gp_par_table );
@@ -520,7 +518,7 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 	////////////////////////////////////////////////////////////////////////////////
 	par_status_t par_save_all(void)
 	{
-		par_status_t 	status 	= ePAR_OK;
+		par_status_t status = ePAR_OK;
 
 		status = par_nvm_write_all();
 

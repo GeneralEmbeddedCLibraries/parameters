@@ -31,130 +31,8 @@
 *
 *			Parameters stored into NVM in little endianness format.
 *
-* 			Parameter NVM region is further organized into following sections:
-*
-*			-----------------------------------------------------------------
-* 				1. Signature:
-* 			-----------------------------------------------------------------
-*
-* 			Signature tells if NVM "Parameters" region is already initialized.
-*
-*				SIGNATURE DEFINITION:
-*
-*			size: 			4 bytes
-*			base address*:	0x00
-*
-* 						| 	byte 3	  | 	byte 2	  | 	byte 1	 | 		byte 0	  |
-* 						---------------------------------------------------------------
-*						|	0x55	  |		0xAA	  |		0x00     | 		0xFF	  |
-*						---------------------------------------------------------------
-*			address
-*			offset*:		0x03			0x02			0x01			0x00
-*
-*
-*			-----------------------------------------------------------------
-* 				2. Header:
-* 			-----------------------------------------------------------------
-*
-*			Header contains number of stored parameters and it's checksum. Purpose of
-*			header is to tell how many parameters are currently stored inside NVM
-*			region "Parameters".
-*
-*			Based on "number of stored parameter" value read logic is being limited.
-*
-*			IMPORTANT: 	Header CRC-16 is being calculated only on "number of stored
-*						parameters" value.
-*
-* 			HEADER DEFINITION:
-*
-*			size: 			8 bytes
-*			base address*:	0x04
-*
-*
-* 						| 	byte 3	  | 	byte 2	  | 	byte 1	 | 		byte 0	  |
-* 						---------------------------------------------------------------
-*						|					number of stored parameters			      |
-*						---------------------------------------------------------------
-*			address
-*			offset**:		0x03			0x02			0x01			0x00
-*
-*						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
-* 						---------------------------------------------------------------
-*						|			CRC-16			  |	 	       reserved		  	  |
-*						---------------------------------------------------------------
-*			address
-*			offset**:		0x07			0x06			0x05			0x04
-*
-*			-----------------------------------------------------------------
-* 				3. Table ID:
-* 			-----------------------------------------------------------------
-*
-*			Table ID is based on hash number calculated based on whole
-*			parameter configuration table. It's purpose is to detect table
-*			change in run-time.
-*
-*			This feature can detect that "RAM" parameter table and "NVM"
-*			parameter table are different. Knowing that copy parameter value
-*			from NVM to RAM is prohibited as data will be misinterpreted.
-*
-*				TABLE ID:
-*
-*			size: 				32 bytes
-*			base address*: 		0x10
-*
-*			*relative to "Parameters" NVM region
-*
-*			-----------------------------------------------------------------
-*				4. Parameters NVM objects
-*			-----------------------------------------------------------------
-*
-*			NVM object consist of parameter value, parameter ID and its CRC-16
-*			checksum. Every time parameter is being read data integrity is being
-*			check based	on it's checksum.
-*
-*			TODO: This logic shall be implemented in future:
-*
-*				Persistence parameters are being stored into consecutive sequence
-*				starting from top of a parameter table to bottom. Therefore first
-*				parameters will be stored in lower address space relative to the
-*				bottom defined one.
-*
-*				For now parameters NVM memory storage is only defined by its
-*				ID as following funtion:
-*
-*					NVM_address = (8 * parameter ID) + base address
-*
-*			TODO END:
-*
-*
-*			IMPORTANT: 	After release is done, parameters from table shall not
-*						be removed or changed but only new parameters definitions
-*						is allowed to be append to existing table.
-*
-*
-*			size: 			8 bytes
-*			base address*:	0x100
-*
-* 						| 	byte 3	  | 	byte 2	  | 	byte 1	 | 		byte 0	  |
-* 						---------------------------------------------------------------
-*						|						parameter value						  |
-*						---------------------------------------------------------------
-*			address
-*			offset**:		0x03			0x02			0x01			0x00
-*
-*						| 	byte 7	  | 	byte 6	  | 	byte 5	 | 		byte 4	  |
-* 						---------------------------------------------------------------
-*						|			CRC-16			  |	 	    parameter ID		  |
-*						---------------------------------------------------------------
-*			address
-*			offset**:		0x07			0x06			0x05			0x04
-*
-*
-*			*relative to "Parameters" NVM region
-*			**plus: (8 * parameter ID) + base address
-*
-*			-----------------------------------------------------------------
-*
+*			For details how parameters are handled in NVM go look at the
+*			documentation.
 *
 * @note		RULES OF "PAR_CFG_TABLE_ID_CHECK_EN" SETTINGS:
 *
@@ -168,19 +46,6 @@
 * 			stored inside NVM. Therefore it is recommended to disable table ID
 * 			detection after first release of SW. Adding new parameters to pre-existing
 * 			table has no harm at all nor does it have any side effects.
-*
-*
-* @brief	STARTUP SEQUENCE:
-*
-* 				check for signature --[invalid]--> complete rewrite of "Parameters" NVM region (signature, header, tableID & all parameters value)
-* 					|
-* 				  [ok]
-* 					|
-* 					-> check for table ID --[table diff]--> complete rewrite of "Parameters" NVM region (signature, header, tableID & all parameters value)
-* 							|
-* 						  [same]
-* 							|
-* 							-> load stored parameters values from NVM to live "RAM" space
 *
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -210,49 +75,73 @@
 	// Definitions
 	////////////////////////////////////////////////////////////////////////////////
 
-	/**
-	 * 	Parameter signature NVM address offset
-	 */
-	#define PAR_NVM_SIGNATURE_ADDR_OFFSET			( 0x00 )
 
 	/**
-	 * 	Parameter signature
+	 * 	Parameter signature and size in bytes
 	 */
-	#define PAR_NVM_SIGNATURE						( 0xFF00AA55 )
+	#define PAR_NVM_SIGN							( 0xFF00AA55 )
+	#define PAR_NVM_SIGN_SIZE						( 4UL )
 
 	/**
-	 * 	Parameter header NVM address offset
-	 */
-	#define PAR_NVM_HEADER_ADDR_OFFSET				( 0x04 )
-
-	/**
-	 * 	Parameter table ID NVM address offset
-	 */
-	#define PAR_NVM_TABLE_ID_ADDR_OFFSET			( 0x20 )
-
-	/**
-	 * 	Parameter object NVM address offset
-	 */
-	#define PAR_NVM_PAR_OBJ_ADDR_OFFSET				( 0x100 )
-
-	/**
-	 * 		Parameter NVM object
+	 * 	Parameter header number of object size
 	 *
-	 * 	@note 	Each parameter is protected with CRC-16.
-	 *
-	 * 			Parameter header has same structure but only
-	 * 			ID field is not being used!
+	 * 	Unit: byte
 	 */
-	typedef union
+	#define PAR_NVM_NB_OF_OBJ_SIZE					( 2UL )
+
+	/**
+	 * 	Parameter CRC size
+	 *
+	 * 	Unit: byte
+	 */
+	#define PAR_NVM_CRC_SIZE						( 2UL )
+
+	/**
+	 * 	Parameter configuration hash size
+	 *
+	 * 	Unit: byte
+	 */
+	#define PAR_NVM_HASH_SIZE						( 32UL )
+
+	/**
+	 * 	Parameter NVM header content address start
+	 *
+	 * 	@note 	This is offset to reserved NVM region. For absolute address
+	 * 			add that value to NVM start region.
+	 */
+	#define PAR_NVM_HEAD_ADDR						( 0x00 )
+	#define PAR_NVM_HEAD_SIGN_ADDR					( PAR_NVM_HEAD_ADDR )
+	#define PAR_NVM_HEAD_NB_OF_OBJ_ADDR				( PAR_NVM_HEAD_SIGN_ADDR 		+ PAR_NVM_HEAD_SIGN_ADDR 	)
+	#define PAR_NVM_HEAD_CRC_ADDR					( PAR_NVM_HEAD_NB_OF_OBJ_ADDR 	+ PAR_NVM_NB_OF_OBJ_SIZE 	)
+	#define PAR_NVM_HEAD_HASH_ADDR					( PAR_NVM_HEAD_CRC_ADDR 		+ PAR_NVM_CRC_SIZE 			)
+
+	/**
+	 * 	Parameters first data object start address
+	 *
+	 * 	Unit: byte
+	 */
+	#define PAR_NVM_FIRST_DATA_OBJ_ADDR				( PAR_NVM_HEAD_HASH_ADDR + PAR_NVM_HEAD_HASH_ADDR )
+
+	/**
+	 * 	Parameter NVM header object
+	 */
+	typedef struct
 	{
-		struct
-		{
-			uint32_t 	val;	/**<4-byte storage for parameter value */
-			uint16_t	id;		/**<Parameter ID */
-			uint16_t	crc;	/**<CRC-16 of parameter value */
-		} field;
-		uint64_t u;
-	}par_nvm_obj_t;
+		uint32_t sign;		/**<Signature */
+		uint16_t obj_nb;	/**<Stored data object number */
+		uint16_t crc;		/**<Header CRC */
+	} par_nvm_head_obj_t;
+
+	/**
+	 * 		Parameter NVM data object
+	 */
+	typedef struct
+	{
+		uint16_t	id;		/**<Parameter ID */
+		uint8_t		size;	/**<Size of parameter data block */
+		uint8_t		crc;	/**<CRC of parameter value */
+		par_type_t 	val;	/**<4-byte storage for parameter value */
+	} par_nvm_data_obj_t;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Variables
@@ -265,13 +154,16 @@
 	static par_status_t		par_nvm_check_signature				(void);
 	static par_status_t		par_nvm_write_signature				(void);
 
-	static par_status_t 	par_nvm_read_header					(uint32_t * const p_num_of_par);
-	static par_status_t 	par_nvm_write_header				(const uint32_t num_of_par);
+	static par_status_t 	par_nvm_read_header					(uint16_t * const p_num_of_par);
+	static par_status_t 	par_nvm_write_header				(const uint16_t num_of_par);
+	static par_status_t 	par_nvm_validate_header				(uint16_t * const p_num_of_par);
 	static uint16_t 		par_nvm_calc_crc					(const uint8_t * const p_data, const uint8_t size);
-	static par_status_t		par_nvm_load_all					(void);
+	static par_status_t		par_nvm_load_all					(const uint16_t num_of_par);
 	static uint32_t			par_nvm_calc_num_of_per_par			(void);
 
 	static bool				par_nvm_precondition_check			(void);
+
+	static par_status_t		par_nvm_reset_all					(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
@@ -287,16 +179,64 @@
 	/**
 	*		Initialize parameter NVM handling
 	*
-	* @brief 	Based on settings in "par_cfg.h" initialization phase is done.
+	* @brief 	Based on settings in "par_cfg.h" initialisation phase is done.
 	* 			Settings such as "PAR_CFG_TABLE_ID_CHECK_EN" will affect checking
 	* 			for table ID.
 	*
-	* @return	status - Status of initialization
+	* @return	status - Status of initialisation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
 	par_status_t par_nvm_init(void)
 	{
-		par_status_t 	status 			= ePAR_OK;
+		par_status_t 	status 	= ePAR_OK;
+		uint16_t 		obj_nb	= 0;
+
+		PAR_ASSERT( true == par_nvm_precondition_check() );
+
+		// Read signature
+		status = par_nvm_check_signature();
+
+		// Signature OK
+		if ( ePAR_OK == status )
+		{
+			// Check hash
+			#if ( PAR_CFG_TABLE_ID_CHECK_EN )
+				// TODO: ...
+			#endif
+
+			// Validate header
+			status = par_nvm_validate_header( &obj_nb );
+
+			// Header OK
+			if ( ePAR_OK == status )
+			{
+				// Load all parameters
+				status = par_nvm_load_all( obj_nb );
+			}
+		}
+
+		// Signature NOT OK
+		else if ( ePAR_ERROR == status )
+		{
+			status = par_nvm_reset_all();
+		}
+
+		// NVM Error
+		else
+		{
+			// No actions...
+		}
+
+
+
+
+
+
+
+
+
+
+/*
 		uint32_t		num_of_per_par 	= 0UL;
 
 		#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
@@ -397,6 +337,7 @@
 		}
 
 		//PAR_ASSERT( ePAR_OK == status );
+*/
 
 		return status;
 	}
@@ -412,6 +353,17 @@
 	par_status_t par_nvm_write(const par_num_t par_num)
 	{
 		par_status_t 	status 		= ePAR_OK;
+
+
+
+
+
+
+
+
+
+
+/*
 		par_nvm_obj_t	par_obj		= { .u = 0ULL };
 		uint32_t		par_addr	= 0UL;
 		par_cfg_t		par_cfg		= {0};
@@ -454,6 +406,7 @@
 		{
 			status = ePAR_ERROR;
 		}
+		*/
 
 		return status;
 	}
@@ -468,7 +421,13 @@
 	par_status_t par_nvm_write_all(void)
 	{
 		par_status_t 	status 		= ePAR_OK;
-		uint32_t		par_num 	= 0UL;
+
+
+
+
+
+
+/*		uint32_t		par_num 	= 0UL;
 		uint32_t		per_par_num	= 0UL;
 
 		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
@@ -480,7 +439,7 @@
 		// Rewrite header
 		status |= par_nvm_write_header( per_par_num );
 
-		PAR_DBG_PRINT( "PAR_NVM: Storing %u persistent parameters to NVM. Status: %u", per_par_num, status );
+		PAR_DBG_PRINT( "PAR_NVM: Storing %u persistent parameters to NVM. Status: %u", per_par_num, status );*/
 
 		return status;
 	}
@@ -514,6 +473,11 @@
 	static par_status_t par_nvm_read(const par_num_t par_num)
 	{
 		par_status_t 	status 		= ePAR_OK;
+
+
+
+
+/*		par_status_t 	status 		= ePAR_OK;
 		par_nvm_obj_t	par_obj		= { .u = 0ULL };
 		uint32_t		par_addr	= 0UL;
 		uint32_t		calc_crc	= 0UL;
@@ -521,10 +485,8 @@
 
 		PAR_ASSERT( true == par_nvm_precondition_check() );
 		PAR_ASSERT( par_num < ePAR_NUM_OF );
-		//PAR_ASSERT( true == par_get_persistance( par_num ))
 
 		// Get parameter ID
-		//par_id = par_get_id( par_num );
 		par_get_id( par_num, &par_obj.field.id );
 
 		// Calculate parameter NVM address
@@ -554,6 +516,8 @@
 			}
 		}
 
+		*/
+
 		return status;
 	}
 
@@ -569,13 +533,13 @@
 		par_status_t 	status 	= ePAR_OK;
 		uint32_t 		sign	= 0UL;
 
-		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U, (uint8_t*) &sign ))
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
 		{
 			status = ePAR_ERROR_NVM;
 		}
 		else
 		{
-			if ( PAR_NVM_SIGNATURE != sign )
+			if ( PAR_NVM_SIGN != sign )
 			{
 				status = ePAR_ERROR;
 			}
@@ -594,9 +558,9 @@
 	static par_status_t	par_nvm_write_signature(void)
 	{
 		par_status_t 	status 	= ePAR_OK;
-		uint32_t 		sign	= PAR_NVM_SIGNATURE;
+		uint32_t 		sign	= PAR_NVM_SIGN;
 
-		status = nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_SIGNATURE_ADDR_OFFSET, 4U, (uint8_t*) &sign );
+		status = nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign );
 
 		return status;
 	}
@@ -691,11 +655,11 @@
 	* @return		status 			- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t par_nvm_read_header(uint32_t * const p_num_of_par)
+	static par_status_t par_nvm_read_header(uint16_t * const p_num_of_par)
 	{
-		par_status_t 	status 		= ePAR_OK;
-		par_nvm_obj_t	par_obj		= { .u = 0ULL };
-		uint32_t		calc_crc	= 0UL;
+		par_status_t 		status 		= ePAR_OK;
+		par_nvm_head_obj_t	head_obj	= {0};
+		uint32_t			calc_crc	= 0UL;
 
 		// Pre-condition
 		PAR_ASSERT( true == par_nvm_precondition_check() );
@@ -703,25 +667,25 @@
 		// Check inputs
 		PAR_ASSERT( NULL != p_num_of_par );
 
-		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEADER_ADDR_OFFSET, sizeof( par_nvm_obj_t ), (uint8_t*) &par_obj.u ))
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (uint8_t*) &head_obj ))
 		{
 			status = ePAR_ERROR_NVM;
 		}
 		else
 		{
 			// Calculate CRC
-			calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 4U );
+			calc_crc = par_nvm_calc_crc((uint8_t*) &head_obj.obj_nb, PAR_NVM_NB_OF_OBJ_SIZE );
 
 			// Validate CRC
-			if ( calc_crc == par_obj.field.crc )
+			if ( calc_crc == head_obj.crc )
 			{
-				*p_num_of_par = par_obj.field.val;
+				*p_num_of_par = head_obj.obj_nb;
 			}
 
 			// CRC corrupt
 			else
 			{
-				status = ePAR_ERROR_NVM;
+				status = ePAR_ERROR_CRC;
 			}
 		}
 
@@ -736,21 +700,54 @@
 	* @return		status 		- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t	par_nvm_write_header(const uint32_t num_of_par)
+	static par_status_t	par_nvm_write_header(const uint16_t num_of_par)
 	{
-		par_status_t 	status 	= ePAR_OK;
-		par_nvm_obj_t	par_obj	= { .field.val = num_of_par, .field.id = 0U, .field.crc = 0U };
+		par_status_t 		status 		= ePAR_OK;
+		par_nvm_head_obj_t	head_obj	= {0};
 
 		// Pre-condition
 		PAR_ASSERT( true == nvm_is_init());
 
+		// Add number of objects
+		head_obj.obj_nb = num_of_par;
+
 		// Calculate CRC
-		par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 4U );
+		head_obj.crc = par_nvm_calc_crc((uint8_t*) &head_obj.obj_nb, PAR_NVM_NB_OF_OBJ_SIZE );
 
 		// Write to NVM
-		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEADER_ADDR_OFFSET, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
+		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (const uint8_t*) &head_obj ))
 		{
 			status = ePAR_ERROR_NVM;
+		}
+
+		return status;
+	}
+
+	static par_status_t par_nvm_validate_header(uint16_t * const p_num_of_par)
+	{
+		par_status_t 	status = ePAR_OK;
+		uint16_t 		obj_nb = 0;
+
+		// Read header
+		status = par_nvm_read_header( &obj_nb );
+
+		// NVM error
+		if ( ePAR_ERROR_NVM == status )
+		{
+			// No actions...
+		}
+		else
+		{
+			if 	(	( ePAR_OK == status )
+				&&	( obj_nb > 0 ))
+			{
+				*p_num_of_par = obj_nb;
+				status = ePAR_OK;
+			}
+			else
+			{
+				status = par_nvm_reset_all();
+			}
 		}
 
 		return status;
@@ -805,10 +802,14 @@
 	* @return		status 		- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t par_nvm_load_all(void)
+	static par_status_t par_nvm_load_all(const uint16_t num_of_par)
 	{
 		par_status_t 	status 			= ePAR_OK;
-		uint32_t 		par_num 		= 0UL;
+
+
+
+
+/*		uint32_t 		par_num 		= 0UL;
 		uint32_t		stored_par_num	= 0UL;
 		uint32_t		loaded_par_num	= 0UL;
 
@@ -829,7 +830,7 @@
 			status = ePAR_ERROR_NVM;
 
 			PAR_DBG_PRINT( "PAR_NVM: Reading header error!" );
-		}
+		}*/
 
 		return status;
 	}
@@ -883,6 +884,26 @@
 
 		return pre_cond;
 	}
+
+	static par_status_t par_nvm_reset_all(void)
+	{
+		par_status_t status = ePAR_OK;
+
+		// Build NVM table
+		// TODO: ...
+
+		// Corrupt header
+		// TODO: ...
+
+		// Write all data object
+		// TODO: ...
+
+		// Write header
+		// TODO: ...
+
+		return status;
+	}
+
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
