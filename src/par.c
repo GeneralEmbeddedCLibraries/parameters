@@ -61,6 +61,21 @@ static bool gb_is_init = false;
 static uint8_t * 	gpu8_par_value 						= NULL;
 static uint32_t 	gu32_par_addr_offset[ ePAR_NUM_OF ] = { 0 };
 
+#if ( PAR_CFG_DEBUG_EN )
+
+	/**
+	 * 	Status strings
+	 */
+	static const char * gs_status[] =
+	{
+		"OK",
+		"ERROR",
+		"ERROR INIT",
+		"ERROR NVM",
+		"ERROR CRC",
+	};
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,15 +149,12 @@ par_status_t par_init(void)
 /**
 *		Get initialisation done flag
 *
-* @param[in]	p_is_init 	- Initialisation flag
 * @return		status 		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-par_status_t par_is_init(bool * const p_is_init)
+bool par_is_init(void)
 {
-	par_status_t status = ePAR_OK;
-
-	return status;
+	return gb_is_init;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -583,6 +595,30 @@ par_status_t par_get_config(const par_num_t par_num, par_cfg_t * const p_par_cfg
 		return status;
 	}
 
+#endif
+
+#if ( PAR_CFG_DEBUG_EN )
+
+
+	const char * par_get_status_str(const par_status_t status)
+	{
+		uint8_t i = 0;
+
+		if ( ePAR_OK == status  )
+		{
+			return &gs_status[0];
+		}
+		else
+		{
+			for ( i = 0; i < 8; i++ )
+			{
+				if ( status & ( 1<<i ))
+				{
+					return &gs_status[i+1];
+				}
+			}
+		}
+	}
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

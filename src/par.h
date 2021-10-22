@@ -112,7 +112,7 @@ typedef struct
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t 	par_init				(void);
-par_status_t	par_is_init				(bool * const p_is_init);
+bool			par_is_init				(void);
 
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
 par_status_t	par_set_to_default		(const par_num_t par_num);
@@ -127,6 +127,10 @@ par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par
 	par_status_t	par_save_all		(void);
 	par_status_t	par_save			(const par_num_t par_num);
 	par_status_t	par_save_by_id		(const uint16_t par_id);
+#endif
+
+#if ( PAR_CFG_DEBUG_EN )
+	const char * par_get_status_str		(const par_status_t status);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
