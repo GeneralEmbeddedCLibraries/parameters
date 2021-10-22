@@ -964,9 +964,11 @@
 
 	static void par_nvm_build_nvm_lut(void)
 	{
-		uint16_t 	per_par_nb 	= 0;
-		par_num_t	par_num		= 0;
-		par_cfg_t	par_cfg		= {0};
+		uint16_t 		per_par_nb 			= 0;
+		par_num_t		par_num				= 0;
+		par_cfg_t		par_cfg				= {0};
+		par_type_list_t	par_type_prev		= 0;
+		uint8_t			par_type_prev_size	= 0;
 
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
@@ -984,7 +986,11 @@
 				// NOTE: For know each NVM data object is fixed in size (4 bytes)
 				else
 				{
-					g_par_nvm_data_obj_addr[per_par_nb].addr = ( g_par_nvm_data_obj_addr[per_par_nb-1].addr + sizeof( par_nvm_data_obj_t ));
+					// Get previous data type size
+					par_get_type_size( par_type_prev, &par_type_prev_size );
+
+					// Calculate and add address of next parameter
+					g_par_nvm_data_obj_addr[per_par_nb].addr = ( g_par_nvm_data_obj_addr[per_par_nb-1].addr + par_type_prev_size );
 				}
 
 				// Store parameter ID
@@ -992,6 +998,9 @@
 
 				// Next persistent parameter
 				per_par_nb++;
+
+				// Store previous data type
+				par_type_prev = par_cfg.type;
 			}
 		}
 	}
