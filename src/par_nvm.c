@@ -176,7 +176,8 @@
 	static uint16_t 		par_nvm_calc_crc					(const uint8_t * const p_data, const uint8_t size);
 	static uint16_t			par_nvm_get_per_par					(void);
 
-	static void 			par_nvm_build_nvm_lut				(void);
+	static void par_nvm_build_new_nvm_lut	(void);
+	static void par_nvm_print_nvm_lut		(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
@@ -816,6 +817,8 @@
 			{
 				*p_num_of_par = obj_nb;
 				status = ePAR_OK;
+
+				PAR_DBG_PRINT( "PAR_NVM: HVM header OK! Nb. of stored obj: %d", obj_nb );
 			}
 			else
 			{
@@ -950,8 +953,8 @@
 	{
 		par_status_t status = ePAR_OK;
 
-		// Build NVM lut
-		par_nvm_build_nvm_lut();
+		// Build new NVM lut
+		par_nvm_build_new_nvm_lut();
 
 		// Corrupt header
 		status |= par_nvm_corrupt_signature();
@@ -962,7 +965,7 @@
 		return status;
 	}
 
-	static void par_nvm_build_nvm_lut(void)
+	static void par_nvm_build_new_nvm_lut(void)
 	{
 		uint16_t 		per_par_nb 			= 0;
 		par_num_t		par_num				= 0;
@@ -1002,6 +1005,21 @@
 				// Store previous data type
 				par_type_prev = par_cfg.type;
 			}
+		}
+
+		par_nvm_print_nvm_lut();
+	}
+
+	static void par_nvm_print_nvm_lut(void)
+	{
+		uint16_t par_num = 0;
+
+		PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
+		PAR_DBG_PRINT( " %s\t%s\t%s", "#", "ID", "NVM addr" );
+
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			PAR_DBG_PRINT( " %d\t%d\t%02X", par_num, g_par_nvm_data_obj_addr[par_num].id, g_par_nvm_data_obj_addr[par_num].addr );
 		}
 	}
 
