@@ -123,6 +123,12 @@ par_status_t par_init(void)
 	// Initialize parameter interface
 	status |= par_if_init();
 
+	// Init succeed
+	if ( ePAR_OK == status )
+	{
+		gb_is_init = true;
+	}
+
 	// Set all parameters to default
 	par_set_all_to_default();
 
@@ -133,11 +139,7 @@ par_status_t par_init(void)
 
 	#endif
 
-	// Init succeed
-	if ( ePAR_OK == status )
-	{
-		gb_is_init = true;
-	}
+
 
 	//PAR_ASSERT( ePAR_OK == status );
 
