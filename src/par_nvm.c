@@ -120,7 +120,7 @@
 	 *
 	 * 	Unit: byte
 	 */
-	#define PAR_NVM_FIRST_DATA_OBJ_ADDR				( PAR_NVM_HEAD_HASH_ADDR + PAR_NVM_HEAD_HASH_ADDR )
+	#define PAR_NVM_FIRST_DATA_OBJ_ADDR				( PAR_NVM_HEAD_HASH_ADDR + PAR_NVM_HASH_SIZE )
 
 	/**
 	 * 	Parameter NVM header object
@@ -140,7 +140,7 @@
 		uint16_t	id;		/**<Parameter ID */
 		uint8_t		size;	/**<Size of parameter data block */
 		uint8_t		crc;	/**<CRC of parameter value */
-		par_type_t 	val;	/**<4-byte storage for parameter value */
+		par_type_t 	data;	/**<4-byte storage for parameter value */
 	} par_nvm_data_obj_t;
 
 	typedef struct
@@ -177,7 +177,6 @@
 	static uint16_t			par_nvm_get_per_par					(void);
 
 	static void par_nvm_build_new_nvm_lut	(void);
-	static void par_nvm_print_nvm_lut		(void);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
@@ -454,6 +453,9 @@
 		uint16_t		per_par_nb	= 0;
 		par_cfg_t		par_cfg		= { 0 };
 
+		// Corrupt header (enter critical)
+		status |= par_nvm_corrupt_signature();
+
 		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
 		{
 			par_get_config( par_num, &par_cfg );
@@ -465,7 +467,7 @@
 			}
 		}
 
-		// Write header
+		// Re-write header (exit critical)
 		status |= par_nvm_write_header( per_par_nb );
 
 		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
@@ -501,10 +503,48 @@
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_read(const par_num_t par_num)
 	{
-		par_status_t 	status 		= ePAR_OK;
+		par_status_t 		status 		= ePAR_OK;
+		uint32_t			par_addr	= 0UL;
+		par_nvm_data_obj_t	par_obj		= { 0 };
+		uint32_t			calc_crc	= 0UL;
 
 		PAR_ASSERT( true == nvm_is_init());
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
+
+		if ( par_num < ePAR_NUM_OF )
+		{
+			// Calculate parameter NVM address
+			par_addr = (uint32_t) g_par_nvm_data_obj_addr[par_num].addr;
+
+			// Read from NVM
+			if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &par_obj ))
+			{
+				status = ePAR_ERROR_NVM;
+			}
+			else
+			{
+				// Calculate CRC
+				calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.id, 2U );
+				calc_crc ^= par_nvm_calc_crc((uint8_t*) &par_obj.data, 4U );	// NOTE: For know it is fixed 4 bytes
+
+				// Validate CRC
+				if ( calc_crc == par_obj.crc )
+				{
+					par_set( par_num, (uint32_t*) &par_obj.data );
+				}
+
+				// CRC corrupt
+				else
+				{
+					par_set_to_default( par_num );
+					status = ePAR_ERROR_CRC;
+				}
+			}
+		}
+		else
+		{
+			return ePAR_ERROR;
+		}
 
 
 /*		par_status_t 	status 		= ePAR_OK;
@@ -880,7 +920,39 @@
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_load_all(const uint16_t num_of_par)
 	{
-		par_status_t 	status 			= ePAR_OK;
+		par_status_t 	status 		= ePAR_OK;
+		uint16_t 		par_num		= 0;
+		uint16_t		obj_addr 	= 0;
+		par_num_t		par_obj_num = 0;
+		uint16_t		par_id		= 0;
+
+
+
+		// Loop thru all parameters
+		for ( par_num = 0; par_num < num_of_par; par_num++ )
+		{
+			// Get NVM object start address
+			// NOTE: For know each object is fixed 4 bytes in lenght!
+			obj_addr = (( 4 * par_num ) + PAR_NVM_FIRST_DATA_OBJ_ADDR );
+
+			// Get parameter number
+			par_get_num_by_id( par_id, &par_obj_num);
+
+			// Assemble LUT
+			g_par_nvm_data_obj_addr[ par_obj_num ].id = par_id;
+			g_par_nvm_data_obj_addr[ par_obj_num ].addr = obj_addr;
+
+			// Read from NVM
+			if ( ePAR_OK != par_nvm_read( par_id ))
+			{
+				status = ePAR_ERROR_NVM;
+				break;
+			}
+		}
+
+		return status;
+
+
 
 
 
@@ -906,9 +978,10 @@
 			status = ePAR_ERROR_NVM;
 
 			PAR_DBG_PRINT( "PAR_NVM: Reading header error!" );
-		}*/
+		}
 
 		return status;
+		*/
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -956,15 +1029,19 @@
 		// Build new NVM lut
 		par_nvm_build_new_nvm_lut();
 
-		// Corrupt header
-		status |= par_nvm_corrupt_signature();
-
 		// Write all data object
 		status |= par_nvm_write_all();
 
 		return status;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Build new parameter NVM LUT table
+	*
+	* @return	void
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static void par_nvm_build_new_nvm_lut(void)
 	{
 		uint16_t 		per_par_nb 			= 0;
@@ -1010,18 +1087,32 @@
 		par_nvm_print_nvm_lut();
 	}
 
-	static void par_nvm_print_nvm_lut(void)
-	{
-		uint16_t par_num = 0;
+	#if ( PAR_CFG_DEBUG_EN )
 
-		PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
-		PAR_DBG_PRINT( " %s\t%s\t%s", "#", "ID", "NVM addr" );
-
-		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		////////////////////////////////////////////////////////////////////////////////
+		/**
+		*		Print parameter NVM table
+		*
+		* @note		Only for debugging purposes
+		*
+		* @return	void
+		*/
+		////////////////////////////////////////////////////////////////////////////////
+		void par_nvm_print_nvm_lut(void)
 		{
-			PAR_DBG_PRINT( " %d\t%d\t%02X", par_num, g_par_nvm_data_obj_addr[par_num].id, g_par_nvm_data_obj_addr[par_num].addr );
+			uint16_t par_num = 0;
+
+			PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
+			PAR_DBG_PRINT( " %s\t%s\t%s", "#", "ID", "NVM addr" );
+			PAR_DBG_PRINT( "=========================" );
+
+			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+			{
+				PAR_DBG_PRINT( " %d\t%d\t0x%04X", par_num, g_par_nvm_data_obj_addr[par_num].id, g_par_nvm_data_obj_addr[par_num].addr );
+				PAR_DBG_PRINT( "------------------------" );
+			}
 		}
-	}
+	#endif
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**

@@ -34,6 +34,10 @@
 	par_status_t par_nvm_write		(const par_num_t par_num);
 	par_status_t par_nvm_write_all	(void);
 
+	#if ( PAR_CFG_DEBUG_EN )
+		void par_nvm_print_nvm_lut(void);
+	#endif
+
 #endif // 1 == PAR_CFG_NVM_EN
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -187,55 +187,69 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 	// Check input
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
 
-	#if ( 1 == PAR_CFG_MUTEX_EN )
-		if ( ePAR_OK == par_if_aquire_mutex())
+	if ( true == gb_is_init )
+	{
+		if ( par_num < ePAR_NUM_OF )
 		{
-	#endif
-			switch ( gp_par_table[ par_num ].type )
-			{
-				case ePAR_TYPE_U8:
-					status = par_set_u8( par_num, *(uint8_t*) p_val );
-					break;
+			#if ( 1 == PAR_CFG_MUTEX_EN )
+				if ( ePAR_OK == par_if_aquire_mutex())
+				{
+			#endif
+					switch ( gp_par_table[ par_num ].type )
+					{
+						case ePAR_TYPE_U8:
+							status = par_set_u8( par_num, *(uint8_t*) p_val );
+							break;
 
-				case ePAR_TYPE_I8:
-					status = par_set_i8( par_num, *(int8_t*) p_val );
-					break;
+						case ePAR_TYPE_I8:
+							status = par_set_i8( par_num, *(int8_t*) p_val );
+							break;
 
-				case ePAR_TYPE_U16:
-					status = par_set_u16( par_num, *(uint16_t*) p_val );
-					break;
+						case ePAR_TYPE_U16:
+							status = par_set_u16( par_num, *(uint16_t*) p_val );
+							break;
 
-				case ePAR_TYPE_I16:
-					status = par_set_i16( par_num, *(int16_t*) p_val );
-					break;
+						case ePAR_TYPE_I16:
+							status = par_set_i16( par_num, *(int16_t*) p_val );
+							break;
 
-				case ePAR_TYPE_U32:
-					status = par_set_u32( par_num, *(uint32_t*) p_val );
-					break;
+						case ePAR_TYPE_U32:
+							status = par_set_u32( par_num, *(uint32_t*) p_val );
+							break;
 
-				case ePAR_TYPE_I32:
-					status = par_set_i32( par_num, *(int32_t*) p_val );
-					break;
+						case ePAR_TYPE_I32:
+							status = par_set_i32( par_num, *(int32_t*) p_val );
+							break;
 
-				case ePAR_TYPE_F32:
-					status = par_set_f32( par_num, *(float32_t*) p_val );
-					break;
+						case ePAR_TYPE_F32:
+							status = par_set_f32( par_num, *(float32_t*) p_val );
+							break;
 
-				default:
-					PAR_ASSERT( 0 );
-					break;
-			}
+						default:
+							PAR_ASSERT( 0 );
+							break;
+					}
 
-	#if ( 1 == PAR_CFG_MUTEX_EN )
-			par_if_release_mutex();
+			#if ( 1 == PAR_CFG_MUTEX_EN )
+					par_if_release_mutex();
+				}
+
+				// Mutex not acquire
+				else
+				{
+					status = ePAR_ERROR;
+				}
+			#endif
 		}
-
-		// Mutex not acquire
 		else
 		{
 			status = ePAR_ERROR;
 		}
-	#endif
+	}
+	else
+	{
+		status = ePAR_ERROR_INIT;
+	}
 
 	return status;
 }
