@@ -424,8 +424,14 @@
 				// Get current par value
 				par_get( par_num, (uint32_t*) &obj_data.data );
 
+
 				// Get parameter ID
-				par_get_id( par_num, &obj_data.id );
+				obj_data.id = par_cfg.id;
+
+				// Get parameter type size
+				// NOTE: For know fixed!
+				//par_get_type_size( par_cfg.type, &obj_data.size );
+				obj_data.size = 4;
 
 				// Calculate CRC
 				obj_data.crc = par_nvm_calc_obj_crc( &obj_data );
@@ -1053,7 +1059,9 @@
 			if ( ePAR_OK == status )
 			{
 				// Increment address
-				obj_addr += obj_data.size;
+				// NOTE: For know fixed 4 bytes!
+				//obj_addr += obj_data.size;
+				obj_addr += 8;
 
 				// Load next parameter object
 				nvm_status = nvm_read( eNVM_REGION_EEPROM_RUN_PAR, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
@@ -1194,8 +1202,8 @@
 		uint16_t 		per_par_nb 			= 0;
 		par_num_t		par_num				= 0;
 		par_cfg_t		par_cfg				= {0};
-		par_type_list_t	par_type_prev		= 0;
-		uint8_t			par_type_prev_size	= 0;
+		//par_type_list_t	par_type_prev		= 0;
+		//uint8_t			par_type_prev_size	= 0;
 
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
@@ -1214,10 +1222,11 @@
 				else
 				{
 					// Get previous data type size
-					par_get_type_size( par_type_prev, &par_type_prev_size );
+					// NOTE: Size for know stays the same!
+					//par_get_type_size( par_type_prev, &par_type_prev_size );
 
 					// Calculate and add address of next parameter
-					g_par_nvm_data_obj_addr[per_par_nb].addr = ( g_par_nvm_data_obj_addr[per_par_nb-1].addr + par_type_prev_size );
+					g_par_nvm_data_obj_addr[per_par_nb].addr = ( g_par_nvm_data_obj_addr[per_par_nb-1].addr + 8 );
 				}
 
 				// Store parameter ID
@@ -1227,7 +1236,7 @@
 				per_par_nb++;
 
 				// Store previous data type
-				par_type_prev = par_cfg.type;
+				//par_type_prev = par_cfg.type;
 			}
 		}
 
