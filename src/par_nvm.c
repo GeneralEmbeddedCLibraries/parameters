@@ -179,9 +179,7 @@
 	static par_status_t		par_nvm_load_all					(const uint16_t num_of_par);
 	static par_status_t		par_nvm_reset_all					(void);
 
-	static par_status_t		par_nvm_read_signature				(void);
 	static par_status_t		par_nvm_corrupt_signature			(void);
-
 	static par_status_t 	par_nvm_read_header					(par_nvm_head_obj_t * const p_head_obj);
 	static par_status_t 	par_nvm_write_header				(const uint16_t num_of_par);
 	static par_status_t 	par_nvm_validate_header				(uint16_t * const p_num_of_par);
@@ -192,6 +190,7 @@
 
 	static void 	par_nvm_build_new_nvm_lut					(void);
 	static uint16_t par_nvm_get_nvm_lut_addr					(const uint16_t id);
+	static bool		par_nvm_is_in_nvm_lut						(const uint16_t id );
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
@@ -732,6 +731,12 @@
 							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
 
 							per_par_nb++;
+
+							// Check if all parameters has been loaded
+							if ( per_par_nb >= num_of_par )
+							{
+								break;
+							}
 						}
 
 						// Parameter not in current table
@@ -775,7 +780,65 @@
 
 		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", gs_status[status] );
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of stored pars in NVM: %d", num_of_par );
-		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", per_par_nb );
+		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", par_nvm_get_per_par() );
+
+#if 0
+		// Check if there are some NEW persistent parameters that needs to be added to the table
+		int16_t new_per_par = par_nvm_get_per_par() - num_of_par;
+		uint8_t new_par = 0;
+		if ( new_per_par > 0 )
+		{
+			PAR_DBG_PRINT( "PAR_NVM: Add additional new persistent paramters to table..." );
+
+			for ( i = 0; i < ePAR_NUM_OF; i++ )
+			{
+				par_get_config( i, &par_cfg );
+
+				if ( true == par_cfg.persistant )
+				{
+					if ( false == par_nvm_is_in_nvm_lut( par_cfg.id ))
+					{
+						// Is persistant and not jet in NVM lut -> Add to LUT
+						g_par_nvm_data_obj_addr[per_par_nb].id 		= par_cfg.id;
+						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par + 1 ));
+
+						per_par_nb++;
+						new_par++;
+					}
+				}
+			}
+		}
+#endif
+
+		if ( ePAR_OK == status )
+		{
+			uint8_t new_par = 0;
+			for ( i = 0; i < ePAR_NUM_OF; i++ )
+			{
+				par_get_config( i, &par_cfg );
+
+				if ( true == par_cfg.persistant )
+				{
+					if ( false == par_nvm_is_in_nvm_lut( par_cfg.id ))
+					{
+						// Is persistant and not jet in NVM lut -> Add to LUT
+						g_par_nvm_data_obj_addr[per_par_nb].id 		= par_cfg.id;
+						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par + 1 ));
+
+						per_par_nb++;
+						new_par++;
+					}
+				}
+			}
+
+			#if ( PAR_CFG_DEBUG_EN )
+				if ( new_par > 0 )
+				{
+					PAR_DBG_PRINT( "PAR_NVM: Added %d new parameters to NVM LUT table!", new_par );
+				}
+			#endif
+
+		}
 
 		return status;
 	}
@@ -903,6 +966,25 @@
 
 		return obj_addr;
 	}
+
+
+	static bool	par_nvm_is_in_nvm_lut(const uint16_t id )
+	{
+		bool is_in_lut = false;
+		par_num_t	par_num		= 0;
+
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			if ( id == g_par_nvm_data_obj_addr[par_num].id )
+			{
+				is_in_lut = true;
+				break;
+			}
+		}
+
+		return is_in_lut;
+	}
+
 
 	#if ( PAR_CFG_DEBUG_EN )
 
