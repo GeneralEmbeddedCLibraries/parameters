@@ -143,10 +143,14 @@
 		par_type_t 	data;	/**<4-byte storage for parameter value */
 	} par_nvm_data_obj_t;
 
+	/**
+	 * 	Parameter NVM LUT talbe
+	 */
 	typedef struct
 	{
-		uint32_t addr;
-		uint16_t id;
+		uint32_t 	addr;	/**<Start address of parameter */
+		uint16_t 	id;		/**<ID of stored parameter */
+		bool		valid;	/**<Valid entry */
 	} par_nvm_lut_t;
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -700,7 +704,84 @@
 		uint8_t				crc_calc	= 0;
 		uint16_t 			per_par_nb 	= 0;
 		par_cfg_t			par_cfg		= {0};
+		uint8_t 			new_par 	= 0;
+		uint32_t			loop_guard	= 0;
 
+		// Read all stored NVM object
+		while 	( 	( per_par_nb <= num_of_par )
+				&&	( loop_guard < UINT16_MAX ))
+		{
+			loop_guard++;
+
+			// Load first parameter object
+			nvm_status = nvm_read( PAR_CFG_NVM_REGION, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
+
+			// NVM read OK
+			if ( eNVM_OK == nvm_status )
+			{
+				// Calculate CRC
+				crc_calc = par_nvm_calc_obj_crc( &obj_data );
+
+				// CRC OK
+				if ( crc_calc == obj_data.crc )
+				{
+					// Is that parameter in current table
+					if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
+					{
+						// Set parameter
+						par_set( par_num, &obj_data.data );
+
+						// Check if already in LUT
+						if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
+						{
+							// Add to NVM lut
+							g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
+							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
+							g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
+						}
+
+						per_par_nb++;
+
+						if ( per_par_nb >= num_of_par )
+						{
+							break;
+						}
+
+					}
+
+					// Parameter not in current table
+					else
+					{
+						// No action...
+					}
+
+					// Increment address
+					// NOTE: For know fixed 8 bytes!
+					//obj_addr += obj_data.size;
+					obj_addr += 8;
+				}
+
+				// CRC corrupted
+				else
+				{
+					status = ePAR_ERROR_CRC;
+					break;
+				}
+			}
+			else
+			{
+				status = ePAR_ERROR_NVM;
+				break;
+			}
+		}
+
+		// Emergency loop exit
+		if ( loop_guard >= UINT16_MAX )
+		{
+			status = ePAR_ERROR;
+		}
+
+#if 0
 		// Load first parameter object
 		nvm_status = nvm_read( PAR_CFG_NVM_REGION, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
 
@@ -777,42 +858,14 @@
 				}
 			}
 		}
+#endif
 
 		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", gs_status[status] );
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of stored pars in NVM: %d", num_of_par );
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", par_nvm_get_per_par() );
 
-#if 0
-		// Check if there are some NEW persistent parameters that needs to be added to the table
-		int16_t new_per_par = par_nvm_get_per_par() - num_of_par;
-		uint8_t new_par = 0;
-		if ( new_per_par > 0 )
-		{
-			PAR_DBG_PRINT( "PAR_NVM: Add additional new persistent paramters to table..." );
-
-			for ( i = 0; i < ePAR_NUM_OF; i++ )
-			{
-				par_get_config( i, &par_cfg );
-
-				if ( true == par_cfg.persistant )
-				{
-					if ( false == par_nvm_is_in_nvm_lut( par_cfg.id ))
-					{
-						// Is persistant and not jet in NVM lut -> Add to LUT
-						g_par_nvm_data_obj_addr[per_par_nb].id 		= par_cfg.id;
-						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par + 1 ));
-
-						per_par_nb++;
-						new_par++;
-					}
-				}
-			}
-		}
-#endif
-
 		if ( ePAR_OK == status )
 		{
-			uint8_t new_par = 0;
 			for ( i = 0; i < ePAR_NUM_OF; i++ )
 			{
 				par_get_config( i, &par_cfg );
@@ -824,6 +877,7 @@
 						// Is persistant and not jet in NVM lut -> Add to LUT
 						g_par_nvm_data_obj_addr[per_par_nb].id 		= par_cfg.id;
 						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par + 1 ));
+						g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
 
 						per_par_nb++;
 						new_par++;
@@ -975,7 +1029,8 @@
 
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
-			if ( id == g_par_nvm_data_obj_addr[par_num].id )
+			if 	(	( id == g_par_nvm_data_obj_addr[par_num].id )
+				&& 	( true == g_par_nvm_data_obj_addr[par_num].valid ))
 			{
 				is_in_lut = true;
 				break;
