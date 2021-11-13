@@ -142,7 +142,7 @@ par_status_t par_init(void)
 
 
 	//PAR_ASSERT( ePAR_OK == status );
-	PAR_DBG_PRINT( "Parameters initialized with status: %s", gs_status[status] );
+	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", gs_status[status] );
 
 	return status;
 }

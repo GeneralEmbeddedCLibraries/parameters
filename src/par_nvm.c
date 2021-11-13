@@ -158,6 +158,21 @@
 	 */
 	static par_nvm_lut_t g_par_nvm_data_obj_addr[ePAR_NUM_OF] = {0};
 
+	#if ( PAR_CFG_DEBUG_EN )
+
+		/**
+		 * 	Status strings
+		 */
+		static const char * gs_status[] =
+		{
+			"OK",
+			"ERROR",
+			"ERROR INIT",
+			"ERROR NVM",
+			"ERROR CRC",
+		};
+	#endif
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Function Prototypes
 	////////////////////////////////////////////////////////////////////////////////
@@ -166,10 +181,10 @@
 	static par_status_t		par_nvm_reset_all					(void);
 
 	static par_status_t		par_nvm_read_signature				(void);
-	static par_status_t		par_nvm_write_signature				(void);
+	//static par_status_t		par_nvm_write_signature				(void);
 	static par_status_t		par_nvm_corrupt_signature			(void);
 
-	static par_status_t 	par_nvm_read_header					(uint16_t * const p_num_of_par);
+	static par_status_t 	par_nvm_read_header					(par_nvm_head_obj_t * const p_head_obj);
 	static par_status_t 	par_nvm_write_header				(const uint16_t num_of_par);
 	static par_status_t 	par_nvm_validate_header				(uint16_t * const p_num_of_par);
 
@@ -215,10 +230,10 @@
 		// At least one persistent parameter
 		if ( per_par_nb > 0 )
 		{
-			// Read signature
-			status = par_nvm_read_signature();
+			// Validate header
+			status = par_nvm_validate_header( &obj_nb );
 
-			// Signature OK
+			// NVM header OK
 			if ( ePAR_OK == status )
 			{
 				// Check hash
@@ -226,38 +241,31 @@
 					// TODO: ...
 				#endif
 
-				// Validate header
-				status = par_nvm_validate_header( &obj_nb );
+				// Load all parameters
+				status = par_nvm_load_all( obj_nb );
 
-				// Header OK
-				if ( ePAR_OK == status )
+				// Load CRC error
+				if ( ePAR_ERROR_CRC == status )
 				{
-					// Load all parameters
-					status = par_nvm_load_all( obj_nb );
+					status = par_nvm_reset_all();
+				}
 
-					// Load CRC error
-					if ( ePAR_ERROR_CRC == status )
-					{
-						status = par_nvm_reset_all();
-					}
-
-					// NVM error
-					else if ( ePAR_ERROR_NVM == status )
-					{
-						/**
-						 * 	@note	Set all parameters to default as it might happend
-						 *			that some of the parameters will be loaded from
-						 *			NVM and some will have default values.
-						 *
-						 *			System might behave unexpectedly if having some
-						 *			default and some modified parameter values!
-						 */
-						par_set_all_to_default();
-					}
-					else
-					{
-						// No actions...
-					}
+				// NVM error
+				else if ( ePAR_ERROR_NVM == status )
+				{
+					/**
+					 * 	@note	Set all parameters to default as it might happend
+					 *			that some of the parameters will be loaded from
+					 *			NVM and some will have default values.
+					 *
+					 *			System might behave unexpectedly if having some
+					 *			default and some modified parameter values!
+					 */
+					par_set_all_to_default();
+				}
+				else
+				{
+					// No actions...
 				}
 			}
 
@@ -663,6 +671,8 @@
 	}
 #endif
 
+
+#if 0
 	////////////////////////////////////////////////////////////////////////////////
 	/**
 	*		Read parameter NVM signature
@@ -699,7 +709,11 @@
 
 		return status;
 	}
+#endif
 
+
+	// TODO: Remove
+#if 0
 	////////////////////////////////////////////////////////////////////////////////
 	/**
 	*		Write parameter signature to NVM
@@ -723,6 +737,7 @@
 
 		return status;
 	}
+#endif
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
@@ -837,37 +852,19 @@
 	* @return		status 			- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t par_nvm_read_header(uint16_t * const p_num_of_par)
+	static par_status_t par_nvm_read_header(par_nvm_head_obj_t * const p_head_obj)
 	{
 		par_status_t 		status 		= ePAR_OK;
-		par_nvm_head_obj_t	head_obj	= {0};
-		uint32_t			calc_crc	= 0UL;
+		//par_nvm_head_obj_t	head_obj	= {0};
+		//uint32_t			calc_crc	= 0UL;
 
 		PAR_ASSERT( true == nvm_is_init());
-		PAR_ASSERT( NULL != p_num_of_par );
+		PAR_ASSERT( NULL != p_head_obj );
 
-		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (uint8_t*) &head_obj ))
+		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (uint8_t*) p_head_obj ))
 		{
 			status = ePAR_ERROR_NVM;
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during header read!" );
-		}
-		else
-		{
-			// Calculate CRC
-			calc_crc = par_nvm_calc_crc((uint8_t*) &head_obj.obj_nb, PAR_NVM_NB_OF_OBJ_SIZE );
-
-			// Validate CRC
-			if ( calc_crc == head_obj.crc )
-			{
-				*p_num_of_par = head_obj.obj_nb;
-			}
-
-			// CRC corrupt
-			else
-			{
-				status = ePAR_ERROR_CRC;
-				PAR_DBG_PRINT( "PAR_NVM: Header CRC corrupted!" );
-			}
 		}
 
 		return status;
@@ -895,6 +892,9 @@
 		// Calculate CRC
 		head_obj.crc = par_nvm_calc_crc((uint8_t*) &head_obj.obj_nb, PAR_NVM_NB_OF_OBJ_SIZE );
 
+		// Set signature
+		head_obj.sign = PAR_NVM_SIGN;
+
 		// Write num of object and CRC
 		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (const uint8_t*) &head_obj ))
 		{
@@ -903,18 +903,19 @@
 		}
 
 		// Write signature
-		status |= par_nvm_write_signature();
+		//status |= par_nvm_write_signature();
 
 		return status;
 	}
 
 	static par_status_t par_nvm_validate_header(uint16_t * const p_num_of_par)
 	{
-		par_status_t 	status = ePAR_OK;
-		uint16_t 		obj_nb = 0;
+		par_status_t 		status 		= ePAR_OK;
+		par_nvm_head_obj_t 	obj_head	= { 0 };
+		uint16_t 			crc_calc	= 0;
 
 		// Read header
-		status = par_nvm_read_header( &obj_nb );
+		status = par_nvm_read_header( &obj_head );
 
 		// NVM error
 		if ( ePAR_ERROR_NVM == status )
@@ -923,18 +924,30 @@
 		}
 		else
 		{
-			// Header OK and persistent parameters found
-			if 	(	( ePAR_OK == status )
-				&&	( obj_nb > 0 ))
+			// Check for signature
+			if ( PAR_NVM_SIGN == obj_head.sign )
 			{
-				*p_num_of_par = obj_nb;
-				status = ePAR_OK;
+				// Calculate CRC
+				crc_calc = par_nvm_calc_crc((uint8_t*) &obj_head.obj_nb, PAR_NVM_NB_OF_OBJ_SIZE );
 
-				PAR_DBG_PRINT( "PAR_NVM: HVM header OK! Nb. of stored obj: %d", obj_nb );
+				// Validate CRC
+				if ( crc_calc == obj_head.crc )
+				{
+					*p_num_of_par = obj_head.obj_nb;
+					PAR_DBG_PRINT( "PAR_NVM: HVM header OK! Nb. of stored obj: %d", obj_head.obj_nb );
+				}
+
+				// CRC corrupt
+				else
+				{
+					status = ePAR_ERROR_CRC;
+					PAR_DBG_PRINT( "PAR_NVM: Header CRC corrupted!" );
+				}
 			}
 			else
 			{
-				status = par_nvm_reset_all();
+				status = ePAR_ERROR;
+				PAR_DBG_PRINT( "PAR_NVM: Signature corrupted!" );
 			}
 		}
 
@@ -1074,36 +1087,7 @@
 			}
 		}
 
-
-
-
-
-
-
-
-#if 0
-		// Loop thru all parameters
-		for ( par_num = 0; par_num < num_of_par; par_num++ )
-		{
-			// Get NVM object start address
-			// NOTE: For know each object is fixed 4 bytes in lenght!
-			obj_addr = (( 4 * par_num ) + PAR_NVM_FIRST_DATA_OBJ_ADDR );
-
-			// Get parameter number
-			par_get_num_by_id( par_id, &par_obj_num);
-
-			// Assemble LUT
-			g_par_nvm_data_obj_addr[ par_obj_num ].id = par_id;
-			g_par_nvm_data_obj_addr[ par_obj_num ].addr = obj_addr;
-
-			// Read from NVM
-			if ( ePAR_OK != par_nvm_read( par_id ))
-			{
-				status = ePAR_ERROR_NVM;
-				break;
-			}
-		}
-#endif
+		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", gs_status[status] );
 
 		return status;
 
