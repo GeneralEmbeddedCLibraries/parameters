@@ -111,7 +111,7 @@
 	 */
 	#define PAR_NVM_HEAD_ADDR						( 0x00 )
 	#define PAR_NVM_HEAD_SIGN_ADDR					( PAR_NVM_HEAD_ADDR )
-	#define PAR_NVM_HEAD_NB_OF_OBJ_ADDR				( PAR_NVM_HEAD_SIGN_ADDR 		+ PAR_NVM_HEAD_SIGN_ADDR 	)
+	#define PAR_NVM_HEAD_NB_OF_OBJ_ADDR				( PAR_NVM_HEAD_SIGN_ADDR 		+ PAR_NVM_SIGN_SIZE 		)
 	#define PAR_NVM_HEAD_CRC_ADDR					( PAR_NVM_HEAD_NB_OF_OBJ_ADDR 	+ PAR_NVM_NB_OF_OBJ_SIZE 	)
 	#define PAR_NVM_HEAD_HASH_ADDR					( PAR_NVM_HEAD_CRC_ADDR 		+ PAR_NVM_CRC_SIZE 			)
 
@@ -177,7 +177,8 @@
 	static uint8_t 			par_nvm_calc_obj_crc				(const par_nvm_data_obj_t * const p_obj);
 	static uint16_t			par_nvm_get_per_par					(void);
 
-	static void par_nvm_build_new_nvm_lut	(void);
+	static void 	par_nvm_build_new_nvm_lut					(void);
+	static uint16_t par_nvm_get_nvm_lut_addr					(const uint16_t id);
 
 	#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
 		static par_status_t	par_nvm_erase_signature	(void);
@@ -412,7 +413,6 @@
 		PAR_ASSERT( true == nvm_is_init());
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
 
-
 		if ( par_num < ePAR_NUM_OF )
 		{
 			// Get configuration
@@ -423,7 +423,6 @@
 			{
 				// Get current par value
 				par_get( par_num, (uint32_t*) &obj_data.data );
-
 
 				// Get parameter ID
 				obj_data.id = par_cfg.id;
@@ -437,7 +436,8 @@
 				obj_data.crc = par_nvm_calc_obj_crc( &obj_data );
 
 				// Get address from NVM lut
-				par_addr = g_par_nvm_data_obj_addr[par_num].addr;
+				//par_addr = g_par_nvm_data_obj_addr[par_num].addr;
+				par_addr = par_nvm_get_nvm_lut_addr( obj_data.id );
 
 				// Write to NVM
 				if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_data_obj_t ), (const uint8_t*) &obj_data ))
@@ -540,7 +540,7 @@
 		// Re-write header (exit critical)
 		status |= par_nvm_write_header( per_par_nb );
 
-		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
+		PAR_DBG_PRINT( "PAR_NVM: Storing all (%d) to NVM status: %s", per_par_nb, par_get_status_str(status) );
 
 		return status;
 	}
@@ -1059,7 +1059,7 @@
 			if ( ePAR_OK == status )
 			{
 				// Increment address
-				// NOTE: For know fixed 4 bytes!
+				// NOTE: For know fixed 8 bytes!
 				//obj_addr += obj_data.size;
 				obj_addr += 8;
 
@@ -1241,6 +1241,34 @@
 		}
 
 		par_nvm_print_nvm_lut();
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Get parameter NVM object start address based on its ID
+	*
+	* @note		In case ID is not found there is a problem with building the
+	* 			NVM lut!!!
+	*
+	* @param[in]	id			- Parameter ID
+	* @return		obj_addr	- NVM address of object with ID
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	static uint16_t par_nvm_get_nvm_lut_addr(const uint16_t id)
+	{
+		uint16_t	obj_addr	= 0;
+		par_num_t	par_num		= 0;
+
+		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+		{
+			if ( id == g_par_nvm_data_obj_addr[par_num].id )
+			{
+				obj_addr = g_par_nvm_data_obj_addr[par_num].addr;
+				break;
+			}
+		}
+
+		return obj_addr;
 	}
 
 	#if ( PAR_CFG_DEBUG_EN )
