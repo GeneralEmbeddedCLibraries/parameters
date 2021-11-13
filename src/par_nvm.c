@@ -1018,76 +1018,88 @@
 	{
 		par_status_t 		status 		= ePAR_OK;
 		par_num_t 			par_num		= 0;
+		uint16_t			i			= 0;
 		uint16_t			obj_addr 	= PAR_NVM_FIRST_DATA_OBJ_ADDR;
 		par_nvm_data_obj_t	obj_data	= {0};
 		nvm_status_t		nvm_status	= eNVM_OK;
 		uint8_t				crc_calc	= 0;
+		uint16_t 			per_par_nb 	= 0;
+		par_cfg_t			par_cfg		= {0};
 
 		// Load first parameter object
 		nvm_status = nvm_read( PAR_CFG_NVM_REGION, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
 
-		// Loop thru all stored in NVM parameters
-		for ( par_num = 0; par_num < num_of_par; par_num++ )
+		// Loop thru all parameters
+		for ( i = 0; i < ePAR_NUM_OF; i++ )
 		{
-			// NVM read OK
-			if ( eNVM_OK == nvm_status )
+			par_get_config( i, &par_cfg );
+
+			if ( true == par_cfg.persistant )
 			{
-				// Calculate CRC
-				crc_calc = par_nvm_calc_obj_crc( &obj_data );
-
-				// CRC OK
-				if ( crc_calc == obj_data.crc )
+				// NVM read OK
+				if ( eNVM_OK == nvm_status )
 				{
-					// Is that parameter in current table
-					if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
-					{
-						// Set parameter
-						par_set( par_num, &obj_data.data );
+					// Calculate CRC
+					crc_calc = par_nvm_calc_obj_crc( &obj_data );
 
-						// Add to NVM lut
-						g_par_nvm_data_obj_addr[par_num].id 	= obj_data.id;
-						g_par_nvm_data_obj_addr[par_num].addr 	= obj_addr;
+					// CRC OK
+					if ( crc_calc == obj_data.crc )
+					{
+						// Is that parameter in current table
+						if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
+						{
+							// Set parameter
+							par_set( par_num, &obj_data.data );
+
+							// Add to NVM lut
+							g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
+							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
+
+							per_par_nb++;
+						}
+
+						// Parameter not in current table
+						else
+						{
+							// No action...
+						}
 					}
 
-					// Parameter not in current table
+					// CRC corrupted
 					else
 					{
-						// No action...
+						status = ePAR_ERROR_CRC;
+						break;
 					}
 				}
-
-				// CRC corrupted
 				else
-				{
-					status = ePAR_ERROR_CRC;
-					break;
-				}
-			}
-			else
-			{
-				status = ePAR_ERROR_NVM;
-				break;
-			}
-
-			if ( ePAR_OK == status )
-			{
-				// Increment address
-				// NOTE: For know fixed 8 bytes!
-				//obj_addr += obj_data.size;
-				obj_addr += 8;
-
-				// Load next parameter object
-				nvm_status = nvm_read( eNVM_REGION_EEPROM_RUN_PAR, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
-
-				if ( eNVM_ERROR == nvm_status )
 				{
 					status = ePAR_ERROR_NVM;
 					break;
+				}
+
+				if ( ePAR_OK == status )
+				{
+					// Increment address
+					// NOTE: For know fixed 8 bytes!
+					//obj_addr += obj_data.size;
+					obj_addr += 8;
+
+					// Load next parameter object
+					nvm_status = nvm_read( eNVM_REGION_EEPROM_RUN_PAR, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
+
+					if ( eNVM_ERROR == nvm_status )
+					{
+						status = ePAR_ERROR_NVM;
+						break;
+					}
 				}
 			}
 		}
 
 		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", gs_status[status] );
+		PAR_DBG_PRINT( "PAR_NVM: Nb. of stored pars in NVM: %d", num_of_par );
+		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", per_par_nb );
 
 		return status;
 
