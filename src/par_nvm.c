@@ -162,21 +162,6 @@
 	 */
 	static par_nvm_lut_t g_par_nvm_data_obj_addr[ePAR_NUM_OF] = {0};
 
-	#if ( PAR_CFG_DEBUG_EN )
-
-		/**
-		 * 	Status strings
-		 */
-		static const char * gs_status[] =
-		{
-			"OK",
-			"ERROR",
-			"ERROR INIT",
-			"ERROR NVM",
-			"ERROR CRC",
-		};
-	#endif
-
 	////////////////////////////////////////////////////////////////////////////////
 	// Function Prototypes
 	////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +169,7 @@
 	static par_status_t		par_nvm_reset_all					(void);
 
 	static par_status_t		par_nvm_corrupt_signature			(void);
+	static par_status_t		par_nvm_write_signature				(void);
 	static par_status_t 	par_nvm_read_header					(par_nvm_head_obj_t * const p_head_obj);
 	static par_status_t 	par_nvm_write_header				(const uint16_t num_of_par);
 	static par_status_t 	par_nvm_validate_header				(uint16_t * const p_num_of_par);
@@ -367,7 +353,7 @@
 	{
 		par_status_t 	status 		= ePAR_OK;
 		uint16_t		par_num		= 0;
-		uint16_t		per_par_nb	= 0;
+		//uint16_t		per_par_nb	= 0;
 		par_cfg_t		par_cfg		= { 0 };
 
 		// Corrupt header (enter critical)
@@ -380,14 +366,16 @@
 			if ( true == par_cfg.persistant )
 			{
 				status |= par_nvm_write( par_num );
-				per_par_nb++;
+				//per_par_nb++;
 			}
 		}
 
 		// Re-write header (exit critical)
-		status |= par_nvm_write_header( per_par_nb );
+		//status |= par_nvm_write_header( per_par_nb );
+		status |= par_nvm_write_signature();
 
-		PAR_DBG_PRINT( "PAR_NVM: Storing all (%d) to NVM status: %s", per_par_nb, par_get_status_str(status) );
+		//PAR_DBG_PRINT( "PAR_NVM: Storing all (%d) to NVM status: %s", per_par_nb, par_get_status_str(status) );
+		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
 
 		return status;
 	}
@@ -425,6 +413,19 @@
 		{
 			status = ePAR_ERROR_NVM;
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature corruption!" );
+		}
+
+		return status;
+	}
+
+	static par_status_t	par_nvm_write_signature(void)
+	{
+		par_status_t status = ePAR_OK;
+
+		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) PAR_NVM_SIGN ))
+		{
+			status = ePAR_ERROR_NVM;
+			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature write!" );
 		}
 
 		return status;
@@ -708,7 +709,7 @@
 		uint32_t			loop_guard	= 0;
 
 		// Read all stored NVM object
-		while 	( 	( per_par_nb <= num_of_par )
+		while 	( 	( per_par_nb < num_of_par )
 				&&	( loop_guard < UINT16_MAX ))
 		{
 			loop_guard++;
@@ -728,31 +729,30 @@
 					// Is that parameter in current table
 					if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
 					{
-						// Set parameter
-						par_set( par_num, &obj_data.data );
-
 						// Check if already in LUT
 						if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
 						{
+							// Set parameter
+							par_set( par_num, &obj_data.data );
+
 							// Add to NVM lut
 							g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
 							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
 							g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
 						}
-
-						per_par_nb++;
-
-						if ( per_par_nb >= num_of_par )
-						{
-							break;
-						}
-
 					}
 
 					// Parameter not in current table
 					else
 					{
 						// No action...
+					}
+
+					per_par_nb++;
+
+					if ( per_par_nb >= num_of_par )
+					{
+						break;
 					}
 
 					// Increment address
@@ -765,6 +765,14 @@
 				else
 				{
 					status = ePAR_ERROR_CRC;
+
+#if 0
+					// If read all CRC error is expected
+					if ( per_par_nb >= num_of_par )
+					{
+						status = ePAR_OK;
+					}
+#endif
 					break;
 				}
 			}
@@ -781,86 +789,7 @@
 			status = ePAR_ERROR;
 		}
 
-#if 0
-		// Load first parameter object
-		nvm_status = nvm_read( PAR_CFG_NVM_REGION, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
-
-		// Loop thru all parameters
-		for ( i = 0; i < ePAR_NUM_OF; i++ )
-		{
-			par_get_config( i, &par_cfg );
-
-			if ( true == par_cfg.persistant )
-			{
-				// NVM read OK
-				if ( eNVM_OK == nvm_status )
-				{
-					// Calculate CRC
-					crc_calc = par_nvm_calc_obj_crc( &obj_data );
-
-					// CRC OK
-					if ( crc_calc == obj_data.crc )
-					{
-						// Is that parameter in current table
-						if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
-						{
-							// Set parameter
-							par_set( par_num, &obj_data.data );
-
-							// Add to NVM lut
-							g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
-							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
-
-							per_par_nb++;
-
-							// Check if all parameters has been loaded
-							if ( per_par_nb >= num_of_par )
-							{
-								break;
-							}
-						}
-
-						// Parameter not in current table
-						else
-						{
-							// No action...
-						}
-					}
-
-					// CRC corrupted
-					else
-					{
-						status = ePAR_ERROR_CRC;
-						break;
-					}
-				}
-				else
-				{
-					status = ePAR_ERROR_NVM;
-					break;
-				}
-
-				if ( ePAR_OK == status )
-				{
-					// Increment address
-					// NOTE: For know fixed 8 bytes!
-					//obj_addr += obj_data.size;
-					obj_addr += 8;
-
-					// Load next parameter object
-					nvm_status = nvm_read( eNVM_REGION_EEPROM_RUN_PAR, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
-
-					if ( eNVM_ERROR == nvm_status )
-					{
-						status = ePAR_ERROR_NVM;
-						break;
-					}
-				}
-			}
-		}
-#endif
-
-		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", gs_status[status] );
+		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", par_get_status_str(status));
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of stored pars in NVM: %d", num_of_par );
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", par_nvm_get_per_par() );
 
@@ -879,18 +808,24 @@
 						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par + 1 ));
 						g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
 
+						// Write new par to NVM
+						par_save( i );
+
 						per_par_nb++;
 						new_par++;
 					}
 				}
 			}
 
-			#if ( PAR_CFG_DEBUG_EN )
-				if ( new_par > 0 )
-				{
+			if ( new_par > 0 )
+			{
+				// Write new number of persistant parameters
+				status |= par_nvm_write_header( per_par_nb );
+
+				#if ( PAR_CFG_DEBUG_EN )
 					PAR_DBG_PRINT( "PAR_NVM: Added %d new parameters to NVM LUT table!", new_par );
-				}
-			#endif
+				#endif
+			}
 
 		}
 
@@ -1057,13 +992,15 @@
 			uint16_t par_num = 0;
 
 			PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
-			PAR_DBG_PRINT( " %s\t%s\t%s", "#", "ID", "NVM addr" );
-			PAR_DBG_PRINT( "=========================" );
+			PAR_DBG_PRINT( " %s\t%s\t%s\t%s", "#", "ID", "Addr", "Valid" );
+			PAR_DBG_PRINT( "===============================" );
 
 			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 			{
-				PAR_DBG_PRINT( " %d\t%d\t0x%04X", par_num, g_par_nvm_data_obj_addr[par_num].id, g_par_nvm_data_obj_addr[par_num].addr );
-				PAR_DBG_PRINT( "------------------------" );
+				PAR_DBG_PRINT( " %d\t%d\t0x%04X\t%d", par_num, 	g_par_nvm_data_obj_addr[par_num].id,
+																g_par_nvm_data_obj_addr[par_num].addr,
+																g_par_nvm_data_obj_addr[par_num].valid );
+				PAR_DBG_PRINT( "-----------------------------" );
 			}
 		}
 	#endif
