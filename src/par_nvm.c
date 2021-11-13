@@ -177,11 +177,9 @@
 	// Function Prototypes
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t		par_nvm_load_all					(const uint16_t num_of_par);
-	//static par_status_t 	par_nvm_read						(const par_num_t par_num);
 	static par_status_t		par_nvm_reset_all					(void);
 
 	static par_status_t		par_nvm_read_signature				(void);
-	//static par_status_t		par_nvm_write_signature				(void);
 	static par_status_t		par_nvm_corrupt_signature			(void);
 
 	static par_status_t 	par_nvm_read_header					(par_nvm_head_obj_t * const p_head_obj);
@@ -288,118 +286,6 @@
 			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
 		}
 
-
-
-
-
-
-
-
-
-
-/*
-		uint32_t		num_of_per_par 	= 0UL;
-
-		#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-
-			static uint8_t par_table_id[32] = { 0 };
-
-			// Calculate parameter table unique ID
-			par_if_calc_hash( par_cfg_get_table(), par_cfg_get_table_size(), (uint8_t*) &par_table_id );
-
-		#endif
-
-		// Pre-condition
-		PAR_ASSERT( true == par_nvm_precondition_check() );
-
-		// Check NVM signature
-		if ( ePAR_OK == par_nvm_check_signature())
-		{
-			PAR_DBG_PRINT( "PAR_NVM: Signature OK" );
-
-			#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-
-				// Same parameters table
-				if ( ePAR_OK == par_nvm_check_table_id((uint8_t*) &par_table_id ))
-				{
-					PAR_DBG_PRINT( "PAR_NVM: Unique table ID OK" );
-
-					// Load all parameters from NVM
-					status |= par_nvm_load_all();
-				}
-
-				// Parameters table change
-				else
-				{
-					PAR_DBG_PRINT( "PAR_NVM: Unique table ID invalid. Rewrite complete NVM memory..." );
-
-					// Clean signature
-					status |= par_nvm_erase_signature();
-
-					// Write new table
-					status |= par_nvm_write_table_id((uint8_t*) &par_table_id );
-
-					// Write new header
-					num_of_per_par = par_nvm_calc_num_of_per_par();
-					status |= par_nvm_write_header( num_of_per_par );
-
-					// Write signature
-					status |= par_nvm_write_signature();
-
-					// Set all parameters to default values
-					par_set_all_to_default();
-
-					// Write default values to NVM
-					status |= par_store_all_to_nvm();
-				}
-
-			#else
-
-				// Load all parameters from NVM
-				status |= par_nvm_load_all();
-
-			#endif
-		}
-
-		// No signature
-		else
-		{
-			PAR_DBG_PRINT( "PAR_NVM: Signature missing" );
-
-			// Set all parameters to default values
-			par_set_all_to_default();
-
-			// Get how many persistant parameters there are
-			num_of_per_par = par_nvm_calc_num_of_per_par();
-
-			if ( num_of_per_par > 0 )
-			{
-				#if ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-					status |= par_nvm_write_table_id((uint8_t*) &par_table_id );
-				#endif
-
-				// Write header
-				status |= par_nvm_write_header( num_of_per_par );
-
-				// Write default values to NVM
-				status |= par_save_all();
-
-				// Lastly write signature
-				// NOTE: 	Safety aspect to write signature last. Signature presents some validation factor!
-				//			Possible power lost during table ID or header write will not have any side effects!
-				status |= par_nvm_write_signature();
-			}
-
-			// None of the persistent parameter
-			else
-			{
-				// No actions..
-			}
-		}
-
-		//PAR_ASSERT( ePAR_OK == status );
-*/
-
 		return status;
 	}
 
@@ -465,56 +351,6 @@
 		}
 
 		return status;
-
-
-
-
-/*
-		par_nvm_obj_t	par_obj		= { .u = 0ULL };
-		uint32_t		par_addr	= 0UL;
-		par_cfg_t		par_cfg		= {0};
-
-		PAR_ASSERT( true == par_nvm_precondition_check());
-		PAR_ASSERT( par_num < ePAR_NUM_OF )
-
-		if ( par_num < ePAR_NUM_OF )
-		{
-			// Get configuration
-			par_get_config( par_num, &par_cfg );
-
-			// Is that parameter persistent
-			if ( true == par_cfg.persistant )
-			{
-				// Get current par value
-				par_get( par_num, (uint32_t*) &par_obj.field.val );
-
-				// Get parameter ID
-				par_get_id( par_num, &par_obj.field.id );
-
-				// Calculate CRC
-				par_obj.field.crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
-
-				// Calculate parameter NVM address
-				par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_obj.field.id ));
-
-				// Write to NVM
-				if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (const uint8_t*) &par_obj.u ))
-				{
-					status = ePAR_ERROR_NVM;
-				}
-			}
-			else
-			{
-				status = ePAR_ERROR;
-			}
-		}
-		else
-		{
-			status = ePAR_ERROR;
-		}
-		*/
-
-
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -567,177 +403,6 @@
 	* 	Kernel functions of device parameters NVM handling
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*		Read parameter value from NVM
-	*
-	* @note		This function is being part of a API as it is only needed at init
-	* 			phase.
-	*
-	* @param[in]	par_num	- Parameter enumeration number
-	* @return		status 	- Status of operation
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-
-#if 0
-	static par_status_t par_nvm_read(const par_num_t par_num)
-	{
-		par_status_t 		status 		= ePAR_OK;
-		uint32_t			par_addr	= 0UL;
-		par_nvm_data_obj_t	obj_data	= { 0 };
-		uint32_t			calc_crc	= 0UL;
-
-		PAR_ASSERT( true == nvm_is_init());
-		PAR_ASSERT( par_num < ePAR_NUM_OF )
-
-		if ( par_num < ePAR_NUM_OF )
-		{
-			// Calculate parameter NVM address
-			par_addr = (uint32_t) g_par_nvm_data_obj_addr[par_num].addr;
-
-			// Read from NVM
-			if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data ))
-			{
-				status = ePAR_ERROR_NVM;
-			}
-			else
-			{
-				// Calculate CRC
-				calc_crc = par_nvm_calc_obj_crc( &obj_data );
-
-				// Validate CRC
-				if ( calc_crc == obj_data.crc )
-				{
-					par_set( par_num, (uint32_t*) &obj_data.data );
-				}
-
-				// CRC corrupt
-				else
-				{
-					par_set_to_default( par_num );
-					status = ePAR_ERROR_CRC;
-				}
-			}
-		}
-		else
-		{
-			return ePAR_ERROR;
-		}
-
-
-/*		par_status_t 	status 		= ePAR_OK;
-		par_nvm_obj_t	par_obj		= { .u = 0ULL };
-		uint32_t		par_addr	= 0UL;
-		uint32_t		calc_crc	= 0UL;
-		uint16_t		par_id		= 0UL;
-
-		PAR_ASSERT( true == par_nvm_precondition_check() );
-		PAR_ASSERT( par_num < ePAR_NUM_OF );
-
-		// Get parameter ID
-		par_get_id( par_num, &par_obj.field.id );
-
-		// Calculate parameter NVM address
-		par_addr = (uint32_t)( PAR_NVM_PAR_OBJ_ADDR_OFFSET + ( 8UL * par_id ));
-
-		// Read from NVM
-		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_obj_t ), (uint8_t*) &par_obj.u ))
-		{
-			status = ePAR_ERROR_NVM;
-		}
-		else
-		{
-			// Calculate CRC
-			calc_crc = par_nvm_calc_crc((uint8_t*) &par_obj.field.val, 6U );
-
-			// Validate CRC
-			if ( calc_crc == par_obj.field.crc )
-			{
-				par_set( par_num, (uint32_t*) &par_obj.field.val );
-			}
-
-			// CRC corrupt
-			else
-			{
-				par_set_to_default( par_num );
-				status = ePAR_ERROR_CRC;
-			}
-		}
-
-		*/
-
-		return status;
-	}
-#endif
-
-
-#if 0
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*		Read parameter NVM signature
-	*
-	* @brief	Return ePAR_OK if signature OK. In case of NVM error it returns
-	* 			ePAR_ERROR_NVM.
-	*
-	* @return		status 	- Status of operation
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t	par_nvm_read_signature(void)
-	{
-		par_status_t 	status 	= ePAR_OK;
-		uint32_t 		sign	= 0UL;
-
-		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
-		{
-			status = ePAR_ERROR_NVM;
-			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature read!" );
-		}
-		else
-		{
-			if ( PAR_NVM_SIGN == sign )
-			{
-				status = ePAR_OK;
-				PAR_DBG_PRINT( "PAR_NVM: Signature OK!" );
-			}
-			else
-			{
-				status = ePAR_ERROR;
-				PAR_DBG_PRINT( "PAR_NVM: Signature corrupted!" );
-			}
-		}
-
-		return status;
-	}
-#endif
-
-
-	// TODO: Remove
-#if 0
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*		Write parameter signature to NVM
-	*
-	*	@brief	Return ePAR_OK if signature written OK. In case of NVM error it returns
-	* 			ePAR_ERROR_NVM.
-	*
-	* @return		status 	- Status of operation
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t	par_nvm_write_signature(void)
-	{
-		par_status_t 	status 	= ePAR_OK;
-		uint32_t 		sign	= PAR_NVM_SIGN;
-
-		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
-		{
-			status = ePAR_ERROR_NVM;
-			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature write!" );
-		}
-
-		return status;
-	}
-#endif
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
@@ -848,15 +513,13 @@
 	/**
 	*		Read parameter NVM header
 	*
-	* @param[in]	p_num_of_par	- Pointer to number of stored parameters in NVM
-	* @return		status 			- Status of operation
+	* @param[in]	p_head_obj	- Pointer to parameter NVM header
+	* @return		status 		- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_read_header(par_nvm_head_obj_t * const p_head_obj)
 	{
-		par_status_t 		status 		= ePAR_OK;
-		//par_nvm_head_obj_t	head_obj	= {0};
-		//uint32_t			calc_crc	= 0UL;
+		par_status_t status = ePAR_OK;
 
 		PAR_ASSERT( true == nvm_is_init());
 		PAR_ASSERT( NULL != p_head_obj );
@@ -902,12 +565,17 @@
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during header write!" );
 		}
 
-		// Write signature
-		//status |= par_nvm_write_signature();
-
 		return status;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Validate parameter NVM header
+	*
+	* @param[out]	num_of_par	- Number of persistent parameters that are stored in NVM
+	* @return		status 		- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_validate_header(uint16_t * const p_num_of_par)
 	{
 		par_status_t 		status 		= ePAR_OK;
@@ -993,6 +661,14 @@
 		return crc16;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Calculate parameter data object CRC
+	*
+	* @param[in]	p_obj	- Pointer to data object
+	* @return		crc16	- Calculated CRC
+	*/
+	////////////////////////////////////////////////////////////////////////////////
 	static uint8_t par_nvm_calc_obj_crc(const par_nvm_data_obj_t * const p_obj)
 	{
 		uint16_t 	crc 	= 0;
@@ -1102,37 +778,6 @@
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", per_par_nb );
 
 		return status;
-
-
-
-
-
-
-/*		uint32_t 		par_num 		= 0UL;
-		uint32_t		stored_par_num	= 0UL;
-		uint32_t		loaded_par_num	= 0UL;
-
-		// Get number of stored parameters
-		if ( ePAR_OK == par_nvm_read_header( &stored_par_num ))			// TODO: FIx this !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		{
-			// Loop thru par table
-			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
-			{
-				status |= par_nvm_read( par_num );
-				loaded_par_num++;
-			}
-
-			PAR_DBG_PRINT( "PAR_NVM: Loading %u of %u stored parameters from NVM. Status: %u", loaded_par_num, stored_par_num, status );
-		}
-		else
-		{
-			status = ePAR_ERROR_NVM;
-
-			PAR_DBG_PRINT( "PAR_NVM: Reading header error!" );
-		}
-
-		return status;
-		*/
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -1198,9 +843,8 @@
 		uint16_t 		per_par_nb 			= 0;
 		par_num_t		par_num				= 0;
 		par_cfg_t		par_cfg				= {0};
-		//par_type_list_t	par_type_prev		= 0;
-		//uint8_t			par_type_prev_size	= 0;
 
+		// Loop thru all parameters
 		for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
 		{
 			par_get_config( par_num, &par_cfg );
@@ -1214,13 +858,9 @@
 				}
 
 				// Build consecutive address space
-				// NOTE: For know each NVM data object is fixed in size (4 bytes)
+				// NOTE: For know each NVM data object is fixed in size (8 bytes)
 				else
 				{
-					// Get previous data type size
-					// NOTE: Size for know stays the same!
-					//par_get_type_size( par_type_prev, &par_type_prev_size );
-
 					// Calculate and add address of next parameter
 					g_par_nvm_data_obj_addr[per_par_nb].addr = ( g_par_nvm_data_obj_addr[per_par_nb-1].addr + 8 );
 				}
@@ -1230,9 +870,6 @@
 
 				// Next persistent parameter
 				per_par_nb++;
-
-				// Store previous data type
-				//par_type_prev = par_cfg.type;
 			}
 		}
 
