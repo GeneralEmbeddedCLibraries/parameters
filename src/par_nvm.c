@@ -421,8 +421,9 @@
 	static par_status_t	par_nvm_write_signature(void)
 	{
 		par_status_t status = ePAR_OK;
+		const uint32_t sign 	= PAR_NVM_SIGN;
 
-		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) PAR_NVM_SIGN ))
+		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
 		{
 			status = ePAR_ERROR_NVM;
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature write!" );
@@ -992,7 +993,7 @@
 			uint16_t par_num = 0;
 
 			PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
-			PAR_DBG_PRINT( " %s\t%s\t%s\t%s", "#", "ID", "Addr", "Valid" );
+			PAR_DBG_PRINT( " %s\t%s\t%s\t\t%s", "#", "ID", "Addr", "Valid" );
 			PAR_DBG_PRINT( "===============================" );
 
 			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
