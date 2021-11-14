@@ -353,7 +353,6 @@
 	{
 		par_status_t 	status 		= ePAR_OK;
 		uint16_t		par_num		= 0;
-		//uint16_t		per_par_nb	= 0;
 		par_cfg_t		par_cfg		= { 0 };
 
 		// Corrupt header (enter critical)
@@ -366,15 +365,12 @@
 			if ( true == par_cfg.persistant )
 			{
 				status |= par_nvm_write( par_num );
-				//per_par_nb++;
 			}
 		}
 
 		// Re-write header (exit critical)
-		//status |= par_nvm_write_header( per_par_nb );
 		status |= par_nvm_write_signature();
 
-		//PAR_DBG_PRINT( "PAR_NVM: Storing all (%d) to NVM status: %s", per_par_nb, par_get_status_str(status) );
 		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
 
 		return status;
@@ -570,6 +566,8 @@
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during header write!" );
 		}
 
+		PAR_DBG_PRINT( "PAR_NVM: Write NVM header with %d nb. of object", num_of_par );
+
 		return status;
 	}
 
@@ -700,15 +698,81 @@
 		par_status_t 		status 		= ePAR_OK;
 		par_num_t 			par_num		= 0;
 		uint16_t			i			= 0;
-		uint16_t			obj_addr 	= PAR_NVM_FIRST_DATA_OBJ_ADDR;
+		uint16_t			obj_addr 	= 0;
 		par_nvm_data_obj_t	obj_data	= {0};
 		nvm_status_t		nvm_status	= eNVM_OK;
 		uint8_t				crc_calc	= 0;
 		uint16_t 			per_par_nb 	= 0;
 		par_cfg_t			par_cfg		= {0};
-		uint8_t 			new_par 	= 0;
-		uint32_t			loop_guard	= 0;
+		uint16_t 			new_par_cnt	= 0;
 
+
+		// Loop thru stored NVM object
+		for ( i = 0; i < num_of_par; i++ )
+		{
+			// Calculate address
+			// NOTE: For know fixed 8 bytes!
+			obj_addr = (( 8 * i ) + PAR_NVM_FIRST_DATA_OBJ_ADDR );
+
+			// Load parameter NVM object
+			nvm_status = nvm_read( PAR_CFG_NVM_REGION, obj_addr, sizeof( par_nvm_data_obj_t ), (uint8_t*) &obj_data );
+
+			// NVM read OK
+			if ( eNVM_OK == nvm_status )
+			{
+				// Calculate CRC
+				crc_calc = par_nvm_calc_obj_crc( &obj_data );
+
+				// CRC OK
+				if ( crc_calc == obj_data.crc )
+				{
+					// Is that parameter in current table
+					if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
+					{
+						// Check if already in LUT
+						if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
+						{
+							// Set parameter
+							par_set( par_num, &obj_data.data );
+
+							// Add to NVM lut
+							g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
+							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
+							g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
+
+							// Increment current persistent parameter counter
+							per_par_nb++;
+						}
+					}
+
+					// Parameter not in current table
+					else
+					{
+						// No action...
+					}
+				}
+
+				// CRC corrupted
+				else
+				{
+					status = ePAR_ERROR_CRC;
+					break;
+				}
+			}
+			else
+			{
+				status = ePAR_ERROR_NVM;
+				break;
+			}
+
+			// Increment address
+			// NOTE: For know fixed 8 bytes!
+			//obj_addr += obj_data.size;
+			//obj_addr += 8;
+		}
+
+
+#if 0
 		// Read all stored NVM object
 		while 	( 	( per_par_nb < num_of_par )
 				&&	( loop_guard < UINT16_MAX ))
@@ -789,10 +853,11 @@
 		{
 			status = ePAR_ERROR;
 		}
+#endif
 
 		PAR_DBG_PRINT( "PAR_NVM: Loading all persistent parameters with status: %s", par_get_status_str(status));
 		PAR_DBG_PRINT( "PAR_NVM: Nb. of stored pars in NVM: %d", num_of_par );
-		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", par_nvm_get_per_par() );
+		PAR_DBG_PRINT( "PAR_NVM: Nb. of live persistent: \t%d", par_nvm_get_per_par());
 
 		if ( ePAR_OK == status )
 		{
@@ -806,25 +871,26 @@
 					{
 						// Is persistant and not jet in NVM lut -> Add to LUT
 						g_par_nvm_data_obj_addr[per_par_nb].id 		= par_cfg.id;
-						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par + 1 ));
+						g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr + ( 8 * ( new_par_cnt + 1 ));
 						g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
 
 						// Write new par to NVM
 						par_save( i );
 
 						per_par_nb++;
-						new_par++;
+						new_par_cnt++;
 					}
 				}
 			}
 
-			if ( new_par > 0 )
+			// If there is a new persistent parameter change HVM header
+			if ( new_par_cnt > 0 )
 			{
-				// Write new number of persistant parameters
-				status |= par_nvm_write_header( per_par_nb );
+				// Add additional new persistent parameters number to exsisting one!
+				status |= par_nvm_write_header( num_of_par + new_par_cnt );
 
 				#if ( PAR_CFG_DEBUG_EN )
-					PAR_DBG_PRINT( "PAR_NVM: Added %d new parameters to NVM LUT table!", new_par );
+					PAR_DBG_PRINT( "PAR_NVM: Added %d new parameters to NVM LUT table!", new_par_cnt );
 				#endif
 			}
 
@@ -880,6 +946,9 @@
 
 		// Write all data object
 		status |= par_nvm_write_all();
+
+		// Re-write header as reseting whole NVM parameter memory
+		status |= par_nvm_write_header( par_nvm_get_per_par() );
 
 		return status;
 	}
