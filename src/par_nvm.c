@@ -235,6 +235,9 @@
 				if ( ePAR_ERROR_CRC == status )
 				{
 					status = par_nvm_reset_all();
+
+					status |= ePAR_WARN_SET_TO_DEF;
+					status |= ePAR_WARN_NVM_REWRITTEN;
 				}
 
 				// NVM error
@@ -249,6 +252,8 @@
 					 *			default and some modified parameter values!
 					 */
 					par_set_all_to_default();
+
+					status |= ePAR_WARN_SET_TO_DEF;
 				}
 				else
 				{
@@ -260,6 +265,9 @@
 			else if ( ePAR_ERROR == status )
 			{
 				status = par_nvm_reset_all();
+
+				status |= ePAR_WARN_SET_TO_DEF;
+				status |= ePAR_WARN_NVM_REWRITTEN;
 			}
 
 			// NVM Error
@@ -272,6 +280,7 @@
 		// No persistent parameters
 		else
 		{
+			status |= ePAR_WARN_NO_PERSISTANT;
 			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
 		}
 
@@ -738,19 +747,29 @@
 					// Is that parameter in current table
 					if ( ePAR_OK == par_get_num_by_id( obj_data.id, &par_num ))
 					{
-						// Check if already in LUT
-						if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
+						par_get_config( par_num, &par_cfg );
+
+						/**
+						 * 	Parameter found in device and stored in NVM
+						 *
+						 * 	Check if that parameter is still persistent!
+						 */
+						if ( true == par_cfg.persistant )
 						{
-							// Set parameter
-							par_set( par_num, &obj_data.data );
+							// Check if already in LUT
+							if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
+							{
+								// Set parameter
+								par_set( par_num, &obj_data.data );
 
-							// Add to NVM lut
-							g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
-							g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
-							g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
+								// Add to NVM lut
+								g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
+								g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
+								g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
 
-							// Increment current persistent parameter counter
-							per_par_nb++;
+								// Increment current persistent parameter counter
+								per_par_nb++;
+							}
 						}
 					}
 
@@ -807,7 +826,8 @@
 			// If there is a new persistent parameter change HVM header
 			if ( new_par_cnt > 0 )
 			{
-				// Add additional new persistent parameters number to exsisting one!
+				// Add additional new persistent parameters number to existing one!
+				// NOTE: In general obj number will only rise!
 				status |= par_nvm_write_header( num_of_par + new_par_cnt );
 
 				#if ( PAR_CFG_DEBUG_EN )
