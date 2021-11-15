@@ -261,8 +261,10 @@
 				}
 			}
 
-			// Signature NOT OK
-			else if ( ePAR_ERROR == status )
+			// 		Signature NOT OK
+			// OR	Header CRC corrupted
+			else if (	( ePAR_ERROR == status )
+					||	( ePAR_ERROR_CRC == status ))
 			{
 				status = par_nvm_reset_all();
 
