@@ -69,10 +69,15 @@ static uint32_t 	gu32_par_addr_offset[ ePAR_NUM_OF ] = { 0 };
 	static const char * gs_status[] =
 	{
 		"OK",
+
 		"ERROR",
 		"ERROR INIT",
 		"ERROR NVM",
 		"ERROR CRC",
+
+		"WARN SET TO DEF",
+		"WARN NVM REWRITTEN",
+		"NO PERSISTENT",
 	};
 #endif
 
@@ -139,10 +144,7 @@ par_status_t par_init(void)
 
 	#endif
 
-
-
-	//PAR_ASSERT( ePAR_OK == status );
-	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", gs_status[status] );
+	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", par_get_status_str( status ));
 
 	return status;
 }
@@ -697,11 +699,12 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 		}
 		else
 		{
-			for ( i = 0; i < 8; i++ )
+			for ( i = 0; i < 16; i++ )
 			{
 				if ( status & ( 1<<i ))
 				{
 					str =  (const char*) gs_status[i+1];
+					break;
 				}
 			}
 		}

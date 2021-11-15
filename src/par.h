@@ -45,11 +45,19 @@
 typedef enum
 {
 	ePAR_OK 				= 0x00,		/**<Normal operation */
+
+	// Errors
 	ePAR_ERROR				= 0x01,		/**<General parameter error */
-	ePAR_ERROR_INIT			= 0x02,		/**<Parameter initialisation error or used before initialisation */
+	ePAR_ERROR_INIT			= 0x02,		/**<Parameter initialization error or usage before initialization */
 	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NMV error */
 	ePAR_ERROR_CRC			= 0x08,		/**<Parameter CRC corrupted */
-}par_status_t;
+
+	// Warnings
+	ePAR_WARN_SET_TO_DEF	= 0x10,		/**<Parameters set to default */
+	ePAR_WARN_NVM_REWRITTEN	= 0x20,		/**<NVM parameters area completely re-written */
+	ePAR_WARN_NO_PERSISTANT = 0x40,		/**<No persistent parameters -> set PAR_CFG_NVM_EN to 0 */
+
+} par_status_t;
 
 /**
  * 	Parameters type enumeration
