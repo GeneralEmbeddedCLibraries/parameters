@@ -7,7 +7,7 @@
 *@brief    	Configuration for device parameters
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.0.1
+*@version	V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -56,32 +56,8 @@ typedef enum
 {
 	// USER CODE START...
 
-	// Touch
-	ePAR_TOUCH_CONTROL = 0,
-	ePAR_TOUCH_STATUS,
-	ePAR_TOUCH_CAL_C0,
-	ePAR_TOUCH_CAL_C1,
-	ePAR_TOUCH_CAL_C2,
-	ePAR_TOUCH_CAL_C3,
-	ePAR_TOUCH_CAL_C4,
-	ePAR_TOUCH_CAL_C5,
-	ePAR_TOUCH_CAL_C6,
-	ePAR_TOUCH_BEEP_EN,
-	ePAR_TOUCH_TRACE_EN,
-
-	// Power management
-	ePAR_BAT_VOLTAGE,
-	ePAR_BAT_SOC,
-	ePAR_BAT_CHARGER_STATUS,
-	ePAR_SYS_CUR,
-	ePAR_USB_VOL,
-	ePAR_USB_SW_STATUS,
-	ePAR_EXT_VOL,
-	ePAR_EXT_SW_STATUS,
-	ePAR_5V_EN_STATUS,
-	ePAR_3V3LP_EN_STATUS,
-	ePAR_USBC_PD_ATTACHED,
-
+	ePAR_TEST_I16,
+	ePAR_TEST_I16_2,
 
 	// USER CODE END...
 

@@ -7,7 +7,7 @@
 *@brief     Configuration for device parameters
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.0.1
+*@version	V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -68,35 +68,8 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 	//	ID			Name						Min 					Max 					Def 					Unit				Data type				PC Access					Persistent
 	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	// Touch display
-	{	.id = 8, 	.name = "Touch control", 	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RW, 	.persistant = false		},
-	{	.id = 0, 	.name = "Touch status", 	.min.u8 = 0,			.max.u8 = 2,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 1, 	.name = "Touch C0", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 2, 	.name = "Touch C1", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 3, 	.name = "Touch C2", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 4, 	.name = "Touch C3", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 5, 	.name = "Touch C4", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 6, 	.name = "Touch C5", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 7, 	.name = "Touch C6", 		.min.i32 = INT32_MIN,	.max.i32 = INT32_MAX,	.def.i32 = 0,			.unit = NULL,		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RO, 	.persistant = true		},
-	{	.id = 9, 	.name = "Touch beep en",	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 1,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RW, 	.persistant = true		},
-	{	.id = 10, 	.name = "Touch trace en",	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RW, 	.persistant = false		},
-
-
-	// Power management
-	{	.id = 128, 	.name = "Battery voltage", 	.min.f32 = 0.0f,		.max.f32 = 5.0f,		.def.f32 = 0.0f,		.unit = "V",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false		},
-	{	.id = 129, 	.name = "Battery SOC",		.min.u8 = 0,			.max.u8 = 100,			.def.u8 = 0,			.unit = "%",		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 130, 	.name = "Charger status",	.min.u8 = 0,			.max.u8 = 10,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 131, 	.name = "System current", 	.min.f32 = 0.0f,		.max.f32 = 10.0f,		.def.f32 = 0.0f,		.unit = "A",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false		},
-	{	.id = 132, 	.name = "USB voltage", 		.min.f32 = 0.0f,		.max.f32 = 25.0f,		.def.f32 = 0.0f,		.unit = "V",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false		},
-	{	.id = 133, 	.name = "USB SW status",	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 134, 	.name = "EXT voltage", 		.min.f32 = 0.0f,		.max.f32 = 25.0f,		.def.f32 = 0.0f,		.unit = "V",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RO, 	.persistant = false		},
-	{	.id = 135, 	.name = "EXT SW status",	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 136, 	.name = "5V EN status",		.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 137, 	.name = "3V3_LP EN status",	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-	{	.id = 138, 	.name = "USB PD attached",	.min.u8 = 0,			.max.u8 = 1,			.def.u8 = 0,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false 	},
-
-
-
+	{	.id = 50, 		.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true		},
+	{	.id = 51, 		.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true		},
 
 	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
