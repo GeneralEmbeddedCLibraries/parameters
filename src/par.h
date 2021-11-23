@@ -7,7 +7,7 @@
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.0.1
+*@version	V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -36,8 +36,8 @@
  * 	Module version
  */
 #define PAR_VER_MAJOR		( 1 )
-#define PAR_VER_MINOR		( 0 )
-#define PAR_VER_DEVELOP		( 1 )
+#define PAR_VER_MINOR		( 2 )
+#define PAR_VER_DEVELOP		( 0 )
 
 /**
  *   Parameter status
@@ -45,11 +45,19 @@
 typedef enum
 {
 	ePAR_OK 				= 0x00,		/**<Normal operation */
-	ePAR_WAR_LIM_TO_MAX		= 0x01,		/**<Parameter limited to max value warning */
-	ePAR_WAR_LIM_TO_MIN		= 0x02,		/**<Parameter limited to min value warning */
-	ePAR_ERROR				= 0x04,		/**<General parameter error */
-	ePAR_ERROR_NVM			= 0x08,		/**<Parameter storage to NMV error */
-}par_status_t;
+
+	// Errors
+	ePAR_ERROR				= 0x01,		/**<General parameter error */
+	ePAR_ERROR_INIT			= 0x02,		/**<Parameter initialization error or usage before initialization */
+	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NMV error */
+	ePAR_ERROR_CRC			= 0x08,		/**<Parameter CRC corrupted */
+
+	// Warnings
+	ePAR_WARN_SET_TO_DEF	= 0x10,		/**<Parameters set to default */
+	ePAR_WARN_NVM_REWRITTEN	= 0x20,		/**<NVM parameters area completely re-written */
+	ePAR_WARN_NO_PERSISTANT = 0x40,		/**<No persistent parameters -> set PAR_CFG_NVM_EN to 0 */
+
+} par_status_t;
 
 /**
  * 	Parameters type enumeration
@@ -97,11 +105,11 @@ typedef union
  */
 typedef struct
 {
-	char*				name;			/**<Name of variable */
+	const char *		name;			/**<Name of variable */
  	par_type_t			min;			/**<Minimum value of parameter */
 	par_type_t			max;			/**<Maximum value of parameter */
 	par_type_t			def;			/**<Default value of parameter */
-	char*				unit;			/**<Unit of parameter */
+	const char *		unit;			/**<Unit of parameter */
 	uint16_t			id;				/**<Variable ID */
 	par_type_list_t		type;			/**<Parameter type */
 	par_io_acess_t 		access;			/**<Parameter access from external device point-of-view */
@@ -112,26 +120,26 @@ typedef struct
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t 	par_init				(void);
-const bool		par_is_init				(void);
-par_num_t		par_get_num_by_id		(const uint16_t id);
+bool			par_is_init				(void);
 
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
-par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
-void 			par_set_to_default		(const par_num_t par_num);
-void		 	par_set_all_to_default	(void);
+par_status_t	par_set_to_default		(const par_num_t par_num);
+par_status_t 	par_set_all_to_default	(void);
 
+par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
+par_status_t	par_get_id				(const par_num_t par_num, uint16_t * const p_id);
+par_status_t	par_get_num_by_id		(const uint16_t id, par_num_t * const p_par_num);
 par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par_cfg);
-uint16_t 		par_get_id				(const par_num_t par_num);
-void			par_get_min_max_def		(const par_num_t par_num, void * const p_min, void * const p_max, void * const p_def);
-void		 	par_get_name			(const par_num_t par_num, uint8_t * const p_name);
-void		 	par_get_unit			(const par_num_t par_num, uint8_t * const p_unit);
-par_type_list_t	par_get_data_type		(const par_num_t par_num);
-par_io_acess_t	par_get_access			(const par_num_t par_num);
-bool			par_get_persistance		(const par_num_t par_num);
+par_status_t	par_get_type_size		(const par_type_list_t type, uint8_t * const p_size);
 
 #if ( 1 == PAR_CFG_NVM_EN )
-	par_status_t	par_store_all_to_nvm	(void);
-	par_status_t	par_store_to_nvm		(const par_num_t par_num);
+	par_status_t	par_save_all		(void);
+	par_status_t	par_save			(const par_num_t par_num);
+	par_status_t	par_save_by_id		(const uint16_t par_id);
+#endif
+
+#if ( PAR_CFG_DEBUG_EN )
+	const char * par_get_status_str		(const par_status_t status);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

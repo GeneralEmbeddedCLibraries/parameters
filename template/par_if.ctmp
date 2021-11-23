@@ -7,7 +7,7 @@
 *@brief     Interface with device parameters
 *@author    Ziga Miklosic
 *@date      24.05.2021
-*@version	V1.0.1
+*@version	V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -55,8 +55,6 @@
 
 /**
  * 	Parameters OS mutex
- *
- * 	@note	Mutext must be recursive in order to be called multiple times in same thread!
  */
 static osMutexId_t	g_par_mutex_id = NULL;
 const osMutexAttr_t g_par_mutex_attr =

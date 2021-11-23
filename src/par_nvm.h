@@ -7,7 +7,7 @@
 *@brief    	Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.0.1
+*@version	V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -33,6 +33,8 @@
 	par_status_t par_nvm_init		(void);
 	par_status_t par_nvm_write		(const par_num_t par_num);
 	par_status_t par_nvm_write_all	(void);
+
+	void par_nvm_print_nvm_lut(void);
 
 #endif // 1 == PAR_CFG_NVM_EN
 

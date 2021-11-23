@@ -7,7 +7,7 @@
 *@brief    	Configuration for device parameters
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.0.1
+*@version	V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -49,21 +49,15 @@
  *
  * @note 	User shall change code only inside section of "USER_CODE_BEGIN"
  * 			ans "USER_CODE_END".
+ *
+ * 			Must be started with 0!
  */
 typedef enum
 {
 	// USER CODE START...
 
-	ePAR_TEST_U8 = 0,
-	ePAR_TEST_I8,
-
-	ePAR_TEST_U16,
 	ePAR_TEST_I16,
-
-	ePAR_TEST_U32,
-	ePAR_TEST_I32,
-
-	ePAR_TEST_F32,
+	ePAR_TEST_I16_2,
 
 	// USER CODE END...
 
@@ -83,40 +77,61 @@ typedef enum
  */
 #define PAR_CFG_NVM_EN							( 1 )
 
-/**
- * 	NVM parameter region option
- *
- * 	@note 	User shall select region based on nvm_cfg.h region
- * 			definitions "nvm_region_name_t"
- *
- * 			Don't care if "PAR_CFG_NVM_EN" set to 0
- */
-#define PAR_CFG_NVM_REGION						( eNVM_REGION_EEPROM_RUN_PAR )
+#if ( 1 == PAR_CFG_NVM_EN )
+	/**
+	 * 	NVM parameter region option
+	 *
+	 * 	@note 	User shall select region based on nvm_cfg.h region
+	 * 			definitions "nvm_region_name_t"
+	 *
+	 * 			Don't care if "PAR_CFG_NVM_EN" set to 0
+	 */
+	#define PAR_CFG_NVM_REGION						( eNVM_REGION_EEPROM_RUN_PAR )
 
-/**
- * 	Enable/Disable parameter table unique ID checking
- *
- * @note	Base on hash unique ID is being calculated with
- * 			purpose to detect device and stored parameter table
- * 			difference.
- *
- * 			Must be disabled once the device is release in order
- * 			to prevent loss of calibrated data stored in NVM.
- *
- * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
- * 			not make sense to calculating ID at all.
- */
-#define PAR_CFG_TABLE_ID_CHECK_EN				( 1 )
+	/**
+	 * 	Enable/Disable parameter table unique ID checking
+	 *
+	 * @note	Base on hash unique ID is being calculated with
+	 * 			purpose to detect device and stored parameter table
+	 * 			difference.
+	 *
+	 * 			Must be disabled once the device is release in order
+	 * 			to prevent loss of calibrated data stored in NVM.
+	 *
+	 * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
+	 * 			not make sense to calculating ID at all.
+	 */
+	#define PAR_CFG_TABLE_ID_CHECK_EN				( 0 )
+
+	#ifndef DEBUG
+	#undef PAR_CFG_TABLE_ID_CHECK_EN
+	#define PAR_CFG_TABLE_ID_CHECK_EN 0
+	#endif
+#endif
 
 /**
  * 	Enable/Disable debug mode
+ *
+ * 	@note	Disable in release!
  */
 #define PAR_CFG_DEBUG_EN						( 1 )
 
+#ifndef DEBUG
+#undef PAR_CFG_DEBUG_EN
+#define PAR_CFG_DEBUG_EN 0
+#endif
+
 /**
  * 	Enable/Disable assertions
+ *
+ * 	@note	Disable in release!
  */
 #define PAR_CFG_ASSERT_EN						( 1 )
+
+#ifndef DEBUG
+#undef PAR_CFG_ASSERT_EN
+#define PAR_CFG_ASSERT_EN 0
+#endif
 
 /**
  * 	Debug communication port macros

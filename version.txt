@@ -1,4 +1,23 @@
 ============================================================
+ Version 1.2.0 (23.11.2021)
+============================================================
+ 
+ Brief:
+   - Major change on module, also API change
+ 
+ Features: 
+   - Change storage policy to build consecutive par nvm objects
+   in order to save space and to be back-compatible with older
+   FW
+   - Change API functions so that major of functions returns 
+   statuses
+   
+ Todo:
+   - Configuration table check needs to be implemented
+   
+============================================================
+
+============================================================
  Version 1.0.1 (25.06.2021)
 ============================================================
  
