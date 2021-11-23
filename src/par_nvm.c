@@ -994,20 +994,18 @@
 		return is_in_lut;
 	}
 
-
-	#if ( PAR_CFG_DEBUG_EN )
-
-		////////////////////////////////////////////////////////////////////////////////
-		/**
-		*		Print parameter NVM table
-		*
-		* @note		Only for debugging purposes
-		*
-		* @return	void
-		*/
-		////////////////////////////////////////////////////////////////////////////////
-		void par_nvm_print_nvm_lut(void)
-		{
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Print parameter NVM table
+	*
+	* @note		Only for debugging purposes
+	*
+	* @return	void
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	void par_nvm_print_nvm_lut(void)
+	{
+		#if ( PAR_CFG_DEBUG_EN )
 			uint16_t par_num = 0;
 
 			PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
@@ -1021,8 +1019,8 @@
 																g_par_nvm_data_obj_addr[par_num].valid );
 				PAR_DBG_PRINT( "-----------------------------" );
 			}
-		}
-	#endif
+		#endif
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
