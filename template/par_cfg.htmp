@@ -102,17 +102,36 @@ typedef enum
 	 * 			not make sense to calculating ID at all.
 	 */
 	#define PAR_CFG_TABLE_ID_CHECK_EN				( 0 )
+
+	#ifndef DEBUG
+	#undef PAR_CFG_TABLE_ID_CHECK_EN
+	#define PAR_CFG_TABLE_ID_CHECK_EN 0
+	#endif
 #endif
 
 /**
  * 	Enable/Disable debug mode
+ *
+ * 	@note	Disable in release!
  */
 #define PAR_CFG_DEBUG_EN						( 1 )
 
+#ifndef DEBUG
+#undef PAR_CFG_DEBUG_EN
+#define PAR_CFG_DEBUG_EN 0
+#endif
+
 /**
  * 	Enable/Disable assertions
+ *
+ * 	@note	Disable in release!
  */
 #define PAR_CFG_ASSERT_EN						( 1 )
+
+#ifndef DEBUG
+#undef PAR_CFG_ASSERT_EN
+#define PAR_CFG_ASSERT_EN 0
+#endif
 
 /**
  * 	Debug communication port macros
