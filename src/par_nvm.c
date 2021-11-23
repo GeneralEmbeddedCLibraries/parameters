@@ -596,8 +596,8 @@
 	/**
 	*		Validate parameter NVM header
 	*
-	* @param[out]	num_of_par	- Number of persistent parameters that are stored in NVM
-	* @return		status 		- Status of operation
+	* @param[out]	p_num_of_par	- Pointer to number of persistent parameters that are stored in NVM
+	* @return		status 			- Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t par_nvm_validate_header(uint16_t * const p_num_of_par)

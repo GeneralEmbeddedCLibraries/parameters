@@ -11,7 +11,7 @@
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@addtogroup PARARAMETERS_API
+*@addtogroup PARAMETERS_API
 * @{ <!-- BEGIN GROUP -->
 *
 * 	Parameter kernel module
@@ -422,12 +422,13 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 *		Get parameter ID
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @return		id 		- Parameter ID
+* @param[in]	p_id 	- Pointer to parameter ID
+* @return		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_get_id(const par_num_t par_num, uint16_t * const p_id)
 {
-	par_status_t 	status 	= ePAR_OK;
+	par_status_t status = ePAR_OK;
 
 	PAR_ASSERT( true == gb_is_init );
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
@@ -457,8 +458,9 @@ par_status_t par_get_id(const par_num_t par_num, uint16_t * const p_id)
 /**
 *		Get parameter number (enumeration) by ID
 *
-* @param[in]	id 		- Parameter ID
-* @return		par_num	- Parameter enumeration number
+* @param[in]	id 			- Parameter ID
+* @param[in]	p_par_num	- Pointer to parameter enumeration number
+* @return		status		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_get_num_by_id(const uint16_t id, par_num_t * const p_par_num)
