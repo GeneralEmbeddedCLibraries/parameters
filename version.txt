@@ -1,4 +1,18 @@
 ============================================================
+ Version 1.3.0 (xx.xx.2022)
+============================================================
+ 
+ Brief:
+   - Minor features and bug fixes
+ 
+ Features:
+   - Adding parameter description to configuration table
+   
+ Todo:
+   - Configuration table check needs to be implemented
+   
+
+============================================================
  Version 1.2.0 (23.11.2021)
 ============================================================
  
