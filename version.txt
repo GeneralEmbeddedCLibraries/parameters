@@ -10,6 +10,8 @@
    
  Todo:
    - Configuration table check needs to be implemented
+   - DMA handling via parameters
+   - Parameters locking mechanism
    
 
 ============================================================
