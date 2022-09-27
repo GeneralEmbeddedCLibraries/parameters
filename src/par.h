@@ -110,6 +110,7 @@ typedef struct
 	par_type_t			max;			/**<Maximum value of parameter */
 	par_type_t			def;			/**<Default value of parameter */
 	const char *		unit;			/**<Unit of parameter */
+	const char * 		desc;			/**<Parameter description */
 	uint16_t			id;				/**<Variable ID */
 	par_type_list_t		type;			/**<Parameter type */
 	par_io_acess_t 		access;			/**<Parameter access from external device point-of-view */
