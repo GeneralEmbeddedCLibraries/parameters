@@ -7,7 +7,7 @@
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.2.0
+*@version	V1.3.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -36,7 +36,7 @@
  * 	Module version
  */
 #define PAR_VER_MAJOR		( 1 )
-#define PAR_VER_MINOR		( 2 )
+#define PAR_VER_MINOR		( 3 )
 #define PAR_VER_DEVELOP		( 0 )
 
 /**
@@ -110,6 +110,7 @@ typedef struct
 	par_type_t			max;			/**<Maximum value of parameter */
 	par_type_t			def;			/**<Default value of parameter */
 	const char *		unit;			/**<Unit of parameter */
+	const char * 		desc;			/**<Parameter description */
 	uint16_t			id;				/**<Variable ID */
 	par_type_list_t		type;			/**<Parameter type */
 	par_io_acess_t 		access;			/**<Parameter access from external device point-of-view */
