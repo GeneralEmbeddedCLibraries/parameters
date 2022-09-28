@@ -6,10 +6,11 @@ and this project/module adheres to [Semantic Versioning](https://semver.org/spec
 
 ---
    
-## V1.3.0 - xx.xx.2022
+## V1.3.0 - 28.09.2022
 
 ### Added
  - Adding parameter description to configuration table
+ - Updated readme
 
 ### Fixes
  - Minor comments corrections
