@@ -615,7 +615,16 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 	{
 		par_status_t status = ePAR_OK;
 
-		status = par_nvm_write_all();
+		PAR_ASSERT( true == gb_is_init );
+
+		if ( true == gb_is_init )
+		{
+			status = par_nvm_write_all();
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
+		}
 
 		return status;
 	}
@@ -635,7 +644,16 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 	{
 		par_status_t status = ePAR_OK;
 
-		status = par_nvm_write( par_num );
+		PAR_ASSERT( true == gb_is_init );
+
+		if ( true == gb_is_init )
+		{
+			status = par_nvm_write( par_num );
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
+		}
 
 		return status;
 	}
@@ -668,11 +686,51 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 		par_status_t 	status 	= ePAR_OK;
 		par_num_t		par_num	= 0;
 
-		status = par_get_num_by_id( par_id, &par_num );
+		PAR_ASSERT( true == gb_is_init );
 
-		if ( ePAR_OK == status )
+		if ( true == gb_is_init )
 		{
-			status = par_save( par_num );
+			status = par_get_num_by_id( par_id, &par_num );
+
+			if ( ePAR_OK == status )
+			{
+				status = par_save( par_num );
+			}
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
+		}
+
+		return status;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Clean all stored parameters inside NVM
+	*
+	* @note		This function shall be locked as it will erase complete parameter
+	* 			region of NVM space. Shall be used only during
+	*
+	* @pre		NVM storage must be initialized first and "PAR_CFG_NVM_EN"
+	* 			settings must be enabled.
+	*
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_save_clean(void)
+	{
+		par_status_t status = ePAR_OK;
+
+		PAR_ASSERT( true == gb_is_init );
+
+		if ( true == gb_is_init )
+		{
+			status = par_nvm_reset_all();
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
 		}
 
 		return status;

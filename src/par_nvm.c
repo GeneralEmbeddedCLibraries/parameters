@@ -166,7 +166,6 @@
 	// Function Prototypes
 	////////////////////////////////////////////////////////////////////////////////
 	static par_status_t		par_nvm_load_all					(const uint16_t num_of_par);
-	static par_status_t		par_nvm_reset_all					(void);
 
 	static par_status_t		par_nvm_corrupt_signature			(void);
 	static par_status_t		par_nvm_write_signature				(void);
@@ -383,6 +382,34 @@
 		status |= par_nvm_write_signature();
 
 		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
+
+		return status;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Reset total section of parameters NVM
+	*
+	* @brief	This function completely re-write whole NVM section.
+	*
+	* 			It first corrupt signature in order to raise "working in progress"
+	* 			flag.
+	*
+	* @return	num_of_per_par - Number of persistent parameters
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_nvm_reset_all(void)
+	{
+		par_status_t status = ePAR_OK;
+
+		// Build new NVM lut
+		par_nvm_build_new_nvm_lut();
+
+		// Write all data object
+		status |= par_nvm_write_all();
+
+		// Re-write header as reseting whole NVM parameter memory
+		status |= par_nvm_write_header( par_nvm_get_per_par() );
 
 		return status;
 	}
@@ -865,34 +892,6 @@
 		}
 
 		return num_of_per_par;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*		Reset total section of parameters NVM
-	*
-	* @brief	This function completely re-write whole NVM section.
-	*
-	* 			It first corrupt signature in order to raise "working in progress"
-	* 			flag.
-	*
-	* @return	num_of_per_par - Number of persistent parameters
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t par_nvm_reset_all(void)
-	{
-		par_status_t status = ePAR_OK;
-
-		// Build new NVM lut
-		par_nvm_build_new_nvm_lut();
-
-		// Write all data object
-		status |= par_nvm_write_all();
-
-		// Re-write header as reseting whole NVM parameter memory
-		status |= par_nvm_write_header( par_nvm_get_per_par() );
-
-		return status;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////

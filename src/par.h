@@ -137,6 +137,7 @@ par_status_t	par_get_type_size		(const par_type_list_t type, uint8_t * const p_s
 	par_status_t	par_save_all		(void);
 	par_status_t	par_save			(const par_num_t par_num);
 	par_status_t	par_save_by_id		(const uint16_t par_id);
+	par_status_t	par_save_clean		(void);
 #endif
 
 #if ( PAR_CFG_DEBUG_EN )
