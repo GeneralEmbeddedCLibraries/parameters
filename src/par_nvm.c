@@ -67,8 +67,8 @@
 	/**
 	 * 	Check NVM module compatibility
 	 */
-	static_assert( 1 == NVM_VER_MAJOR );
-	static_assert( 0 == NVM_VER_MINOR );
+	_Static_assert( 1 == NVM_VER_MAJOR );
+	_Static_assert( 0 == NVM_VER_MINOR );
 	//static_assert( 0 == NVM_VER_DEVELOP );
 
 	////////////////////////////////////////////////////////////////////////////////
