@@ -208,6 +208,7 @@
 		uint16_t 		obj_nb		= 0;
 		uint16_t		per_par_nb	= 0;
 
+		// TODO: Remove assert and add NVM init here....
 		PAR_ASSERT( true == nvm_is_init());
 
 		// Get number of persistent parameters
