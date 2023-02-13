@@ -6,7 +6,7 @@ In combination of Device Parameters, [CLI](https://github.com/GeneralEmbeddedCLi
 
 ## **Dependencies**
 
-### **1. Parameter persistance **
+### **1. Parameter persistance**
 
 In case of using persistant options (*PAR_CFG_NVM_EN = 1*) it is mandatory to use [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm).
 
