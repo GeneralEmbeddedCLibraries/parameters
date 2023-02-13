@@ -29,7 +29,8 @@ root/middleware/parameters/parameters/"module_space"
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
 | **par_init** | Initialization of parameters module | par_status_t par_init(void) |****
-| **par_is_init** | Get initialization flag | bool 	par_is_init (void) |
+| **par_deinit** | De-initialization of parameters module | par_status_t par_deinit(void) |****
+| **par_is_init** | Get initialization flag | par_status par_is_init(bool * const p_is_init) |
 | **par_set** | Set parameter | par_status_t 	par_set (const par_num_t par_num, const void *p_val) |
 | **par_set_to_default** | Set parameter to default value | par_status_t 	par_set_to_default (const par_num_t par_num) |
 | **par_set_all_to_default** | Set all parameters to default value | par_status_t 	par_set_all_to_default (void) |
@@ -44,9 +45,10 @@ With enable NVM additional fuctions are available:
 
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
-| **par_save_all** | Store all parameters to NVM | par_status_t 	par_save_all (void) |
-| **par_save** | Store single parameter | par_status_t 	par_save (const par_num_t par_num) |
-| **par_save_by_id** | Store single parameter by ID | par_status_t 	par_save_by_id (const uint16_t par_id) |
+| **par_save_all** | Store all parameters to NVM | par_status_t par_save_all(void) |
+| **par_save** | Store single parameter | par_status_t 	par_save(const par_num_t par_num) |
+| **par_save_by_id** | Store single parameter by ID | par_status_t par_save_by_id(const uint16_t par_id) |
+| **par_save_clean** | Re-Write complete NVM memory | par_status_t par_save_clean(void) |
 
 
 ## Usage
