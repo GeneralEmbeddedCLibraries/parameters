@@ -90,16 +90,15 @@ typedef enum
  *
  *	Each defined parameter has following properties:
  *
- *		i) 		Parameter ID: 	Unique parameter identification number. ID shall not be duplicated.
- *		ii) 	Name:			Parameter name. Max. length of 32 chars.
- *		iii)	Min:			Parameter minimum value. Min value must be less than max value.
- *		iv)		Max:			Parameter maximum value. Max value must be more than min value.
- *		v)		Def:			Parameter default value. Default value must lie between interval: [min, max]
- *		vi)		Unit:			In case parameter shows physical value. Max. length of 32 chars.
- *		vii)	Data type:		Parameter data type. Supported types: uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t and float32_t
- *		viii)	Access:			Access type visible from external device such as PC. Either ReadWrite or ReadOnly.
- *		ix)		Persistence:	Tells if parameter value is being written into NVM.
- *
+ *		i)      Parameter ID:   Unique parameter identification number. ID shall not be duplicated.
+ *		ii)     Name:           Parameter name. Max. length of 32 chars.
+ *		iii)    Min:            Parameter minimum value. Min value must be less than max value.
+ *		iv)     Max:            Parameter maximum value. Max value must be more than min value.
+ *		v)      Def:            Parameter default value. Default value must lie between interval: [min, max]
+ *		vi)     Unit:           In case parameter shows physical value. Max. length of 32 chars.
+ *		vii)    Data type:      Parameter data type. Supported types: uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t and float32_t
+ *		viii)   Access:         Access type visible from external device such as PC. Either ReadWrite or ReadOnly.
+ *		ix)     Persistence:    Tells if parameter value is being written into NVM.
  *
  *	@note	User shall fill up wanted parameter definitions!
  */
