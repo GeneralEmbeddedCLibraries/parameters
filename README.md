@@ -1,13 +1,15 @@
-# **Device parameters**
+# **Device Parameters**
 
-Parameters module is build for easier configuration and diagnostics of device via communication port of choise. All of the properties of parameters are configurable via single table. 
+Device Parameters module holds of all device parameters defined via a single configuration table and provides a simple configuratation and diagnostics of the system. Often Device Parameters serve as a backbone for embedded system as they control the end behaviour of the application. Additional it provides a insights of device performance therefore making diagnostics of a target device very simple. 
 
-Parameters module also takes care of management to NVM space.
+In combination of Device Parameters, [CLI](https://github.com/GeneralEmbeddedCLibraries/cli) and [NVM](https://github.com/GeneralEmbeddedCLibraries/nvm) modules embedded application is capable to communicate with PC (via CLI), configure and diagnose (via CLI to Device Parameters) and storing configured settings to NVM (via Device Parameters and NVM). Using the combination of following modules we can speed up embedded firmware application development dramatically. 
 
 ## **Dependencies**
---- 
 
-In case of using persistant options for parameters it is mandatory to use [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm).
+### **1. Parameter persistance **
+
+In case of using persistant options (*PAR_CFG_NVM_EN = 1*) it is mandatory to use [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm).
+
 
 ## **General Embedded C Libraries Ecosystem**
 In order to be part of *General Embedded C Libraries Ecosystem* this module must be placed in following path: 
@@ -16,7 +18,6 @@ root/middleware/parameters/parameters/"module_space"
 ```
 
  ## **API**
----
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
 | **par_init** | Initialization of parameters module | par_status_t par_init(void) |****
