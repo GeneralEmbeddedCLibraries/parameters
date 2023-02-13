@@ -114,7 +114,7 @@ par_status_t par_init(void)
 {
 	par_status_t status = ePAR_OK;
 
-    if ( true == gb_is_init )
+    if ( false == gb_is_init )
     {
     	// Get parameter table
     	gp_par_table = par_cfg_get_table();
