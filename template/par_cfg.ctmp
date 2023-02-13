@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////

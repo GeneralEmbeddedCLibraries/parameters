@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "project_config.h"
 #include "../../par_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +82,11 @@ typedef enum
 	ePAR_ACCESS_RO = 0,			/**<Parameter read only */
 	ePAR_ACCESS_RW				/**<Parameter read/write */
 }par_io_acess_t;
+
+/**
+ *  32-bit floating data type definition
+ */
+typedef float float32_t;
 
 /**
  * 	Supported data types

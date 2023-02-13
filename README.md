@@ -7,15 +7,6 @@ Parameters module also takes care of management to NVM space.
 ## **Dependencies**
 --- 
 
-Definition of float32_t must be provided by user. In current implementation it is defined in "project_config.h". Just add following statement to your code where it suits the best.
-
-```C
-// Define float
-typedef float float32_t;
-```
-
-Additionaly module uses "static_assert()" function defined in <assert.h>.
-
 In case of using persistant options for parameters it is mandatory to use [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm).
 
 ## **General Embedded C Libraries Ecosystem**
@@ -141,52 +132,15 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 
 4. Set-up all configurations options inside **par_cfg.h** file (such as using mutex, using NVM, ...)
 
-```C
-/**
- * 	Enable/Disable multiple access protection
- */
-#define PAR_CFG_MUTEX_EN						( 1 )
-
-/**
- * 	Enable/Disable storing persistent parameters to NVM
- */
-#define PAR_CFG_NVM_EN							( 1 )
-
-/**
- * 	NVM parameter region option
- *
- * 	@note 	User shall select region based on nvm_cfg.h region
- * 			definitions "nvm_region_name_t"
- *
- * 			Don't care if "PAR_CFG_NVM_EN" set to 0
- */
-#define PAR_CFG_NVM_REGION						( eNVM_REGION_EEPROM_RUN_PAR )
-
-/**
- * 	Enable/Disable parameter table unique ID checking
- *
- * @note	Base on hash unique ID is being calculated with
- * 			purpose to detect device and stored parameter table
- * 			difference.
- *
- * 			Must be disabled once the device is release in order
- * 			to prevent loss of calibrated data stored in NVM.
- *
- * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
- * 			not make sense to calculating ID at all.
- */
-#define PAR_CFG_TABLE_ID_CHECK_EN				( 1 )
-
-/**
- * 	Enable/Disable debug mode
- */
-#define PAR_CFG_DEBUG_EN						( 1 )
-
-/**
- * 	Enable/Disable assertions
- */
-#define PAR_CFG_ASSERT_EN						( 1 )
-```
+| Configuration | Description |
+| --- | --- |
+| **PAR_CFG_MUTEX_EN** 			| Enable/Disable multiple access protection. |
+| **PAR_CFG_NVM_EN** 			| Enable/Disable usage of NVM for persistant parameters. |
+| **PAR_CFG_NVM_REGION** 		| Select NVM region for Device Parameter storage space. | 
+| **PAR_CFG_DEBUG_EN** 			| Enable/Disable debugging mode. | 
+| **PAR_CFG_ASSERT_EN** 		| Enable/Disable asserts. Shall be disabled in release build!  | 
+| **PAR_DBG_PRINT** 			| Definition of debug print. | 
+| **PAR_ASSERT** 				| Definition of assert. | 
 
 5. Call **par_init()** function
 
