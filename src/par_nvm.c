@@ -156,6 +156,11 @@
 	// Variables
 	////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     *      Initialization guard
+     */
+     static bool gb_is_init = false;
+
 	/**
 	 * 	Parameter NVM lut
 	 */
@@ -291,6 +296,9 @@
     			status |= ePAR_WARN_NO_PERSISTANT;
     			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
     		}
+            
+            // Par NVM module init
+            gb_is_init = true;
         }
 
 		return status;
@@ -311,51 +319,58 @@
 		uint32_t			par_addr	= 0UL;
 		par_cfg_t			par_cfg		= {0};
 
-		PAR_ASSERT( true == nvm_is_init());     // TODO: Fix this!!!!
+		PAR_ASSERT( true == gb_is_init );     
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
 
-		if ( par_num < ePAR_NUM_OF )
+		if ( true == gb_is_init )
 		{
-			// Get configuration
-			par_get_config( par_num, &par_cfg );
+            if ( par_num < ePAR_NUM_OF )
+            {
+    			// Get configuration
+    			par_get_config( par_num, &par_cfg );
 
-			// Is that parameter persistent
-			if ( true == par_cfg.persistant )
-			{
-				// Get current par value
-				par_get( par_num, (uint32_t*) &obj_data.data );
+    			// Is that parameter persistent
+    			if ( true == par_cfg.persistant )
+    			{
+    				// Get current par value
+    				par_get( par_num, (uint32_t*) &obj_data.data );
 
-				// Get parameter ID
-				obj_data.id = par_cfg.id;
+    				// Get parameter ID
+    				obj_data.id = par_cfg.id;
 
-				// Get parameter type size
-				// NOTE: For know fixed!
-				//par_get_type_size( par_cfg.type, &obj_data.size );
-				obj_data.size = 4;
+    				// Get parameter type size
+    				// NOTE: For know fixed!
+    				//par_get_type_size( par_cfg.type, &obj_data.size );
+    				obj_data.size = 4;
 
-				// Calculate CRC
-				obj_data.crc = par_nvm_calc_obj_crc( &obj_data );
+    				// Calculate CRC
+    				obj_data.crc = par_nvm_calc_obj_crc( &obj_data );
 
-				// Get address from NVM lut
-				//par_addr = g_par_nvm_data_obj_addr[par_num].addr;
-				par_addr = par_nvm_get_nvm_lut_addr( obj_data.id );
+    				// Get address from NVM lut
+    				//par_addr = g_par_nvm_data_obj_addr[par_num].addr;
+    				par_addr = par_nvm_get_nvm_lut_addr( obj_data.id );
 
-				// Write to NVM
-				if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_data_obj_t ), (const uint8_t*) &obj_data ))
-				{
-					status = ePAR_ERROR_NVM;
-				}
+    				// Write to NVM
+    				if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_data_obj_t ), (const uint8_t*) &obj_data ))
+    				{
+    					status = ePAR_ERROR_NVM;
+    				}
 
-			}
-			else
-			{
-				status = ePAR_ERROR;
-			}
-		}
-		else
-		{
-			status = ePAR_ERROR;
-		}
+    			}
+    			else
+    			{
+    				status = ePAR_ERROR;
+    			}
+    		}
+    		else
+    		{
+    			status = ePAR_ERROR;
+    		}
+        }
+        else
+        {
+            status = ePAR_ERROR_INIT;
+        }
 
 		return status;
 	}
@@ -373,27 +388,35 @@
 		uint16_t		par_num		= 0;
 		par_cfg_t		par_cfg		= { 0 };
 
-		// Corrupt header (enter critical)
-        // NOTE: When dealing with flash memory, this also clears NVM header!
-		status |= par_nvm_corrupt_signature();
+        PAR_ASSERT( true == gb_is_init );     
 
-		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
-		{
-			par_get_config( par_num, &par_cfg );
+		if ( true == gb_is_init )
+        {
+    		// Corrupt header (enter critical)
+    		status |= par_nvm_corrupt_signature();
 
-			if ( true == par_cfg.persistant )
-			{
-				status |= par_nvm_write( par_num );
-			}
-		}
+            // Got thru all parameters
+    		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
+    		{   
+                // Get parameter configuration
+    			par_get_config( par_num, &par_cfg );
+                
+                // Store only persistant one
+    			if ( true == par_cfg.persistant )
+    			{
+    				status |= par_nvm_write( par_num );
+    			}
+    		}
 
-		// Re-write header (exit critical)
-		//status |= par_nvm_write_signature();
+            // Re-write header (exit critical)
+    		status |= par_nvm_write_header( par_nvm_get_per_par());
 
-        // Re-write header (exit critical)
-		status |= par_nvm_write_header( par_nvm_get_per_par());
-
-		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
+    		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
+        }
+        else
+        {
+            status = ePAR_ERROR_INIT;
+        }
 
 		return status;
 	}
@@ -414,14 +437,23 @@
 	{
 		par_status_t status = ePAR_OK;
 
-		// Build new NVM lut
-		par_nvm_build_new_nvm_lut();
+        PAR_ASSERT( true == gb_is_init );     
 
-		// Write all data object
-		status |= par_nvm_write_all();
+		if ( true == gb_is_init )
+        {
+    		// Build new NVM lut
+    		par_nvm_build_new_nvm_lut();
 
-		// Re-write header as reseting whole NVM parameter memory
-		status |= par_nvm_write_header( par_nvm_get_per_par() );
+    		// Write all data object
+    		status |= par_nvm_write_all();
+
+    		// Re-write header as reseting whole NVM parameter memory
+    		status |= par_nvm_write_header( par_nvm_get_per_par() );
+        }
+        else
+        {
+            status = ePAR_ERROR_INIT;
+        }
 
 		return status;
 	}
@@ -947,7 +979,8 @@
 				per_par_nb++;
 			}
 		}
-
+        
+        // Show NVM LUT table
 		par_nvm_print_nvm_lut();
 	}
 
