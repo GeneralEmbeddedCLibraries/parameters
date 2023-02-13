@@ -151,8 +151,7 @@ if ( ePAR_OK != par_init())
     PROJECT_CONFIG_ASSERT( 0 );
 }
 ```
-
-In case of using storing parameters to NVM, NVM module must be initialized **before** parameters!
+NOTICE: NVM module will be part of Device Parameters initialization routine in case of usage (*PAR_CFG_NVM_EN = 1*)!
 
 6. Set up parameter value
 
@@ -160,8 +159,19 @@ For set/get of parameters value always use a casting form!
 
 ```C
 // Set battery voltage & sytem current
-par_set( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
-par_set( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
+(void) par_set( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
+(void) par_set( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
+```
+
+7. Store to NVM example:
+
+```C
+// Store all paramters to NVM
+if ( ePAR_OK != par_save_all())
+{
+	// Storing to NVM error...
+	// Further actions here...
+}
 ```
 
 
