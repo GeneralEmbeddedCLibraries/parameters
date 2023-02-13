@@ -101,7 +101,7 @@ static par_status_t par_set_f32				(const par_num_t par_num, const float32_t f32
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Parameters initialization
+*		Device Parameters initialization
 *
 *	At init parameter table is being check for correct definition, allocation
 *	in RAM space for parameters live values and additionaly interface to
@@ -114,51 +114,101 @@ par_status_t par_init(void)
 {
 	par_status_t status = ePAR_OK;
 
-	// Get parameter table
-	gp_par_table = par_cfg_get_table();
-	PAR_ASSERT( NULL != gp_par_table );
+    if ( true == gb_is_init )
+    {
+    	// Get parameter table
+    	gp_par_table = par_cfg_get_table();
+    	PAR_ASSERT( NULL != gp_par_table );
 
-	// Check if par table is defined correctly
-	status |= par_check_table_validy( gp_par_table );
+    	// Check if par table is defined correctly
+    	status |= par_check_table_validy( gp_par_table );
 
-	// Allocate space in RAM
-	status |= par_allocate_ram_space( &gpu8_par_value );
-	PAR_ASSERT( NULL != gpu8_par_value );
+    	// Allocate space in RAM
+    	status |= par_allocate_ram_space( &gpu8_par_value );
+    	PAR_ASSERT( NULL != gpu8_par_value );
 
-	// Initialize parameter interface
-	status |= par_if_init();
+    	// Initialize parameter interface
+    	status |= par_if_init();
 
-	// Init succeed
-	if ( ePAR_OK == status )
-	{
-		gb_is_init = true;
-	}
+    	// Init succeed
+    	if ( ePAR_OK == status )
+    	{
+    		gb_is_init = true;
+    	}
 
-	// Set all parameters to default
-	par_set_all_to_default();
+    	// Set all parameters to default
+    	par_set_all_to_default();
 
-	#if ( 1 == PAR_CFG_NVM_EN )
+    	#if ( 1 == PAR_CFG_NVM_EN )
 
-		// Init and load parameters from NVM
-		status |= par_nvm_init();
+    		// Init and load parameters from NVM
+    		status |= par_nvm_init();
 
-	#endif
+    	#endif
 
-	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", par_get_status_str( status ));
+    	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", par_get_status_str( status ));
+    }
+    else
+    {
+        status = ePAR_ERROR_INIT;
+    }
 
 	return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get initialisation done flag
+*		De-initialize Device Parameters
 *
 * @return		status 		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-bool par_is_init(void)
+par_status_t par_deinit(void)
 {
-	return gb_is_init;
+    par_status_t status = ePAR_OK;
+
+    if ( true == gb_is_init )
+    {
+    	#if ( 1 == PAR_CFG_NVM_EN )
+
+    		// Init and load parameters from NVM
+    		status |= par_nvm_deinit();
+
+    	#endif
+        
+        // Module de-initialized
+        gb_is_init = false;
+    }
+    else
+    {
+        status = ePAR_ERROR_INIT;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get initialisation flag
+*
+* @param[out]   p_is_init   - Pointer to init flag
+* @return		status 		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_is_init(bool * const p_is_init)
+{
+	par_status_t status = ePAR_OK;
+    
+    if ( NULL != p_is_init )
+    {
+        *p_is_init = gb_is_init;
+    }
+    else
+    {
+        status = ePAR_ERROR;
+    }
+
+    return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

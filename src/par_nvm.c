@@ -304,6 +304,32 @@
 		return status;
 	}
 
+    ////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		De-Initialize parameter NVM handling
+	*
+	* @return	status - Status of de-init
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+    par_status_t par_nvm_deinit(void)
+    {
+        par_status_t status = ePAR_OK;
+        
+        if ( true == gb_is_init )
+        {
+            if ( eNVM_OK != nvm_deinit())
+            {
+                status = ePAR_ERROR;
+            }
+        }
+        else
+        {
+            status = ePAR_ERROR;
+        }
+
+        return status;
+    }
+
 	////////////////////////////////////////////////////////////////////////////////
 	/**
 	*		Store parameter value to NVM

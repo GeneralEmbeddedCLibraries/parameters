@@ -22,6 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -121,7 +122,8 @@ typedef struct
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t 	par_init				(void);
-bool			par_is_init				(void);
+par_status_t 	par_deinit				(void);
+par_status_t    par_is_init				(bool * const p_is_init);
 
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
 par_status_t	par_set_to_default		(const par_num_t par_num);
