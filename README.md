@@ -109,19 +109,19 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 	// USER CODE BEGIN...
 
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	//			ID			Name						Min 				Max 				Def 					Unit				Data type				PC Access					Persistent		Description 
+	//                   ID         Name                  Min              Max           Def                 Unit         Data type               PC Access                 Persistent		     Description 
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	[ePAR_TEST_U8] = {	.id = 0,  .name = "Test_u8",  .min.u8 = 0,  .max.u8 = 10,  .def.u8 = 8,			.unit = "n/a",		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter U8" 		},
-	[ePAR_TEST_I8] = {	.id = 1,  .name = "Test_i8",  .min.i8 = -10,  .max.i8 = 100,  .def.i8 = -8,			.unit = "n/a",		.type = ePAR_TYPE_I8,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter I8"  		},
+	[ePAR_TEST_U8] = {	.id = 0,  .name = "Test_u8",  .min.u8 = 0,      .max.u8 = 10,   .def.u8 = 8,       .unit = "n/a", .type = ePAR_TYPE_U8, .access = ePAR_ACCESS_RW,  .persistant = true, .desc = "Test parameter U8" },
+	[ePAR_TEST_I8] = {	.id = 1,  .name = "Test_i8",  .min.i8 = -10,    .max.i8 = 100,  .def.i8 = -8,      .unit = "n/a", .type = ePAR_TYPE_I8, .access = ePAR_ACCESS_RW,  .persistant = true, .desc = "Test parameter" },
 
-	[ePAR_TEST_U16] = {	.id = 2,  .name = "Test_u16",  .min.u16 = 0,  .max.u16 = 10,  .def.u16 = 3,			.unit = "n/a",		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter U16"  		},
-	[ePAR_TEST_I16] = {	.id = 3,  .name = "Test_i16",  .min.i16 = -10,  .max.i16 = 100,  .def.i16 = -5,			.unit = "n/a",		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter I16"  		},
+	[ePAR_TEST_U16] = {	.id = 2,  .name = "Test_u16",  .min.u16 = 0,    .max.u16 = 10,  .def.u16 = 3,      .unit = "n/a", .type = ePAR_TYPE_U16, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter U16"},
+	[ePAR_TEST_I16] = {	.id = 3,  .name = "Test_i16",  .min.i16 = -10,  .max.i16 = 100, .def.i16 = -5,     .unit = "n/a", .type = ePAR_TYPE_I16, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter I16"},
 
-	[ePAR_TEST_U32] = {	.id = 4,  .name = "Test_u32",  .min.u32 = 0,  .max.u32 = 10,  .def.u32 = 10,			.unit = "n/a",		.type = ePAR_TYPE_U32,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter U32"  		},
-	[ePAR_TEST_I32] = {	.id = 5,  .name = "Test_i32",  .min.i32 = -10,  .max.i32 = 100,  .def.i32 = -10,			.unit = "n/a",		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter I32"  		},
+	[ePAR_TEST_U32] = {	.id = 4,  .name = "Test_u32",  .min.u32 = 0,    .max.u32 = 10,  .def.u32 = 10,     .unit = "n/a", .type = ePAR_TYPE_U32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter U32" },
+	[ePAR_TEST_I32] = {	.id = 5,  .name = "Test_i32",  .min.i32 = -10,  .max.i32 = 100, .def.i32 = -10,    .unit = "n/a", .type = ePAR_TYPE_I32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter I32" },
 
-	[ePAR_TEST_F32] = {	.id = 6,  .name = "Test_f32",  .min.f32 = -10, .max.f32 = 100,  .def.f32 = -1.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter F32"  		},
+	[ePAR_TEST_F32] = {	.id = 6,  .name = "Test_f32",  .min.f32 = -10,  .max.f32 = 100, .def.f32 = -1.123, .unit = "n/a", .type = ePAR_TYPE_F32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter F32" },
 
 	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
