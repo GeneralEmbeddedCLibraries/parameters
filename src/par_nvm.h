@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,7 +7,7 @@
 *@brief    	Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.3.0
+*@version	V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -30,11 +30,12 @@
 	////////////////////////////////////////////////////////////////////////////////
 	// Functions Prototypes
 	////////////////////////////////////////////////////////////////////////////////
-	par_status_t par_nvm_init		(void);
-	par_status_t par_nvm_write		(const par_num_t par_num);
-	par_status_t par_nvm_write_all	(void);
-
-	void par_nvm_print_nvm_lut(void);
+	par_status_t par_nvm_init           (void);
+	par_status_t par_nvm_deinit         (void);
+	par_status_t par_nvm_write          (const par_num_t par_num);
+	par_status_t par_nvm_write_all      (void);
+	par_status_t par_nvm_reset_all      (void);
+	par_status_t par_nvm_print_nvm_lut  (void);
 
 #endif // 1 == PAR_CFG_NVM_EN
 

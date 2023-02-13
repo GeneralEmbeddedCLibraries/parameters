@@ -1,22 +1,15 @@
-# **Device parameters**
+# **Device Parameters**
 
-Parameters module is build for easier configuration and diagnostics of device via communication port of choise. All of the properties of parameters are configurable via single table. 
+Device Parameters module holds of all device parameters defined via a single configuration table and provides a simple configuratation and diagnostics of the system. Often Device Parameters serve as a backbone for embedded system as they control the end behaviour of the application. Additional it provides a insights of device performance therefore making diagnostics of a target device very simple. 
 
-Parameters module also takes care of management to NVM space.
+In combination of Device Parameters, [CLI](https://github.com/GeneralEmbeddedCLibraries/cli) and [NVM](https://github.com/GeneralEmbeddedCLibraries/nvm) modules embedded application is capable to communicate with PC (via CLI), configure and diagnose (via CLI to Device Parameters) and storing configured settings to NVM (via Device Parameters and NVM). Using the combination of following modules we can speed up embedded firmware application development dramatically. 
 
 ## **Dependencies**
---- 
 
-Definition of float32_t must be provided by user. In current implementation it is defined in "project_config.h". Just add following statement to your code where it suits the best.
+### **1. Parameter persistance**
 
-```C
-// Define float
-typedef float float32_t;
-```
+In case of using persistant options (*PAR_CFG_NVM_EN = 1*) it is mandatory to use [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm).
 
-Additionaly module uses "static_assert()" function defined in <assert.h>.
-
-In case of using persistant options for parameters it is mandatory to use [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm).
 
 ## **General Embedded C Libraries Ecosystem**
 In order to be part of *General Embedded C Libraries Ecosystem* this module must be placed in following path: 
@@ -25,11 +18,11 @@ root/middleware/parameters/parameters/"module_space"
 ```
 
  ## **API**
----
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
 | **par_init** | Initialization of parameters module | par_status_t par_init(void) |****
-| **par_is_init** | Get initialization flag | bool 	par_is_init (void) |
+| **par_deinit** | De-initialization of parameters module | par_status_t par_deinit(void) |****
+| **par_is_init** | Get initialization flag | par_status par_is_init(bool * const p_is_init) |
 | **par_set** | Set parameter | par_status_t 	par_set (const par_num_t par_num, const void *p_val) |
 | **par_set_to_default** | Set parameter to default value | par_status_t 	par_set_to_default (const par_num_t par_num) |
 | **par_set_all_to_default** | Set all parameters to default value | par_status_t 	par_set_all_to_default (void) |
@@ -44,9 +37,10 @@ With enable NVM additional fuctions are available:
 
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
-| **par_save_all** | Store all parameters to NVM | par_status_t 	par_save_all (void) |
-| **par_save** | Store single parameter | par_status_t 	par_save (const par_num_t par_num) |
-| **par_save_by_id** | Store single parameter by ID | par_status_t 	par_save_by_id (const uint16_t par_id) |
+| **par_save_all** | Store all parameters to NVM | par_status_t par_save_all(void) |
+| **par_save** | Store single parameter | par_status_t 	par_save(const par_num_t par_num) |
+| **par_save_by_id** | Store single parameter by ID | par_status_t par_save_by_id(const uint16_t par_id) |
+| **par_save_clean** | Re-Write complete NVM memory | par_status_t par_save_clean(void) |
 
 
 ## Usage
@@ -97,16 +91,15 @@ typedef enum
  *
  *	Each defined parameter has following properties:
  *
- *		i) 		Parameter ID: 	Unique parameter identification number. ID shall not be duplicated.
- *		ii) 	Name:			Parameter name. Max. length of 32 chars.
- *		iii)	Min:			Parameter minimum value. Min value must be less than max value.
- *		iv)		Max:			Parameter maximum value. Max value must be more than min value.
- *		v)		Def:			Parameter default value. Default value must lie between interval: [min, max]
- *		vi)		Unit:			In case parameter shows physical value. Max. length of 32 chars.
- *		vii)	Data type:		Parameter data type. Supported types: uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t and float32_t
- *		viii)	Access:			Access type visible from external device such as PC. Either ReadWrite or ReadOnly.
- *		ix)		Persistence:	Tells if parameter value is being written into NVM.
- *
+ *		i)      Parameter ID:   Unique parameter identification number. ID shall not be duplicated.
+ *		ii)     Name:           Parameter name. Max. length of 32 chars.
+ *		iii)    Min:            Parameter minimum value. Min value must be less than max value.
+ *		iv)     Max:            Parameter maximum value. Max value must be more than min value.
+ *		v)      Def:            Parameter default value. Default value must lie between interval: [min, max]
+ *		vi)     Unit:           In case parameter shows physical value. Max. length of 32 chars.
+ *		vii)    Data type:      Parameter data type. Supported types: uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t and float32_t
+ *		viii)   Access:         Access type visible from external device such as PC. Either ReadWrite or ReadOnly.
+ *		ix)     Persistence:    Tells if parameter value is being written into NVM.
  *
  *	@note	User shall fill up wanted parameter definitions!
  */
@@ -116,19 +109,19 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 	// USER CODE BEGIN...
 
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	//			ID			Name						Min 				Max 				Def 					Unit				Data type				PC Access					Persistent		Description 
+	//                   ID         Name                  Min              Max           Def                 Unit         Data type               PC Access                 Persistent		     Description 
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	[ePAR_TEST_U8] = {	.id = 0, 	.name = "Test_u8",	 		.min.u8 = 0,		.max.u8 = 10,		.def.u8 = 8,			.unit = "n/a",		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter U8" 		},
-	[ePAR_TEST_I8] = {	.id = 1, 	.name = "Test_i8", 			.min.i8 = -10,		.max.i8 = 100,		.def.i8 = -8,			.unit = "n/a",		.type = ePAR_TYPE_I8,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter I8"  		},
+	[ePAR_TEST_U8] = {	.id = 0,  .name = "Test_u8",  .min.u8 = 0,      .max.u8 = 10,   .def.u8 = 8,       .unit = "n/a", .type = ePAR_TYPE_U8, .access = ePAR_ACCESS_RW,  .persistant = true, .desc = "Test parameter U8" },
+	[ePAR_TEST_I8] = {	.id = 1,  .name = "Test_i8",  .min.i8 = -10,    .max.i8 = 100,  .def.i8 = -8,      .unit = "n/a", .type = ePAR_TYPE_I8, .access = ePAR_ACCESS_RW,  .persistant = true, .desc = "Test parameter" },
 
-	[ePAR_TEST_U16] = {	.id = 2, 	.name = "Test_u16",	 		.min.u16 = 0,		.max.u16 = 10,		.def.u16 = 3,			.unit = "n/a",		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter U16"  		},
-	[ePAR_TEST_I16] = {	.id = 3, 	.name = "Test_i16", 		.min.i16 = -10,		.max.i16 = 100,		.def.i16 = -5,			.unit = "n/a",		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter I16"  		},
+	[ePAR_TEST_U16] = {	.id = 2,  .name = "Test_u16",  .min.u16 = 0,    .max.u16 = 10,  .def.u16 = 3,      .unit = "n/a", .type = ePAR_TYPE_U16, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter U16"},
+	[ePAR_TEST_I16] = {	.id = 3,  .name = "Test_i16",  .min.i16 = -10,  .max.i16 = 100, .def.i16 = -5,     .unit = "n/a", .type = ePAR_TYPE_I16, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter I16"},
 
-	[ePAR_TEST_U32] = {	.id = 4, 	.name = "Test_u32", 		.min.u32 = 0,		.max.u32 = 10,		.def.u32 = 10,			.unit = "n/a",		.type = ePAR_TYPE_U32,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter U32"  		},
-	[ePAR_TEST_I32] = {	.id = 5, 	.name = "Test_i32", 		.min.i32 = -10,		.max.i32 = 100,		.def.i32 = -10,			.unit = "n/a",		.type = ePAR_TYPE_I32,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter I32"  		},
+	[ePAR_TEST_U32] = {	.id = 4,  .name = "Test_u32",  .min.u32 = 0,    .max.u32 = 10,  .def.u32 = 10,     .unit = "n/a", .type = ePAR_TYPE_U32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter U32" },
+	[ePAR_TEST_I32] = {	.id = 5,  .name = "Test_i32",  .min.i32 = -10,  .max.i32 = 100, .def.i32 = -10,    .unit = "n/a", .type = ePAR_TYPE_I32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter I32" },
 
-	[ePAR_TEST_F32] = {	.id = 6, 	.name = "Test_f32", 		.min.f32 = -10,		.max.f32 = 100,		.def.f32 = -1.123,		.unit = "n/a",		.type = ePAR_TYPE_F32,	.access = ePAR_ACCESS_RW, 	.persistant = true, .desc = "Test parameter F32"  		},
+	[ePAR_TEST_F32] = {	.id = 6,  .name = "Test_f32",  .min.f32 = -10,  .max.f32 = 100, .def.f32 = -1.123, .unit = "n/a", .type = ePAR_TYPE_F32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter F32" },
 
 	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -139,52 +132,15 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 
 4. Set-up all configurations options inside **par_cfg.h** file (such as using mutex, using NVM, ...)
 
-```C
-/**
- * 	Enable/Disable multiple access protection
- */
-#define PAR_CFG_MUTEX_EN						( 1 )
-
-/**
- * 	Enable/Disable storing persistent parameters to NVM
- */
-#define PAR_CFG_NVM_EN							( 1 )
-
-/**
- * 	NVM parameter region option
- *
- * 	@note 	User shall select region based on nvm_cfg.h region
- * 			definitions "nvm_region_name_t"
- *
- * 			Don't care if "PAR_CFG_NVM_EN" set to 0
- */
-#define PAR_CFG_NVM_REGION						( eNVM_REGION_EEPROM_RUN_PAR )
-
-/**
- * 	Enable/Disable parameter table unique ID checking
- *
- * @note	Base on hash unique ID is being calculated with
- * 			purpose to detect device and stored parameter table
- * 			difference.
- *
- * 			Must be disabled once the device is release in order
- * 			to prevent loss of calibrated data stored in NVM.
- *
- * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
- * 			not make sense to calculating ID at all.
- */
-#define PAR_CFG_TABLE_ID_CHECK_EN				( 1 )
-
-/**
- * 	Enable/Disable debug mode
- */
-#define PAR_CFG_DEBUG_EN						( 1 )
-
-/**
- * 	Enable/Disable assertions
- */
-#define PAR_CFG_ASSERT_EN						( 1 )
-```
+| Configuration | Description |
+| --- | --- |
+| **PAR_CFG_MUTEX_EN** 			| Enable/Disable multiple access protection. |
+| **PAR_CFG_NVM_EN** 			| Enable/Disable usage of NVM for persistant parameters. |
+| **PAR_CFG_NVM_REGION** 		| Select NVM region for Device Parameter storage space. | 
+| **PAR_CFG_DEBUG_EN** 			| Enable/Disable debugging mode. | 
+| **PAR_CFG_ASSERT_EN** 		| Enable/Disable asserts. Shall be disabled in release build!  | 
+| **PAR_DBG_PRINT** 			| Definition of debug print. | 
+| **PAR_ASSERT** 				| Definition of assert. | 
 
 5. Call **par_init()** function
 
@@ -195,8 +151,7 @@ if ( ePAR_OK != par_init())
     PROJECT_CONFIG_ASSERT( 0 );
 }
 ```
-
-In case of using storing parameters to NVM, NVM module must be initialized **before** parameters!
+**NOTICE: NVM module will be initialized as a part of Device Parameters initialization routine in case of usage (*PAR_CFG_NVM_EN = 1*)!**
 
 6. Set up parameter value
 
@@ -204,8 +159,19 @@ For set/get of parameters value always use a casting form!
 
 ```C
 // Set battery voltage & sytem current
-par_set( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
-par_set( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
+(void) par_set( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
+(void) par_set( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
+```
+
+7. Store to NVM
+
+```C
+// Store all paramters to NVM
+if ( ePAR_OK != par_save_all())
+{
+	// Storing to NVM error...
+	// Further actions here...
+}
 ```
 
 

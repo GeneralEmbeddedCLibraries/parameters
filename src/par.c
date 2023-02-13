@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,7 +7,7 @@
 *@brief     Device parameters API functions
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.3.0
+*@version	V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -21,13 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
 #include "par.h"
 #include "par_nvm.h"
 #include "../../par_cfg.h"
 #include "../../par_if.h"
 
-#include <stdlib.h>
-#include <string.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -101,7 +104,7 @@ static par_status_t par_set_f32				(const par_num_t par_num, const float32_t f32
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Parameters initialization
+*		Device Parameters initialization
 *
 *	At init parameter table is being check for correct definition, allocation
 *	in RAM space for parameters live values and additionaly interface to
@@ -114,51 +117,101 @@ par_status_t par_init(void)
 {
 	par_status_t status = ePAR_OK;
 
-	// Get parameter table
-	gp_par_table = par_cfg_get_table();
-	PAR_ASSERT( NULL != gp_par_table );
+    if ( false == gb_is_init )
+    {
+    	// Get parameter table
+    	gp_par_table = par_cfg_get_table();
+    	PAR_ASSERT( NULL != gp_par_table );
 
-	// Check if par table is defined correctly
-	status |= par_check_table_validy( gp_par_table );
+    	// Check if par table is defined correctly
+    	status |= par_check_table_validy( gp_par_table );
 
-	// Allocate space in RAM
-	status |= par_allocate_ram_space( &gpu8_par_value );
-	PAR_ASSERT( NULL != gpu8_par_value );
+    	// Allocate space in RAM
+    	status |= par_allocate_ram_space( &gpu8_par_value );
+    	PAR_ASSERT( NULL != gpu8_par_value );
 
-	// Initialize parameter interface
-	status |= par_if_init();
+    	// Initialize parameter interface
+    	status |= par_if_init();
 
-	// Init succeed
-	if ( ePAR_OK == status )
-	{
-		gb_is_init = true;
-	}
+    	// Init succeed
+    	if ( ePAR_OK == status )
+    	{
+    		gb_is_init = true;
+    	}
 
-	// Set all parameters to default
-	par_set_all_to_default();
+    	// Set all parameters to default
+    	par_set_all_to_default();
 
-	#if ( 1 == PAR_CFG_NVM_EN )
+    	#if ( 1 == PAR_CFG_NVM_EN )
 
-		// Init and load parameters from NVM
-		status |= par_nvm_init();
+    		// Init and load parameters from NVM
+    		status |= par_nvm_init();
 
-	#endif
+    	#endif
 
-	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", par_get_status_str( status ));
+    	PAR_DBG_PRINT( "PAR: Parameters initialized with status: %s", par_get_status_str( status ));
+    }
+    else
+    {
+        status = ePAR_ERROR_INIT;
+    }
 
 	return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get initialisation done flag
+*		De-initialize Device Parameters
 *
 * @return		status 		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-bool par_is_init(void)
+par_status_t par_deinit(void)
 {
-	return gb_is_init;
+    par_status_t status = ePAR_OK;
+
+    if ( true == gb_is_init )
+    {
+    	#if ( 1 == PAR_CFG_NVM_EN )
+
+    		// Init and load parameters from NVM
+    		status |= par_nvm_deinit();
+
+    	#endif
+        
+        // Module de-initialized
+        gb_is_init = false;
+    }
+    else
+    {
+        status = ePAR_ERROR_INIT;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get initialisation flag
+*
+* @param[out]   p_is_init   - Pointer to init flag
+* @return		status 		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_is_init(bool * const p_is_init)
+{
+	par_status_t status = ePAR_OK;
+    
+    if ( NULL != p_is_init )
+    {
+        *p_is_init = gb_is_init;
+    }
+    else
+    {
+        status = ePAR_ERROR;
+    }
+
+    return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -615,7 +668,16 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 	{
 		par_status_t status = ePAR_OK;
 
-		status = par_nvm_write_all();
+		PAR_ASSERT( true == gb_is_init );
+
+		if ( true == gb_is_init )
+		{
+			status = par_nvm_write_all();
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
+		}
 
 		return status;
 	}
@@ -635,7 +697,16 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 	{
 		par_status_t status = ePAR_OK;
 
-		status = par_nvm_write( par_num );
+		PAR_ASSERT( true == gb_is_init );
+
+		if ( true == gb_is_init )
+		{
+			status = par_nvm_write( par_num );
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
+		}
 
 		return status;
 	}
@@ -668,11 +739,51 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 		par_status_t 	status 	= ePAR_OK;
 		par_num_t		par_num	= 0;
 
-		status = par_get_num_by_id( par_id, &par_num );
+		PAR_ASSERT( true == gb_is_init );
 
-		if ( ePAR_OK == status )
+		if ( true == gb_is_init )
 		{
-			status = par_save( par_num );
+			status = par_get_num_by_id( par_id, &par_num );
+
+			if ( ePAR_OK == status )
+			{
+				status = par_save( par_num );
+			}
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
+		}
+
+		return status;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Clean all stored parameters inside NVM
+	*
+	* @note		This function shall be locked as it will erase complete parameter
+	* 			region of NVM space. Shall be used only during
+	*
+	* @pre		NVM storage must be initialized first and "PAR_CFG_NVM_EN"
+	* 			settings must be enabled.
+	*
+	* @return		status 	- Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_save_clean(void)
+	{
+		par_status_t status = ePAR_OK;
+
+		PAR_ASSERT( true == gb_is_init );
+
+		if ( true == gb_is_init )
+		{
+			status = par_nvm_reset_all();
+		}
+		else
+		{
+			status = ePAR_ERROR_INIT;
 		}
 
 		return status;

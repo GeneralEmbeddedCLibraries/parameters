@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,7 +7,7 @@
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.3.0
+*@version	V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -22,10 +22,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "project_config.h"
 #include "../../par_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,8 +35,8 @@
 /**
  * 	Module version
  */
-#define PAR_VER_MAJOR		( 1 )
-#define PAR_VER_MINOR		( 3 )
+#define PAR_VER_MAJOR		( 2 )
+#define PAR_VER_MINOR		( 0 )
 #define PAR_VER_DEVELOP		( 0 )
 
 /**
@@ -49,7 +49,7 @@ typedef enum
 	// Errors
 	ePAR_ERROR				= 0x01,		/**<General parameter error */
 	ePAR_ERROR_INIT			= 0x02,		/**<Parameter initialization error or usage before initialization */
-	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NMV error */
+	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NVM error */
 	ePAR_ERROR_CRC			= 0x08,		/**<Parameter CRC corrupted */
 
 	// Warnings
@@ -82,6 +82,11 @@ typedef enum
 	ePAR_ACCESS_RO = 0,			/**<Parameter read only */
 	ePAR_ACCESS_RW				/**<Parameter read/write */
 }par_io_acess_t;
+
+/**
+ *  32-bit floating data type definition
+ */
+typedef float float32_t;
 
 /**
  * 	Supported data types
@@ -121,7 +126,8 @@ typedef struct
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t 	par_init				(void);
-bool			par_is_init				(void);
+par_status_t 	par_deinit				(void);
+par_status_t    par_is_init				(bool * const p_is_init);
 
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
 par_status_t	par_set_to_default		(const par_num_t par_num);
@@ -137,6 +143,7 @@ par_status_t	par_get_type_size		(const par_type_list_t type, uint8_t * const p_s
 	par_status_t	par_save_all		(void);
 	par_status_t	par_save			(const par_num_t par_num);
 	par_status_t	par_save_by_id		(const uint16_t par_id);
+	par_status_t	par_save_clean		(void);
 #endif
 
 #if ( PAR_CFG_DEBUG_EN )
