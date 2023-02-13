@@ -49,7 +49,7 @@ typedef enum
 	// Errors
 	ePAR_ERROR				= 0x01,		/**<General parameter error */
 	ePAR_ERROR_INIT			= 0x02,		/**<Parameter initialization error or usage before initialization */
-	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NMV error */
+	ePAR_ERROR_NVM			= 0x04,		/**<Parameter storage to NVM error */
 	ePAR_ERROR_CRC			= 0x08,		/**<Parameter CRC corrupted */
 
 	// Warnings
