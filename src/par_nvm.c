@@ -220,6 +220,9 @@
         // NVM driver init OK
         if ( ePAR_OK == status );
         {
+            // Par NVM module init
+            gb_is_init = true;
+
     		// Get number of persistent parameters
     		per_par_nb = par_nvm_get_per_par();
 
@@ -294,9 +297,6 @@
     			status |= ePAR_WARN_NO_PERSISTANT;
     			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
     		}
-            
-            // Par NVM module init
-            gb_is_init = true;
         }
 
 		return status;
@@ -670,7 +670,6 @@
 	{
 		par_status_t status = ePAR_OK;
 
-		PAR_ASSERT( true == nvm_is_init());
 		PAR_ASSERT( NULL != p_head_obj );
 
 		if ( eNVM_OK != nvm_read( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_ADDR, sizeof( par_nvm_head_obj_t ), (uint8_t*) p_head_obj ))
@@ -694,9 +693,6 @@
 	{
 		par_status_t 		status 		= ePAR_OK;
 		par_nvm_head_obj_t	head_obj	= {0};
-
-		// Pre-condition
-		PAR_ASSERT( true == nvm_is_init());
 
 		// Add number of objects
 		head_obj.obj_nb = num_of_par;
