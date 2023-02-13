@@ -7,7 +7,7 @@
 *@brief     Device parameters API functions
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.3.0
+*@version	V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**

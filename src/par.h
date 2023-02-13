@@ -7,7 +7,7 @@
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
 *@date      22.05.2021
-*@version	V1.3.0
+*@version	V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -35,8 +35,8 @@
 /**
  * 	Module version
  */
-#define PAR_VER_MAJOR		( 1 )
-#define PAR_VER_MINOR		( 3 )
+#define PAR_VER_MAJOR		( 2 )
+#define PAR_VER_MINOR		( 0 )
 #define PAR_VER_DEVELOP		( 0 )
 
 /**
