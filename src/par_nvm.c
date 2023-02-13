@@ -191,6 +191,8 @@
 		static par_status_t par_nvm_write_table_id	(const uint8_t * const p_table_id);
 	#endif
 
+    static par_status_t par_nvm_init_nvm    (void);
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Functions
 	////////////////////////////////////////////////////////////////////////////////
@@ -212,15 +214,11 @@
 		uint16_t 		obj_nb		= 0;
 		uint16_t		per_par_nb	= 0;
         
-        // Init NVM
-        if ( eNVM_OK != nvm_init())
-        {
-            status = ePAR_ERROR_INIT;
-            PAR_DBG_PRINT( "PAR_NVM: NVM module init error!" );  
-        }
+        // Init NVM module
+        status = par_nvm_init_nvm();
 
         // NVM driver init OK
-        else
+        if ( ePAR_OK == status );
         {
     		// Get number of persistent parameters
     		per_par_nb = par_nvm_get_per_par();
@@ -482,6 +480,38 @@
         }
 
 		return status;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Print parameter NVM table
+	*
+	* @note		Only for debugging purposes
+	*
+	* @return	void
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+	par_status_t par_nvm_print_nvm_lut(void)
+	{
+        par_status_t status = ePAR_OK;
+
+		#if ( PAR_CFG_DEBUG_EN )
+			uint16_t par_num = 0;
+
+			PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
+			PAR_DBG_PRINT( " %s\t%s\t%s\t\t%s", "#", "ID", "Addr", "Valid" );
+			PAR_DBG_PRINT( "===============================" );
+
+			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+			{
+				PAR_DBG_PRINT( " %d\t%d\t0x%04X\t%d", par_num, 	g_par_nvm_data_obj_addr[par_num].id,
+																g_par_nvm_data_obj_addr[par_num].addr,
+																g_par_nvm_data_obj_addr[par_num].valid );
+				PAR_DBG_PRINT( "-----------------------------" );
+			}
+		#endif
+
+        return status;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -1066,31 +1096,34 @@
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
-	*		Print parameter NVM table
+	*		Initialize NVM module
 	*
-	* @note		Only for debugging purposes
-	*
-	* @return	void
+	* @return		status - Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	void par_nvm_print_nvm_lut(void)
-	{
-		#if ( PAR_CFG_DEBUG_EN )
-			uint16_t par_num = 0;
+    static par_status_t par_nvm_init_nvm(void)
+    {
+        par_status_t    status      = ePAR_OK;
+        bool            is_nvm_init = false;
 
-			PAR_DBG_PRINT( "PAR_NVM: Parameter NVM look-up table:" );
-			PAR_DBG_PRINT( " %s\t%s\t%s\t\t%s", "#", "ID", "Addr", "Valid" );
-			PAR_DBG_PRINT( "===============================" );
+        // First check if NVM is already init
+        (void) nvm_is_init( &is_nvm_init );
+        
+        // NVM is not jet init
+        if ( false == is_nvm_init )
+        {
+            // Init NVM
+            if ( eNVM_OK != nvm_init())
+            {
+                status = ePAR_ERROR_INIT;
+                PAR_DBG_PRINT( "PAR_NVM: NVM module init error!" );  
+            }
+        }
 
-			for ( par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
-			{
-				PAR_DBG_PRINT( " %d\t%d\t0x%04X\t%d", par_num, 	g_par_nvm_data_obj_addr[par_num].id,
-																g_par_nvm_data_obj_addr[par_num].addr,
-																g_par_nvm_data_obj_addr[par_num].valid );
-				PAR_DBG_PRINT( "-----------------------------" );
-			}
-		#endif
-	}
+        return status;
+    }
+
+
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
