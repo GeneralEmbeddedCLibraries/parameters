@@ -206,84 +206,92 @@
 		par_status_t 	status 		= ePAR_OK;
 		uint16_t 		obj_nb		= 0;
 		uint16_t		per_par_nb	= 0;
+        
+        // Init NVM
+        if ( eNVM_OK != nvm_init())
+        {
+            status = ePAR_ERROR_INIT;
+            PAR_DBG_PRINT( "PAR_NVM: NVM module init error!" );  
+        }
 
-		// TODO: Remove assert and add NVM init here....
-		PAR_ASSERT( true == nvm_is_init());
+        // NVM driver init OK
+        else
+        {
+    		// Get number of persistent parameters
+    		per_par_nb = par_nvm_get_per_par();
 
-		// Get number of persistent parameters
-		per_par_nb = par_nvm_get_per_par();
+    		// At least one persistent parameter
+    		if ( per_par_nb > 0 )
+    		{
+    			// Validate header
+    			status = par_nvm_validate_header( &obj_nb );
 
-		// At least one persistent parameter
-		if ( per_par_nb > 0 )
-		{
-			// Validate header
-			status = par_nvm_validate_header( &obj_nb );
+    			// NVM header OK
+    			if ( ePAR_OK == status )
+    			{
+    				// Check hash
+    				#if ( PAR_CFG_TABLE_ID_CHECK_EN )
+    					// TODO: ...
+    				#endif
 
-			// NVM header OK
-			if ( ePAR_OK == status )
-			{
-				// Check hash
-				#if ( PAR_CFG_TABLE_ID_CHECK_EN )
-					// TODO: ...
-				#endif
+    				// Load all parameters
+    				status = par_nvm_load_all( obj_nb );
 
-				// Load all parameters
-				status = par_nvm_load_all( obj_nb );
+    				// Load CRC error
+    				if ( ePAR_ERROR_CRC == status )
+    				{
+    					status = par_nvm_reset_all();
 
-				// Load CRC error
-				if ( ePAR_ERROR_CRC == status )
-				{
-					status = par_nvm_reset_all();
+    					status |= ePAR_WARN_SET_TO_DEF;
+    					status |= ePAR_WARN_NVM_REWRITTEN;
+    				}
 
-					status |= ePAR_WARN_SET_TO_DEF;
-					status |= ePAR_WARN_NVM_REWRITTEN;
-				}
+    				// NVM error
+    				else if ( ePAR_ERROR_NVM == status )
+    				{
+    					/**
+    					 * 	@note	Set all parameters to default as it might happend
+    					 *			that some of the parameters will be loaded from
+    					 *			NVM and some will have default values.
+    					 *
+    					 *			System might behave unexpectedly if having some
+    					 *			default and some modified parameter values!
+    					 */
+    					par_set_all_to_default();
 
-				// NVM error
-				else if ( ePAR_ERROR_NVM == status )
-				{
-					/**
-					 * 	@note	Set all parameters to default as it might happend
-					 *			that some of the parameters will be loaded from
-					 *			NVM and some will have default values.
-					 *
-					 *			System might behave unexpectedly if having some
-					 *			default and some modified parameter values!
-					 */
-					par_set_all_to_default();
+    					status |= ePAR_WARN_SET_TO_DEF;
+    				}
+    				else
+    				{
+    					// No actions...
+    				}
+    			}
 
-					status |= ePAR_WARN_SET_TO_DEF;
-				}
-				else
-				{
-					// No actions...
-				}
-			}
+    			// 		Signature NOT OK
+    			// OR	Header CRC corrupted
+    			else if (	( ePAR_ERROR == status )
+    					||	( ePAR_ERROR_CRC == status ))
+    			{
+    				status = par_nvm_reset_all();
 
-			// 		Signature NOT OK
-			// OR	Header CRC corrupted
-			else if (	( ePAR_ERROR == status )
-					||	( ePAR_ERROR_CRC == status ))
-			{
-				status = par_nvm_reset_all();
+    				status |= ePAR_WARN_SET_TO_DEF;
+    				status |= ePAR_WARN_NVM_REWRITTEN;
+    			}
 
-				status |= ePAR_WARN_SET_TO_DEF;
-				status |= ePAR_WARN_NVM_REWRITTEN;
-			}
+    			// NVM Error
+    			else
+    			{
+    				// No actions...
+    			}
+    		}
 
-			// NVM Error
-			else
-			{
-				// No actions...
-			}
-		}
-
-		// No persistent parameters
-		else
-		{
-			status |= ePAR_WARN_NO_PERSISTANT;
-			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
-		}
+    		// No persistent parameters
+    		else
+    		{
+    			status |= ePAR_WARN_NO_PERSISTANT;
+    			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
+    		}
+        }
 
 		return status;
 	}
@@ -303,7 +311,7 @@
 		uint32_t			par_addr	= 0UL;
 		par_cfg_t			par_cfg		= {0};
 
-		PAR_ASSERT( true == nvm_is_init());
+		PAR_ASSERT( true == nvm_is_init());     // TODO: Fix this!!!!
 		PAR_ASSERT( par_num < ePAR_NUM_OF )
 
 		if ( par_num < ePAR_NUM_OF )
@@ -366,6 +374,7 @@
 		par_cfg_t		par_cfg		= { 0 };
 
 		// Corrupt header (enter critical)
+        // NOTE: When dealing with flash memory, this also clears NVM header!
 		status |= par_nvm_corrupt_signature();
 
 		for ( par_num = 0UL; par_num < ePAR_NUM_OF; par_num++ )
@@ -379,7 +388,10 @@
 		}
 
 		// Re-write header (exit critical)
-		status |= par_nvm_write_signature();
+		//status |= par_nvm_write_signature();
+
+        // Re-write header (exit critical)
+		status |= par_nvm_write_header( par_nvm_get_per_par());
 
 		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
 
