@@ -151,7 +151,7 @@ if ( ePAR_OK != par_init())
     PROJECT_CONFIG_ASSERT( 0 );
 }
 ```
-**NOTICE: NVM module will be part of Device Parameters initialization routine in case of usage (*PAR_CFG_NVM_EN = 1*)!**
+**NOTICE: NVM module will be initialized as a part of Device Parameters initialization routine in case of usage (*PAR_CFG_NVM_EN = 1*)!**
 
 6. Set up parameter value
 
