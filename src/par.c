@@ -701,7 +701,7 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 
 		if ( true == gb_is_init )
 		{
-			status = par_nvm_write( par_num );
+			status = par_nvm_write( par_num, true );
 		}
 		else
 		{
