@@ -6,8 +6,8 @@
 *@file      par_nvm.h
 *@brief    	Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
-*@date      22.05.2021
-*@version	V2.0.0
+*@date      15.02.2023
+*@version	V2.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -32,7 +32,7 @@
 	////////////////////////////////////////////////////////////////////////////////
 	par_status_t par_nvm_init           (void);
 	par_status_t par_nvm_deinit         (void);
-	par_status_t par_nvm_write          (const par_num_t par_num);
+	par_status_t par_nvm_write          (const par_num_t par_num, const bool nvm_sync);
 	par_status_t par_nvm_write_all      (void);
 	par_status_t par_nvm_reset_all      (void);
 	par_status_t par_nvm_print_nvm_lut  (void);

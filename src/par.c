@@ -6,8 +6,8 @@
 *@file      par.c
 *@brief     Device parameters API functions
 *@author    Ziga Miklosic
-*@date      22.05.2021
-*@version	V2.0.0
+*@date      15.02.2023
+*@version	V2.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -29,8 +29,6 @@
 #include "par_nvm.h"
 #include "../../par_cfg.h"
 #include "../../par_if.h"
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -701,7 +699,7 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 
 		if ( true == gb_is_init )
 		{
-			status = par_nvm_write( par_num );
+			status = par_nvm_write( par_num, true );
 		}
 		else
 		{

@@ -6,8 +6,8 @@
 *@file      par.h
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
-*@date      22.05.2021
-*@version	V2.0.0
+*@date      15.02.2023
+*@version	V2.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -36,7 +36,7 @@
  * 	Module version
  */
 #define PAR_VER_MAJOR		( 2 )
-#define PAR_VER_MINOR		( 0 )
+#define PAR_VER_MINOR		( 1 )
 #define PAR_VER_DEVELOP		( 0 )
 
 /**
