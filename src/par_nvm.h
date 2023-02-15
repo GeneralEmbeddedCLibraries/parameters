@@ -6,8 +6,8 @@
 *@file      par_nvm.h
 *@brief    	Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
-*@date      22.05.2021
-*@version	V2.0.0
+*@date      15.02.2023
+*@version	V2.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
