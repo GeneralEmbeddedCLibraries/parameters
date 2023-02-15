@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project/module adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## V2.1.0 - 15.02.2023
+
+### Changed
+ - Parameter NVM management introduce nvm_sync function
+ - Cross-compatibility criteria with NVM change 
+
+
+---
 ## V2.0.0 - 13.02.2023
 ### Added
  - Added NVM initialization (Issue #19: Add NVM init)
