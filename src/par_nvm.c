@@ -68,7 +68,7 @@
 	 * 	Check NVM module compatibility
 	 */
 	_Static_assert( 2 == NVM_VER_MAJOR );
-	_Static_assert( 0 == NVM_VER_MINOR );
+	_Static_assert( 1 <= NVM_VER_MINOR );
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Definitions
@@ -192,6 +192,7 @@
 	#endif
 
     static par_status_t par_nvm_init_nvm    (void);
+    static par_status_t par_nvm_sync        (void);
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Functions
@@ -331,12 +332,20 @@
 	////////////////////////////////////////////////////////////////////////////////
 	/**
 	*		Store parameter value to NVM
+    *
+    * @note     Sync has only effect when using EEPROM emulated NVM feature! When 
+    *           using Flash end memory device.
+    *
+    * @note     In case of using Flash end memory for storing parameters take special
+    *           care when enabling sync (nvm_sync=true). At each sync data from RAM
+    *           is copied to FLASH.
 	*
-	* @param[in]	par_num	- Parameter enumeration number
-	* @return		status 	- Status of operation
+	* @param[in]	par_num     - Parameter enumeration number
+	* @param[in]	nvm_sync    - Perform NVM sync after parameter write
+	* @return		status      - Status of operation
 	*/
 	////////////////////////////////////////////////////////////////////////////////
-	par_status_t par_nvm_write(const par_num_t par_num)
+	par_status_t par_nvm_write(const par_num_t par_num, const bool nvm_sync)
 	{
 		par_status_t 		status 		= ePAR_OK;
 		par_nvm_data_obj_t	obj_data	= { 0 };
@@ -377,9 +386,14 @@
     				// Write to NVM
     				if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, par_addr, sizeof( par_nvm_data_obj_t ), (const uint8_t*) &obj_data ))
     				{
-    					status = ePAR_ERROR_NVM;
+    					status |= ePAR_ERROR_NVM;
     				}
 
+                    // Sync NVM
+                    if ( true == nvm_sync )
+                    {
+                        status |= par_nvm_sync();
+                    }
     			}
     			else
     			{
@@ -427,13 +441,17 @@
                 
                 // Store only persistant one
     			if ( true == par_cfg.persistant )
-    			{
-    				status |= par_nvm_write( par_num );
+    			{   
+                    // Sync will be done later
+    				status |= par_nvm_write( par_num, false );
     			}
     		}
 
             // Re-write header (exit critical)
     		status |= par_nvm_write_header( par_nvm_get_per_par());
+
+            // Sync NVM
+            status |= par_nvm_sync();
 
     		PAR_DBG_PRINT( "PAR_NVM: Storing all to NVM status: %s", par_get_status_str(status) );
         }
@@ -473,6 +491,9 @@
 
     		// Re-write header as reseting whole NVM parameter memory
     		status |= par_nvm_write_header( par_nvm_get_per_par() );
+
+            // Sync NVM
+            status |= par_nvm_sync();
         }
         else
         {
@@ -955,6 +976,9 @@
 				// NOTE: In general obj number will only rise!
 				status |= par_nvm_write_header( num_of_par + new_par_cnt );
 
+                // Sync NVM
+                status |= par_nvm_sync();
+
 				#if ( PAR_CFG_DEBUG_EN )
 					PAR_DBG_PRINT( "PAR_NVM: Added %d new parameters to NVM LUT table!", new_par_cnt );
 				#endif
@@ -1119,6 +1143,24 @@
         return status;
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+	/**
+	*		Sync NVM module
+	*
+	* @return		status - Status of operation
+	*/
+	////////////////////////////////////////////////////////////////////////////////
+    static par_status_t par_nvm_sync(void)
+    {
+        par_status_t status = ePAR_OK;
+
+        if ( eNVM_OK != nvm_sync( PAR_CFG_NVM_REGION ))
+        {
+            status = ePAR_ERROR_NVM;
+        }
+
+        return status;       
+    }
 
 
 	////////////////////////////////////////////////////////////////////////////////
