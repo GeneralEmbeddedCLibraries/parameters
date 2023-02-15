@@ -6,8 +6,8 @@
 *@file      par_cfg.c
 *@brief     Configuration for device parameters
 *@author    Ziga Miklosic
-*@date      22.05.2021
-*@version	V2.0.0
+*@date      15.02.2023
+*@version	V2.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -54,10 +54,6 @@
  *
  *
  *	@note	User shall fill up wanted parameter definitions!
- *
- *	@note 	Version V1.0.1 parameters store to NVM based on ID numbers (fixed addresses)!
- *
- *			For this configuration of nvm size=1024 max persistent par ID must be less than 128
  */
 static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 {
