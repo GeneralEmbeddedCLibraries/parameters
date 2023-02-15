@@ -298,9 +298,6 @@
     			status |= ePAR_WARN_NO_PERSISTANT;
     			PAR_DBG_PRINT( "PAR_NVM: No persistent parameters... Nothing to do..." );
     		}
-
-            // Sync NVM
-            status |= par_nvm_sync();
         }
 
 		return status;
@@ -978,6 +975,9 @@
 				// Add additional new persistent parameters number to existing one!
 				// NOTE: In general obj number will only rise!
 				status |= par_nvm_write_header( num_of_par + new_par_cnt );
+
+                // Sync NVM
+                status |= par_nvm_sync();
 
 				#if ( PAR_CFG_DEBUG_EN )
 					PAR_DBG_PRINT( "PAR_NVM: Added %d new parameters to NVM LUT table!", new_par_cnt );
