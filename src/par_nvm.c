@@ -172,7 +172,6 @@
 	static par_status_t		par_nvm_load_all					(const uint16_t num_of_par);
 
 	static par_status_t		par_nvm_corrupt_signature			(void);
-	static par_status_t		par_nvm_write_signature				(void);
 	static par_status_t 	par_nvm_read_header					(par_nvm_head_obj_t * const p_head_obj);
 	static par_status_t 	par_nvm_write_header				(const uint16_t num_of_par);
 	static par_status_t 	par_nvm_validate_header				(uint16_t * const p_num_of_par);
@@ -219,7 +218,7 @@
         status = par_nvm_init_nvm();
 
         // NVM driver init OK
-        if ( ePAR_OK == status );
+        if ( ePAR_OK == status )
         {
             // Par NVM module init
             gb_is_init = true;
@@ -568,30 +567,6 @@
 		{
 			status = ePAR_ERROR_NVM;
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature corruption!" );
-		}
-
-		return status;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*		Write correct signature
-	*
-	* @brief	Return ePAR_OK if signature corrupted OK. In case of NVM error it returns
-	* 			ePAR_ERROR_NVM.
-	*
-	* @return		status 	- Status of operation
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t	par_nvm_write_signature(void)
-	{
-		par_status_t status = ePAR_OK;
-		const uint32_t sign = PAR_NVM_SIGN;
-
-		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
-		{
-			status = ePAR_ERROR_NVM;
-			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature write!" );
 		}
 
 		return status;
