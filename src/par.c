@@ -279,6 +279,7 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 							status = par_set_f32( par_num, *(float32_t*) p_val );
 							break;
 
+						case ePAR_TYPE_NUM_OF:
 						default:
 							PAR_ASSERT( 0 );
 							break;
@@ -449,6 +450,7 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 					*(float32_t*) p_val = *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
 					break;
 
+				case ePAR_TYPE_NUM_OF:
 				default:
 					PAR_ASSERT( 0 );
 					break;
@@ -637,6 +639,7 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 				*p_size = sizeof( float32_t );
 				break;
 
+			case ePAR_TYPE_NUM_OF:
 			default:
 				status = ePAR_ERROR;
 				break;
