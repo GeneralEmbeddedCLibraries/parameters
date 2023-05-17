@@ -65,7 +65,7 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	[ePAR_TEST_I16] 	= 	{	.id = 50, 	.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true,		.desc = "Test  I16 parameter"		},
-	[ePAR_TEST_I16_2] 	=	{	.id = 51, 	.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true		.desc = "Test  I16 2 parameter"		},
+	[ePAR_TEST_I16_2] 	=	{	.id = 51, 	.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true,		.desc = "Test  I16 2 parameter"		},
 
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
