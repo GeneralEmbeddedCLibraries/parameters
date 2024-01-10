@@ -485,7 +485,7 @@ par_status_t par_get_id(const par_num_t par_num, uint16_t * const p_id)
 
 	PAR_ASSERT( true == gb_is_init );
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
-	PAR_ASSERT( NULL != p_id )
+	PAR_ASSERT( NULL != p_id );
 
 	if ( true == gb_is_init )
 	{

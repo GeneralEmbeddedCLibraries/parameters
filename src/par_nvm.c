@@ -352,7 +352,7 @@
 		par_cfg_t			par_cfg		= {0};
 
 		PAR_ASSERT( true == gb_is_init );     
-		PAR_ASSERT( par_num < ePAR_NUM_OF )
+		PAR_ASSERT( par_num < ePAR_NUM_OF );
 
 		if ( true == gb_is_init )
 		{
