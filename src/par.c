@@ -653,6 +653,69 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 	return status;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter type
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @param[in]	p_type 	- Pointer to parameter type
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_get_type(const par_num_t par_num, par_type_list_t *const p_type)
+{
+	par_status_t status = ePAR_OK;
+
+	PAR_ASSERT( true == gb_is_init );
+	PAR_ASSERT( NULL != p_type );
+    PAR_ASSERT( ePAR_NUM_OF > par_num );
+
+	if ( 	( true == gb_is_init )
+		&&	( NULL != p_type )
+        &&  ( ePAR_NUM_OF > par_num ))
+	{
+        *p_type = gp_par_table[par_num].type;
+	}
+	else
+	{
+		status = ePAR_ERROR;
+	}
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get parameter value range
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @param[in]	p_type 	- Pointer to value range
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_get_range(const par_num_t par_num, par_range_t *const p_range)
+{
+	par_status_t status = ePAR_OK;
+
+	PAR_ASSERT( true == gb_is_init );
+	PAR_ASSERT( NULL != p_range );
+    PAR_ASSERT( ePAR_NUM_OF > par_num );
+
+	if ( 	( true == gb_is_init )
+		&&	( NULL != p_range )
+        &&  ( ePAR_NUM_OF > par_num ))
+	{
+        p_range->min = gp_par_table[par_num].min;
+        p_range->max = gp_par_table[par_num].max;
+	}
+	else
+	{
+		status = ePAR_ERROR;
+	}
+
+	return status;
+}
+
 #if ( 1 == PAR_CFG_NVM_EN )
 
 	////////////////////////////////////////////////////////////////////////////////
