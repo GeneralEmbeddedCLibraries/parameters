@@ -321,9 +321,7 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_set_to_default(const par_num_t par_num)
 {
-	par_status_t 	status 			= ePAR_OK;
-	par_cfg_t		par_cfg			= {0};
-	uint8_t			par_type_size	= 0;
+	par_status_t status = ePAR_OK;
 
 	PAR_ASSERT( true == gb_is_init );
 	PAR_ASSERT( par_num < ePAR_NUM_OF );
@@ -332,14 +330,7 @@ par_status_t par_set_to_default(const par_num_t par_num)
 	{
 		if ( par_num < ePAR_NUM_OF )
 		{
-			// Get par type
-			par_get_config( par_num, &par_cfg );
-
-			// Get size of data type
-			par_get_type_size( par_cfg.type, &par_type_size );
-
-			// Copy default value to live space
-			memcpy( &gpu8_par_value[gu32_par_addr_offset[par_num]], &gp_par_table[par_num].def.u8, par_type_size );
+            status |= par_set(par_num, &gp_par_table[par_num].def);
 		}
 		else
 		{
