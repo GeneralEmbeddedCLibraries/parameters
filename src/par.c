@@ -95,6 +95,13 @@ static par_status_t par_set_i16				(const par_num_t par_num, const int16_t i16_v
 static par_status_t par_set_u32				(const par_num_t par_num, const uint32_t u32_val);
 static par_status_t par_set_i32				(const par_num_t par_num, const int32_t i32_val);
 static par_status_t par_set_f32				(const par_num_t par_num, const float32_t f32_val);
+static uint8_t      par_get_u8				(const par_num_t par_num);
+static int8_t       par_get_i8				(const par_num_t par_num);
+static uint16_t     par_get_u16				(const par_num_t par_num);
+static int16_t      par_get_i16				(const par_num_t par_num);
+static uint32_t     par_get_u32				(const par_num_t par_num);
+static int32_t      par_get_i32				(const par_num_t par_num);
+static float32_t    par_get_f32				(const par_num_t par_num);
 static void         par_load_default        (void);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -432,31 +439,31 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 			switch ( gp_par_table[par_num].type )
 			{
 				case ePAR_TYPE_U8:
-					*(uint8_t*) p_val = *(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(uint8_t*) p_val = par_get_u8(par_num);
 					break;
 
 				case ePAR_TYPE_I8:
-					*(int8_t*) p_val = *(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(int8_t*) p_val = par_get_i8(par_num);
 					break;
 
 				case ePAR_TYPE_U16:
-					*(uint16_t*) p_val = *(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(uint16_t*) p_val = par_get_u16(par_num);
 					break;
 
 				case ePAR_TYPE_I16:
-					*(int16_t*) p_val = *(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(int16_t*) p_val = par_get_i16(par_num);
 					break;
 
 				case ePAR_TYPE_U32:
-					*(uint32_t*) p_val = *(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(uint32_t*) p_val = par_get_u32(par_num);
 					break;
 
 				case ePAR_TYPE_I32:
-					*(int32_t*) p_val = *(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(int32_t*) p_val = par_get_i32(par_num);
 					break;
 
 				case ePAR_TYPE_F32:
-					*(float32_t*) p_val = *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+					*(float32_t*) p_val = par_get_f32(par_num);
 					break;
 
 				case ePAR_TYPE_NUM_OF:
@@ -1277,6 +1284,97 @@ static par_status_t par_set_f32(const par_num_t par_num, const float32_t f32_val
 	}
 
 	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get unsigned 8-bit parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static uint8_t par_get_u8(const par_num_t par_num)
+{
+    return *(uint8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get signed 8-bit parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static int8_t par_get_i8(const par_num_t par_num)
+{
+    return *(int8_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get unsigned 16-bit parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static uint16_t par_get_u16(const par_num_t par_num)
+{
+    return *(uint16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get signed 16-bit parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static int16_t par_get_i16(const par_num_t par_num)
+{
+    return *(int16_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get unsigned 32-bit parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static uint32_t par_get_u32(const par_num_t par_num)
+{
+    return *(uint32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get signed 32-bit parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static int32_t par_get_i32(const par_num_t par_num)
+{
+    return *(int32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get floating value parameter
+*
+* @param[in]	par_num	- Parameter number (enumeration)
+* @return		value   - Value of parameter
+*/
+////////////////////////////////////////////////////////////////////////////////
+static float32_t par_get_f32(const par_num_t par_num)
+{
+    return *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
