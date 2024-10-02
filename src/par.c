@@ -95,6 +95,7 @@ static par_status_t par_set_i16				(const par_num_t par_num, const int16_t i16_v
 static par_status_t par_set_u32				(const par_num_t par_num, const uint32_t u32_val);
 static par_status_t par_set_i32				(const par_num_t par_num, const int32_t i32_val);
 static par_status_t par_set_f32				(const par_num_t par_num, const float32_t f32_val);
+static void         par_load_default        (void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -138,7 +139,7 @@ par_status_t par_init(void)
     	}
 
     	// Set all parameters to default
-    	par_set_all_to_default();
+    	par_load_default();
 
     	#if ( 1 == PAR_CFG_NVM_EN )
 
@@ -1263,6 +1264,33 @@ static par_status_t par_set_f32(const par_num_t par_num, const float32_t f32_val
 	}
 
 	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Load parameter default values to live space
+*
+* @return		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void par_load_default(void)
+{
+	par_cfg_t par_cfg = {0};
+	uint8_t par_type_size = 0;
+
+    for ( par_num_t par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+    {
+        // Get par type
+        par_get_config( par_num, &par_cfg );
+
+        // Get size of data type
+        par_get_type_size( par_cfg.type, &par_type_size );
+
+        // Copy default value to live space
+        memcpy( &gpu8_par_value[gu32_par_addr_offset[par_num]], &gp_par_table[par_num].def.u8, par_type_size );
+    }
+
+    PAR_DBG_PRINT( "PAR: Loading default parameters" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
