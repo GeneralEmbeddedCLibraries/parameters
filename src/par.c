@@ -1275,19 +1275,43 @@ static par_status_t par_set_f32(const par_num_t par_num, const float32_t f32_val
 ////////////////////////////////////////////////////////////////////////////////
 static void par_load_default(void)
 {
-	par_cfg_t par_cfg = {0};
-	uint8_t par_type_size = 0;
-
     for ( par_num_t par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
     {
-        // Get par type
-        par_get_config( par_num, &par_cfg );
+        switch ( gp_par_table[ par_num ].type )
+        {
+            case ePAR_TYPE_U8:
+                par_set_u8( par_num, gp_par_table[par_num].def.u8 );
+                break;
 
-        // Get size of data type
-        par_get_type_size( par_cfg.type, &par_type_size );
+            case ePAR_TYPE_I8:
+                par_set_i8( par_num, gp_par_table[par_num].def.i8 );
+                break;
 
-        // Copy default value to live space
-        memcpy( &gpu8_par_value[gu32_par_addr_offset[par_num]], &gp_par_table[par_num].def.u8, par_type_size );
+            case ePAR_TYPE_U16:
+                par_set_u16( par_num, gp_par_table[par_num].def.u16 );
+                break;
+
+            case ePAR_TYPE_I16:
+                par_set_i16( par_num, gp_par_table[par_num].def.i16 );
+                break;
+
+            case ePAR_TYPE_U32:
+                par_set_u32( par_num, gp_par_table[par_num].def.u32 );
+                break;
+
+            case ePAR_TYPE_I32:
+                par_set_i32( par_num, gp_par_table[par_num].def.i32 );
+                break;
+
+            case ePAR_TYPE_F32:
+                par_set_f32( par_num, gp_par_table[par_num].def.f32 );
+                break;
+
+            case ePAR_TYPE_NUM_OF:
+            default:
+                PAR_ASSERT( 0 );
+                break;
+        }
     }
 
     PAR_DBG_PRINT( "PAR: Loading default parameters" );
