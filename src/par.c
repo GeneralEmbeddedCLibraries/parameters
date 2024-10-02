@@ -290,7 +290,10 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 					par_if_release_mutex();
             #endif
             #if ( 1 == PAR_CFG_AUTO_SAVE)
-                    status |= par_save(par_num);
+                    if ( true == gp_par_table[ par_num ].persistant )
+                    {
+                        status |= par_save(par_num);
+                    }
             #endif
 				}
             #if ( 1 == PAR_CFG_MUTEX_EN )
