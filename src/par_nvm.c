@@ -882,13 +882,14 @@
 							// Check if already in LUT
 							if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
 							{
-								// Set parameter
-								par_set( par_num, &obj_data.data );
-
 								// Add to NVM lut
 								g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
 								g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
 								g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
+                                
+                                //TODO
+                                // Set parameter
+								par_set( par_num, &obj_data.data );
 
 								// Increment current persistent parameter counter
 								per_par_nb++;
@@ -1061,6 +1062,8 @@
 				break;
 			}
 		}
+
+        // ZIGA: TODO: Validate if address is found correctly!!!
 
 		return obj_addr;
 	}
