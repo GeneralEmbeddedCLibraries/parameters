@@ -487,10 +487,14 @@
     		status |= par_nvm_write_all();
 
     		// Re-write header as reseting whole NVM parameter memory
-    		status |= par_nvm_write_header( par_nvm_get_per_par() );
+    		
+            // ZIGA: Redundant TODO: 
+            //status |= par_nvm_write_header( par_nvm_get_per_par() );
 
             // Sync NVM
-            status |= par_nvm_sync();
+
+            // ZIGA: Redundant TODO: 
+            //status |= par_nvm_sync();
         }
         else
         {
