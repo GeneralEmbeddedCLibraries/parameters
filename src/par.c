@@ -153,13 +153,11 @@ par_status_t par_init(void)
     		// Init and load parameters from NVM
     		status |= par_nvm_init();
             
-            // TODO:
-            //if (ePAR_OK != status)
-            if ( ePAR_ERROR_NVM == ( ePAR_ERROR_NVM & status ))
+            // Load default parameters in case of incomplete loading of parameters from NVM.
+            // This will guarantee that we are working with valid default parameters preventing potential issues resulting from
+            // loading only some of the parameters from NVM.
+            if (0 != (ePAR_ERROR_NVM & status))
             {
-                // Load default parameters in case of problem or incomplete loading of parameters from NVM.
-                // This will guarantee that we are working with valid default parameters preventing potential issues resulting from
-                // loading only some parameters from NVM and not all.
                 par_load_default();
             }
 
