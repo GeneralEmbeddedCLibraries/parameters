@@ -102,7 +102,6 @@ static int16_t      par_get_i16				(const par_num_t par_num);
 static uint32_t     par_get_u32				(const par_num_t par_num);
 static int32_t      par_get_i32				(const par_num_t par_num);
 static float32_t    par_get_f32				(const par_num_t par_num);
-static void         par_load_default        (void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -146,20 +145,12 @@ par_status_t par_init(void)
     	}
 
     	// Set all parameters to default
-    	par_load_default();
+    	par_set_all_to_default();
 
     	#if ( 1 == PAR_CFG_NVM_EN )
 
     		// Init and load parameters from NVM
     		status |= par_nvm_init();
-            
-            // Load default parameters in case of incomplete loading of parameters from NVM.
-            // This will guarantee that we are working with valid default parameters preventing potential issues resulting from
-            // loading only some of the parameters from NVM.
-            if (0 != (ePAR_ERROR_NVM & status))
-            {
-                par_load_default();
-            }
 
     	#endif
 
@@ -263,43 +254,35 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 		{
 			#if ( 1 == PAR_CFG_MUTEX_EN )
 				if ( ePAR_OK == par_if_aquire_mutex())
-            #endif
 				{
-                    bool has_value_changed = false;
+			#endif
 					switch ( gp_par_table[ par_num ].type )
 					{
 						case ePAR_TYPE_U8:
-                            has_value_changed = (par_get_u8(par_num) != *(uint8_t*)p_val);
 							status = par_set_u8( par_num, *(uint8_t*) p_val );
 							break;
 
 						case ePAR_TYPE_I8:
-                            has_value_changed = (par_get_i8(par_num) != *(int8_t*)p_val);
 							status = par_set_i8( par_num, *(int8_t*) p_val );
 							break;
 
 						case ePAR_TYPE_U16:
-                            has_value_changed = (par_get_u16(par_num) != *(uint16_t*)p_val);
 							status = par_set_u16( par_num, *(uint16_t*) p_val );
 							break;
 
 						case ePAR_TYPE_I16:
-                            has_value_changed = (par_get_i16(par_num) != *(int16_t*)p_val);
 							status = par_set_i16( par_num, *(int16_t*) p_val );
 							break;
 
 						case ePAR_TYPE_U32:
-                            has_value_changed = (par_get_u32(par_num) != *(uint32_t*)p_val);
 							status = par_set_u32( par_num, *(uint32_t*) p_val );
 							break;
 
 						case ePAR_TYPE_I32:
-                            has_value_changed = (par_get_i32(par_num) != *(int32_t*)p_val);
 							status = par_set_i32( par_num, *(int32_t*) p_val );
 							break;
 
 						case ePAR_TYPE_F32:
-                            has_value_changed = (par_get_f32(par_num) != *(float32_t*)p_val);
 							status = par_set_f32( par_num, *(float32_t*) p_val );
 							break;
 
@@ -311,15 +294,8 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 
 			#if ( 1 == PAR_CFG_MUTEX_EN )
 					par_if_release_mutex();
-            #endif
-            #if ( 1 == PAR_CFG_AUTO_SAVE)
-                    if (gp_par_table[par_num].persistant && has_value_changed)
-                    {
-                        status |= par_save(par_num);
-                    }
-            #endif
 				}
-            #if ( 1 == PAR_CFG_MUTEX_EN )
+
 				// Mutex not acquire
 				else
 				{
@@ -739,6 +715,80 @@ par_status_t par_get_range(const par_num_t par_num, par_range_t *const p_range)
 }
 
 #if ( 1 == PAR_CFG_NVM_EN )
+    ////////////////////////////////////////////////////////////////////////////////
+    /**
+    *		Set parameter value and save to NVM if value changed
+    *
+    * @note 	Mandatory to cast input argument to appropriate type. E.g.:
+    *
+    * @code
+    * 			float32_t my_val = 1.234f;
+    * 			par_set( ePAR_MY_VAR, (float32_t*) &my_val );
+    * @endcode
+    *
+    * @note		Input is parameter number (enumeration) defined in par_cfg.h and not
+    * 			parameter ID number!
+    *
+    * @param[in]	par_num	- Parameter number (enumeration)
+    * @param[in]	p_val	- Pointer to value
+    * @return		status 	- Status of operation
+    */
+    ////////////////////////////////////////////////////////////////////////////////
+    par_status_t par_set_n_save(const par_num_t par_num, const void * p_val)
+    {
+    	par_status_t status = ePAR_OK;
+
+    	// Is init
+    	PAR_ASSERT( true == gb_is_init );
+
+    	// Check input
+    	PAR_ASSERT( par_num < ePAR_NUM_OF );
+
+        bool has_value_changed = false;
+        switch ( gp_par_table[ par_num ].type )
+        {
+            case ePAR_TYPE_U8:
+                has_value_changed = (par_get_u8(par_num) != *(uint8_t*)p_val);
+                break;
+
+            case ePAR_TYPE_I8:
+                has_value_changed = (par_get_i8(par_num) != *(int8_t*)p_val);
+                break;
+
+            case ePAR_TYPE_U16:
+                has_value_changed = (par_get_u16(par_num) != *(uint16_t*)p_val);
+                break;
+
+            case ePAR_TYPE_I16:
+                has_value_changed = (par_get_i16(par_num) != *(int16_t*)p_val);
+                break;
+
+            case ePAR_TYPE_U32:
+                has_value_changed = (par_get_u32(par_num) != *(uint32_t*)p_val);
+                break;
+
+            case ePAR_TYPE_I32:
+                has_value_changed = (par_get_i32(par_num) != *(int32_t*)p_val);
+                break;
+
+            case ePAR_TYPE_F32:
+                has_value_changed = (par_get_f32(par_num) != *(float32_t*)p_val);
+                break;
+
+            case ePAR_TYPE_NUM_OF:
+            default:
+                PAR_ASSERT( 0 );
+                break;
+        }
+
+        status |= par_set(par_num, p_val);
+        if ((ePAR_OK == status) && has_value_changed)
+        {
+            status |= par_save(par_num);
+        }
+
+    	return status;
+    }
 
 	////////////////////////////////////////////////////////////////////////////////
 	/**
@@ -1381,57 +1431,6 @@ static int32_t par_get_i32(const par_num_t par_num)
 static float32_t par_get_f32(const par_num_t par_num)
 {
     return *(float32_t*)&gpu8_par_value[ gu32_par_addr_offset[par_num] ];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Load parameter default values to live space
-*
-* @return		void
-*/
-////////////////////////////////////////////////////////////////////////////////
-static void par_load_default(void)
-{
-    for ( par_num_t par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
-    {
-        switch ( gp_par_table[ par_num ].type )
-        {
-            case ePAR_TYPE_U8:
-                par_set_u8( par_num, gp_par_table[par_num].def.u8 );
-                break;
-
-            case ePAR_TYPE_I8:
-                par_set_i8( par_num, gp_par_table[par_num].def.i8 );
-                break;
-
-            case ePAR_TYPE_U16:
-                par_set_u16( par_num, gp_par_table[par_num].def.u16 );
-                break;
-
-            case ePAR_TYPE_I16:
-                par_set_i16( par_num, gp_par_table[par_num].def.i16 );
-                break;
-
-            case ePAR_TYPE_U32:
-                par_set_u32( par_num, gp_par_table[par_num].def.u32 );
-                break;
-
-            case ePAR_TYPE_I32:
-                par_set_i32( par_num, gp_par_table[par_num].def.i32 );
-                break;
-
-            case ePAR_TYPE_F32:
-                par_set_f32( par_num, gp_par_table[par_num].def.f32 );
-                break;
-
-            case ePAR_TYPE_NUM_OF:
-            default:
-                PAR_ASSERT( 0 );
-                break;
-        }
-    }
-
-    PAR_DBG_PRINT( "PAR: Loading default parameters" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -151,6 +151,7 @@ par_status_t    par_get_type            (const par_num_t par_num, par_type_list_
 par_status_t    par_get_range           (const par_num_t par_num, par_range_t *const p_range);
 
 #if ( 1 == PAR_CFG_NVM_EN )
+    par_status_t    par_set_n_save      (const par_num_t par_num, const void * p_val);
 	par_status_t	par_save_all		(void);
 	par_status_t	par_save			(const par_num_t par_num);
 	par_status_t	par_save_by_id		(const uint16_t par_id);
