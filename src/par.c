@@ -267,33 +267,41 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 				if ( ePAR_OK == par_if_aquire_mutex())
             #endif
 				{
+                    bool has_value_changed = false;
 					switch ( gp_par_table[ par_num ].type )
 					{
 						case ePAR_TYPE_U8:
+                            has_value_changed = (par_get_u8(par_num) != *(uint8_t*)p_val);
 							status = par_set_u8( par_num, *(uint8_t*) p_val );
 							break;
 
 						case ePAR_TYPE_I8:
+                            has_value_changed = (par_get_i8(par_num) != *(int8_t*)p_val);
 							status = par_set_i8( par_num, *(int8_t*) p_val );
 							break;
 
 						case ePAR_TYPE_U16:
+                            has_value_changed = (par_get_u16(par_num) != *(uint16_t*)p_val);
 							status = par_set_u16( par_num, *(uint16_t*) p_val );
 							break;
 
 						case ePAR_TYPE_I16:
+                            has_value_changed = (par_get_i16(par_num) != *(int16_t*)p_val);
 							status = par_set_i16( par_num, *(int16_t*) p_val );
 							break;
 
 						case ePAR_TYPE_U32:
+                            has_value_changed = (par_get_u32(par_num) != *(uint32_t*)p_val);
 							status = par_set_u32( par_num, *(uint32_t*) p_val );
 							break;
 
 						case ePAR_TYPE_I32:
+                            has_value_changed = (par_get_i32(par_num) != *(int32_t*)p_val);
 							status = par_set_i32( par_num, *(int32_t*) p_val );
 							break;
 
 						case ePAR_TYPE_F32:
+                            has_value_changed = (par_get_f32(par_num) != *(float32_t*)p_val);
 							status = par_set_f32( par_num, *(float32_t*) p_val );
 							break;
 
@@ -307,7 +315,7 @@ par_status_t par_set(const par_num_t par_num, const void * p_val)
 					par_if_release_mutex();
             #endif
             #if ( 1 == PAR_CFG_AUTO_SAVE)
-                    if ( true == gp_par_table[ par_num ].persistant )
+                    if (gp_par_table[par_num].persistant && has_value_changed)
                     {
                         status |= par_save(par_num);
                     }
