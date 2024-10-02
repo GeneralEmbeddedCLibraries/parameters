@@ -263,8 +263,6 @@
     					 *			System might behave unexpectedly if having some
     					 *			default and some modified parameter values!
     					 */
-    					par_set_all_to_default();
-
     					status |= ePAR_WARN_SET_TO_DEF;
     				}
     				else
