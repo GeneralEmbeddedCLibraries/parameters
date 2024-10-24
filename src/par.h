@@ -141,6 +141,7 @@ par_status_t    par_is_init				(bool * const p_is_init);
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
 par_status_t	par_set_to_default		(const par_num_t par_num);
 par_status_t 	par_set_all_to_default	(void);
+par_status_t    par_has_changed         (const par_num_t par_num, bool *const p_has_changed);
 
 par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
 par_status_t	par_get_id				(const par_num_t par_num, uint16_t * const p_id);

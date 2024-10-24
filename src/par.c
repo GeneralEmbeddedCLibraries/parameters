@@ -387,6 +387,71 @@ par_status_t par_set_all_to_default(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*		Check if parameter changed from its default value
+*
+* @param[in]	par_num         - Parameter number (enumeration)
+* @param[out]	p_has_changed - Pointer to changed indication
+* @return		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_has_changed(const par_num_t par_num, bool *const p_has_changed)
+{
+	par_status_t status = ePAR_OK;
+
+	PAR_ASSERT( true == gb_is_init );
+	PAR_ASSERT( NULL != p_has_changed );
+    PAR_ASSERT( ePAR_NUM_OF > par_num );
+
+	if ( 	( true == gb_is_init )
+		&&	( NULL != p_has_changed )
+        &&  ( ePAR_NUM_OF > par_num ))
+	{
+        switch ( gp_par_table[par_num].type )
+        {
+            case ePAR_TYPE_U8:
+                *p_has_changed = (par_get_u8(par_num) != gp_par_table[par_num].def.u8);
+                break;
+
+            case ePAR_TYPE_I8:
+                *p_has_changed = (par_get_i8(par_num) != gp_par_table[par_num].def.i8);
+                break;
+
+            case ePAR_TYPE_U16:
+                *p_has_changed = (par_get_u16(par_num) != gp_par_table[par_num].def.u16);
+                break;
+
+            case ePAR_TYPE_I16:
+                *p_has_changed = (par_get_i16(par_num) != gp_par_table[par_num].def.i16);
+                break;
+
+            case ePAR_TYPE_U32:
+                *p_has_changed = (par_get_u32(par_num) != gp_par_table[par_num].def.u32);
+                break;
+
+            case ePAR_TYPE_I32:
+                *p_has_changed = (par_get_i32(par_num) != gp_par_table[par_num].def.i32);
+                break;
+
+            case ePAR_TYPE_F32:
+                *p_has_changed = (par_get_f32(par_num) != gp_par_table[par_num].def.f32);
+                break;
+
+            case ePAR_TYPE_NUM_OF:
+            default:
+                PAR_ASSERT( 0 );
+                break;
+        }
+	}
+	else
+	{
+		status = ePAR_ERROR;
+	}
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *		Get parameter value
 *
 * @note 	Mandatory to cast input argument to appropriate type. E.g.:
@@ -473,7 +538,7 @@ par_status_t par_get(const par_num_t par_num, void * const p_val)
 *		Get parameter ID
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_id 	- Pointer to parameter ID
+* @param[out]	p_id 	- Pointer to parameter ID
 * @return		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -510,7 +575,7 @@ par_status_t par_get_id(const par_num_t par_num, uint16_t * const p_id)
 *		Get parameter number (enumeration) by ID
 *
 * @param[in]	id 			- Parameter ID
-* @param[in]	p_par_num	- Pointer to parameter enumeration number
+* @param[out]	p_par_num	- Pointer to parameter enumeration number
 * @return		status		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -561,7 +626,7 @@ par_status_t par_get_num_by_id(const uint16_t id, par_num_t * const p_par_num)
 *		Get parameter configurations
 *
 * @param[in]	par_num		- Parameter number (enumeration)
-* @param[in]	p_par_cfg	- Pointer to parameter configurations
+* @param[out]	p_par_cfg	- Pointer to parameter configurations
 * @return		status 		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -656,7 +721,7 @@ par_status_t par_get_type_size(const par_type_list_t type, uint8_t * const p_siz
 *		Get parameter type
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_type 	- Pointer to parameter type
+* @param[out]	p_type 	- Pointer to parameter type
 * @return		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -687,7 +752,7 @@ par_status_t par_get_type(const par_num_t par_num, par_type_list_t *const p_type
 *		Get parameter value range
 *
 * @param[in]	par_num	- Parameter number (enumeration)
-* @param[in]	p_type 	- Pointer to value range
+* @param[out]	p_type 	- Pointer to value range
 * @return		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
