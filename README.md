@@ -23,7 +23,7 @@ When combined with the following modules, the **Device Parameters** module signi
      - Configuration and diagnostics of the application via Device Parameters.  
      - Storage of settings to NVM, ensuring data persistence.  
 
-## Development Benefits  
+### Development Benefits  
 By leveraging this combination of modules, embedded firmware development becomes significantly faster and more efficient, enabling developers to focus on functionality rather than repetitive low-level implementation.  
 
 ## **Dependencies**
