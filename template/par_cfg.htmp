@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Ziga Miklosic
+// Copyright (c) 2025 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,9 @@
 *@file      par_cfg.h
 *@brief    	Configuration for device parameters
 *@author    Ziga Miklosic
-*@date      15.02.2023
-*@version	V2.1.0
+*@email     ziga.miklosic@gmail.com
+*@date      06.12.2024
+*@version   V2.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -26,13 +27,13 @@
 
 // USER CODE BEGIN...
 
-#include "project_config.h"
+#include "config/proj_cfg.h"
 
 // Debug communication port
-#include "middleware/debug_comm_port/com_dbg.h"
+#include "middleware/cli/cli/src/cli.h"
 
 // NVM
-#include "middleware/nvm/nvm_cfg.h"
+//#include "middleware/nvm/nvm_cfg.h"
 
 // USER CODE END...
 
@@ -64,18 +65,39 @@ typedef enum
 	ePAR_NUM_OF
 } par_num_t;
 
-
 // USER CODE BEGIN...
+
+/************************************************************************************
+ *
+ *      Device parameter enumerations
+ *
+ ***********************************************************************************/
+
+/**
+ *  Test I16 state
+ *
+ * @note Applicable to "ePAR_TEST_I16" parameter!
+ */
+typedef enum
+{
+    ePAR_TEST_I16_STATE_IDLE         = 0U,
+    ePAR_TEST_I16_STATE_BT_PAIR      = 1U,
+    ePAR_TEST_I16_STATE_BT_ADV       = 2U,
+    ePAR_TEST_I16_STATE_LR_PAIR      = 3U,
+    ePAR_TEST_I16_STATE_LR_ADV       = 4U,
+
+    ePAR_BLE_ADV_STATE_NUM_OF,
+} par_test_i16_state_t;
 
 /**
  * 	Enable/Disable multiple access protection
  */
-#define PAR_CFG_MUTEX_EN						( 1 )
+#define PAR_CFG_MUTEX_EN						( 0 )
 
 /**
  * 	Enable/Disable storing persistent parameters to NVM
  */
-#define PAR_CFG_NVM_EN							( 1 )
+#define PAR_CFG_NVM_EN							( 0 )
 
 #if ( 1 == PAR_CFG_NVM_EN )
 	/**
@@ -137,7 +159,7 @@ typedef enum
  * 	Debug communication port macros
  */
 #if ( 1 == PAR_CFG_DEBUG_EN )
-	#define PAR_DBG_PRINT( ... )				( com_dbg_print( eCOM_DBG_CH_NONE, (const char*) __VA_ARGS__ ))
+	#define PAR_DBG_PRINT( ... )				( cli_printf((char*) __VA_ARGS__ ))
 #else
 	#define PAR_DBG_PRINT( ... )				{ ; }
 
@@ -147,7 +169,7 @@ typedef enum
  * 	 Assertion macros
  */
 #if ( 1 == PAR_CFG_ASSERT_EN )
-	#define PAR_ASSERT(x)						PROJECT_CONFIG_ASSERT(x)
+	#define PAR_ASSERT(x)						PROJ_CFG_ASSERT(x)
 #else
 	#define PAR_ASSERT(x)						{ ; }
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Ziga Miklosic
+// Copyright (c) 2025 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,9 @@
 *@file      par_nvm.c
 *@brief     Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
-*@date      15.02.2023
-*@version	V2.1.0
+*@email     ziga.miklosic@gmail.com
+*@date      06.12.2024
+*@version   V2.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -172,7 +173,6 @@
 	static par_status_t		par_nvm_load_all					(const uint16_t num_of_par);
 
 	static par_status_t		par_nvm_corrupt_signature			(void);
-	static par_status_t		par_nvm_write_signature				(void);
 	static par_status_t 	par_nvm_read_header					(par_nvm_head_obj_t * const p_head_obj);
 	static par_status_t 	par_nvm_write_header				(const uint16_t num_of_par);
 	static par_status_t 	par_nvm_validate_header				(uint16_t * const p_num_of_par);
@@ -219,7 +219,7 @@
         status = par_nvm_init_nvm();
 
         // NVM driver init OK
-        if ( ePAR_OK == status );
+        if ( ePAR_OK == status )
         {
             // Par NVM module init
             gb_is_init = true;
@@ -353,7 +353,7 @@
 		par_cfg_t			par_cfg		= {0};
 
 		PAR_ASSERT( true == gb_is_init );     
-		PAR_ASSERT( par_num < ePAR_NUM_OF )
+		PAR_ASSERT( par_num < ePAR_NUM_OF );
 
 		if ( true == gb_is_init )
 		{
@@ -490,10 +490,14 @@
     		status |= par_nvm_write_all();
 
     		// Re-write header as reseting whole NVM parameter memory
-    		status |= par_nvm_write_header( par_nvm_get_per_par() );
+    		
+            // ZIGA: Redundant TODO: 
+            //status |= par_nvm_write_header( par_nvm_get_per_par() );
 
             // Sync NVM
-            status |= par_nvm_sync();
+
+            // ZIGA: Redundant TODO: 
+            //status |= par_nvm_sync();
         }
         else
         {
@@ -568,30 +572,6 @@
 		{
 			status = ePAR_ERROR_NVM;
 			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature corruption!" );
-		}
-
-		return status;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-	/**
-	*		Write correct signature
-	*
-	* @brief	Return ePAR_OK if signature corrupted OK. In case of NVM error it returns
-	* 			ePAR_ERROR_NVM.
-	*
-	* @return		status 	- Status of operation
-	*/
-	////////////////////////////////////////////////////////////////////////////////
-	static par_status_t	par_nvm_write_signature(void)
-	{
-		par_status_t status = ePAR_OK;
-		const uint32_t sign = PAR_NVM_SIGN;
-
-		if ( eNVM_OK != nvm_write( PAR_CFG_NVM_REGION, PAR_NVM_HEAD_SIGN_ADDR, PAR_NVM_SIGN_SIZE, (uint8_t*) &sign ))
-		{
-			status = ePAR_ERROR_NVM;
-			PAR_DBG_PRINT( "PAR_NVM: NVM error during signature write!" );
 		}
 
 		return status;
@@ -905,13 +885,13 @@
 							// Check if already in LUT
 							if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
 							{
-								// Set parameter
-								par_set( par_num, &obj_data.data );
-
 								// Add to NVM lut
 								g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
 								g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
 								g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
+
+                                // Set parameter
+								par_set( par_num, &obj_data.data );
 
 								// Increment current persistent parameter counter
 								per_par_nb++;
@@ -1084,6 +1064,8 @@
 				break;
 			}
 		}
+
+        // ZIGA: TODO: Validate if address is found correctly!!!
 
 		return obj_addr;
 	}
