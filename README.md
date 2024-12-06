@@ -1,8 +1,30 @@
 # **Device Parameters**
 
-Device Parameters module holds of all device parameters defined via a single configuration table and provides a simple configuratation and diagnostics of the system. Often Device Parameters serve as a backbone for embedded system as they control the end behaviour of the application. Additional it provides a insights of device performance therefore making diagnostics of a target device very simple. 
+The **Device Parameters** module manages all device parameters through a single configuration table, offering a streamlined approach to system configuration and diagnostics. This module often serves as the backbone of an embedded system, controlling the application's behavior and providing insights into device performance, making diagnostics straightforward and efficient.  
 
-In combination of Device Parameters, [CLI](https://github.com/GeneralEmbeddedCLibraries/cli) and [NVM](https://github.com/GeneralEmbeddedCLibraries/nvm) modules embedded application is capable to communicate with PC (via CLI), configure and diagnose (via CLI to Device Parameters) and storing configured settings to NVM (via Device Parameters and NVM). Using the combination of following modules we can speed up embedded firmware application development dramatically. 
+## Key Benefits  
+- **Centralized Configuration**: Simplifies the management of system parameters.  
+- **Diagnostics**: Enables quick and easy performance analysis of the target device.  
+- **Behavior Control**: Directly influences the end behavior of the embedded application.  
+
+## Integration with other modules in General Embedded C Libraries ecosystem
+When combined with the following modules, the **Device Parameters** module significantly enhances the capabilities of embedded applications:  
+
+1. **[CLI (Command Line Interface)](https://github.com/GeneralEmbeddedCLibraries/cli)**  
+   - Enables communication between the embedded application and a PC.  
+   - Allows real-time configuration and diagnostics via the CLI interface.  
+
+2. **[NVM (Non-Volatile Memory)](https://github.com/GeneralEmbeddedCLibraries/nvm)**  
+   - Ensures that configured settings are stored persistently.  
+
+3. **Device Parameters + CLI + NVM**  
+   - Together, these modules allow:  
+     - Communication with a PC using CLI.  
+     - Configuration and diagnostics of the application via Device Parameters.  
+     - Storage of settings to NVM, ensuring data persistence.  
+
+## Development Benefits  
+By leveraging this combination of modules, embedded firmware development becomes significantly faster and more efficient, enabling developers to focus on functionality rather than repetitive low-level implementation.  
 
 ## **Dependencies**
 
@@ -20,27 +42,31 @@ root/middleware/parameters/parameters/"module_space"
  ## **API**
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
-| **par_init** | Initialization of parameters module | par_status_t par_init(void) |****
-| **par_deinit** | De-initialization of parameters module | par_status_t par_deinit(void) |****
-| **par_is_init** | Get initialization flag | par_status par_is_init(bool * const p_is_init) |
-| **par_set** | Set parameter | par_status_t 	par_set (const par_num_t par_num, const void *p_val) |
-| **par_set_to_default** | Set parameter to default value | par_status_t 	par_set_to_default (const par_num_t par_num) |
-| **par_set_all_to_default** | Set all parameters to default value | par_status_t 	par_set_all_to_default (void) |
-| **par_get** | Get parameter value | par_status_t 	par_get (const par_num_t par_num, void *const p_val)|
-| **par_get_id** | Get parameter ID number | par_status_t 	par_get_id (const par_num_t par_num, uint16_t *const p_id) |
-| **par_get_num_by_id** | Get parameter number (enumeration) by its ID | par_status_t 	par_get_num_by_id (const uint16_t id, par_num_t *const p_par_num) |
-| **par_get_config** | Get parameter configurations | par_status_t 	par_get_config (const par_num_t par_num, par_cfg_t *const p_par_cfg) |
-| **par_get_type_size** | Get parameter data type size | par_status_t 	par_get_type_size (const par_type_list_t type, uint8_t *const p_size) |
+| **par_init** 					| Initialization of parameters module 				| par_status_t par_init(void) |****
+| **par_deinit** 				| De-initialization of parameters module 			| par_status_t par_deinit(void) |****
+| **par_is_init** 				| Get initialization flag 							| par_status par_is_init(bool * const p_is_init) |
+| **par_set** 					| Set parameter 									| par_status_t par_set (const par_num_t par_num, const void *p_val) |
+| **par_set_to_default** 		| Set parameter to default value 					| par_status_t par_set_to_default (const par_num_t par_num) |
+| **par_set_all_to_default** 	| Set all parameters to default value 				| par_status_t par_set_all_to_default (void) |
+| **par_has_changed** 			| Has parameter changed								| par_status_t par_has_changed(const par_num_t par_num, bool *const p_has_changed) |
+| **par_get** 					| Get parameter value 								| par_status_t par_get (const par_num_t par_num, void *const p_val)|
+| **par_get_id** 				| Get parameter ID number 							| par_status_t par_get_id (const par_num_t par_num, uint16_t *const p_id) |
+| **par_get_num_by_id** 		| Get parameter number (enumeration) by its ID 		| par_status_t par_get_num_by_id (const uint16_t id, par_num_t *const p_par_num) |
+| **par_get_config** 			| Get parameter configurations 						| par_status_t par_get_config (const par_num_t par_num, par_cfg_t *const p_par_cfg) |
+| **par_get_type_size** 		| Get parameter data type size 						| par_status_t par_get_type_size (const par_type_list_t type, uint8_t *const p_size) |
+| **par_get_type** 				| Get parameter data type 							| par_status_t par_get_type(const par_num_t par_num, par_type_list_t *const p_type) |
+| **par_get_range** 			| Get parameter range 								| par_status_t par_get_range(const par_num_t par_num, par_range_t *const p_range) |
 
 
 With enable NVM additional fuctions are available:
 
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
-| **par_save_all** | Store all parameters to NVM | par_status_t par_save_all(void) |
-| **par_save** | Store single parameter | par_status_t 	par_save(const par_num_t par_num) |
-| **par_save_by_id** | Store single parameter by ID | par_status_t par_save_by_id(const uint16_t par_id) |
-| **par_save_clean** | Re-Write complete NVM memory | par_status_t par_save_clean(void) |
+| **par_set_n_save** 	| Set and store parameter to NVM 					| par_status_t par_set_n_save(const par_num_t par_num, const void * p_val) |
+| **par_save_all** 		| Store all parameters to NVM 						| par_status_t par_save_all(void) |
+| **par_save** 			| Store single parameter 							| par_status_t par_save(const par_num_t par_num) |
+| **par_save_by_id** 	| Store single parameter by ID 						| par_status_t par_save_by_id(const uint16_t par_id) |
+| **par_save_clean** 	| Re-Write complete NVM memory 						| par_status_t par_save_clean(void) |
 
 
 ## Usage
@@ -161,6 +187,13 @@ For set/get of parameters value always use a casting form!
 // Set battery voltage & sytem current
 (void) par_set( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
 (void) par_set( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
+
+// Set and save parameter 
+if ( ePAR_OK != par_set_n_save( ePAR_P1_10, (uint32_t) &p1_10_val ))
+{
+	// Operation error...
+	// Further actions here...
+}
 ```
 
 7. Store to NVM

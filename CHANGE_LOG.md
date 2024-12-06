@@ -5,12 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project/module adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## V2.2.0 - 06.12.2024
+
+### Added
+ - Added new API functions
+    + par_has_changed
+    + par_get_type
+    + par_get_range
+    + par_get_range
+    + par_set_n_save
+
+### Changed
+ - Cleaning up code, adding internal functions for setting parameters by it's data types
+
+---
 ## V2.1.0 - 15.02.2023
 
 ### Changed
  - Parameter NVM management introduce nvm_sync function
  - Cross-compatibility criteria with NVM change 
-
 
 ---
 ## V2.0.0 - 13.02.2023
