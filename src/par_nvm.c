@@ -6,6 +6,7 @@
 *@file      par_nvm.c
 *@brief     Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
+*@email     ziga.miklosic@gmail.com
 *@date      15.02.2023
 *@version	V2.1.0
 */
@@ -489,10 +490,14 @@
     		status |= par_nvm_write_all();
 
     		// Re-write header as reseting whole NVM parameter memory
-    		status |= par_nvm_write_header( par_nvm_get_per_par() );
+    		
+            // ZIGA: Redundant TODO: 
+            //status |= par_nvm_write_header( par_nvm_get_per_par() );
 
             // Sync NVM
-            status |= par_nvm_sync();
+
+            // ZIGA: Redundant TODO: 
+            //status |= par_nvm_sync();
         }
         else
         {
@@ -880,13 +885,13 @@
 							// Check if already in LUT
 							if ( false == par_nvm_is_in_nvm_lut( obj_data.id ))
 							{
-								// Set parameter
-								par_set( par_num, &obj_data.data );
-
 								// Add to NVM lut
 								g_par_nvm_data_obj_addr[per_par_nb].id 		= obj_data.id;
 								g_par_nvm_data_obj_addr[per_par_nb].addr 	= obj_addr;
 								g_par_nvm_data_obj_addr[per_par_nb].valid 	= true;
+
+                                // Set parameter
+								par_set( par_num, &obj_data.data );
 
 								// Increment current persistent parameter counter
 								per_par_nb++;
@@ -1059,6 +1064,8 @@
 				break;
 			}
 		}
+
+        // ZIGA: TODO: Validate if address is found correctly!!!
 
 		return obj_addr;
 	}

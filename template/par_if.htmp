@@ -6,6 +6,7 @@
 *@file      par_if.h
 *@brief    	Interface for device parameters
 *@author    Ziga Miklosic
+*@email     ziga.miklosic@gmail.com
 *@date      15.02.2023
 *@version	V2.1.0
 */

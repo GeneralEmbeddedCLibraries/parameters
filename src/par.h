@@ -6,6 +6,9 @@
 *@file      par.h
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
+*@email     ziga.miklosic@gmail.com
+*@author    Matej Otic
+*@email     otic.matej@dancing-bits.com
 *@date      15.02.2023
 *@version	V2.1.0
 */
@@ -103,6 +106,15 @@ typedef union
 } par_type_t;
 
 /**
+ *  Parameter value range
+ */
+typedef struct
+{
+    par_type_t min; /**<Minimum value */
+    par_type_t max; /**<Maximum value */
+} par_range_t;
+
+/**
  * 	Parameter data settings
  *
  * @note	Single parameter object has size of 28 bytes on
@@ -132,14 +144,18 @@ par_status_t    par_is_init				(bool * const p_is_init);
 par_status_t 	par_set					(const par_num_t par_num, const void * p_val);
 par_status_t	par_set_to_default		(const par_num_t par_num);
 par_status_t 	par_set_all_to_default	(void);
+par_status_t    par_has_changed         (const par_num_t par_num, bool *const p_has_changed);
 
 par_status_t 	par_get					(const par_num_t par_num, void * const p_val);
 par_status_t	par_get_id				(const par_num_t par_num, uint16_t * const p_id);
 par_status_t	par_get_num_by_id		(const uint16_t id, par_num_t * const p_par_num);
 par_status_t 	par_get_config			(const par_num_t par_num, par_cfg_t * const p_par_cfg);
 par_status_t	par_get_type_size		(const par_type_list_t type, uint8_t * const p_size);
+par_status_t    par_get_type            (const par_num_t par_num, par_type_list_t *const p_type);
+par_status_t    par_get_range           (const par_num_t par_num, par_range_t *const p_range);
 
 #if ( 1 == PAR_CFG_NVM_EN )
+    par_status_t    par_set_n_save      (const par_num_t par_num, const void * p_val);
 	par_status_t	par_save_all		(void);
 	par_status_t	par_save			(const par_num_t par_num);
 	par_status_t	par_save_by_id		(const uint16_t par_id);
