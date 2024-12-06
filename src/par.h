@@ -6,6 +6,9 @@
 *@file      par.h
 *@brief    	Device parameters API functions
 *@author    Ziga Miklosic
+*@email     ziga.miklosic@gmail.com
+*@author    Matej Otic
+*@email     otic.matej@dancing-bits.com
 *@date      15.02.2023
 *@version	V2.1.0
 */

@@ -6,6 +6,7 @@
 *@file      par_nvm.c
 *@brief     Parameter storage to non-volatile memory
 *@author    Ziga Miklosic
+*@email     ziga.miklosic@gmail.com
 *@date      15.02.2023
 *@version	V2.1.0
 */

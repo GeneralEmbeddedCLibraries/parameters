@@ -6,6 +6,7 @@
 *@file      par_cfg.h
 *@brief    	Configuration for device parameters
 *@author    Ziga Miklosic
+*@email     ziga.miklosic@gmail.com
 *@date      15.02.2023
 *@version	V2.1.0
 */
@@ -64,8 +65,29 @@ typedef enum
 	ePAR_NUM_OF
 } par_num_t;
 
-
 // USER CODE BEGIN...
+
+/************************************************************************************
+ *
+ *      Device parameter enumerations
+ *
+ ***********************************************************************************/
+
+/**
+ *  Test I16 state
+ *
+ * @note Applicable to "ePAR_TEST_I16" parameter!
+ */
+typedef enum
+{
+    ePAR_TEST_I16_STATE_IDLE         = 0U,
+    ePAR_TEST_I16_STATE_BT_PAIR      = 1U,
+    ePAR_TEST_I16_STATE_BT_ADV       = 2U,
+    ePAR_TEST_I16_STATE_LR_PAIR      = 3U,
+    ePAR_TEST_I16_STATE_LR_ADV       = 4U,
+
+    ePAR_BLE_ADV_STATE_NUM_OF,
+} par_test_i16_state_t;
 
 /**
  * 	Enable/Disable multiple access protection
