@@ -40,8 +40,46 @@ NVM module must take following path:
 "root/middleware/nvm/nvm/src/nvm.h"
 ```
 
-### **2. C11 compiler support**
-Parameter module utilize C11 *_Atomic* and *_Generic* features, therefore make sure your compiler supports C11 primitives.  
+### **2. Atomic backend configuration**
+The module requires an atomic backend for parameter value access.
+
+By default, it uses the C11 atomic backend. If your compiler does not provide usable C11 atomics, or if your platform already provides its own atomic API, you can switch the module to a port-specific backend through `par_atomic_port.h`.
+
+#### 2.1 When to use `par_atomic_port.h`
+
+Use `par_atomic_port.h` when:
+
+- the compiler does not fully support `<stdatomic.h>`
+- the target platform already provides atomic primitives
+- you want the parameter module to use the RTOS or platform-native atomic implementation
+
+For example, in RT-Thread-based projects, `par_atomic_port.h` can be used to map parameter atomic operations to the RT-Thread atomic API.
+
+#### 2.2 How to enable `par_atomic_port.h`
+
+Atomic backend selection is controlled by `PAR_ATOMIC_BACKEND` in `parameters/src/par_atomic.h`.
+
+Available options:
+
+```c
+#define PAR_ATOMIC_BACKEND_C11   1
+#define PAR_ATOMIC_BACKEND_PORT  2
+````
+
+To use the port backend, define:
+
+```c
+#define PAR_ATOMIC_BACKEND PAR_ATOMIC_BACKEND_PORT
+```
+
+After that, `par_atomic.h` will include `par_atomic_port.h` and use the port-provided atomic types and helpers.
+
+#### 2.3 Notes
+
+* `par_atomic_port.h` must provide all atomic types and operations required by `par_atomic.h`
+* `float32_t` should be stored and loaded by preserving its raw bit representation, not by numeric cast
+* make sure the underlying atomic storage type matches the size of `float`
+* keep all platform-specific atomic adaptation inside `par_atomic_port.h` so the core parameter code does not need to change
 
 ## **Limitations**
  - **Heap Usage:** The module uses malloc during par_init() to allocate RAM space for the parameters based on the configuration table. Ensure your heap is sufficiently sized.
@@ -221,12 +259,13 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 
 | Configuration | Description |
 | --- | --- |
-| **PAR_CFG_NVM_EN** 			| Enable/Disable usage of NVM for persistant parameters. |
-| **PAR_CFG_NVM_REGION** 		| Select NVM region for Device Parameter storage space. | 
-| **PAR_CFG_DEBUG_EN** 			| Enable/Disable debugging mode. | 
-| **PAR_CFG_ASSERT_EN** 		| Enable/Disable asserts. Shall be disabled in release build!  | 
-| **PAR_DBG_PRINT** 			| Definition of debug print. | 
-| **PAR_ASSERT** 				| Definition of assert. | 
+| **PAR_CFG_NVM_EN**            | Enable/Disable usage of NVM for persistant parameters. |
+| **PAR_CFG_NVM_REGION**        | Select NVM region for Device Parameter storage space. | 
+| **PAR_CFG_DEBUG_EN**          | Enable/Disable debugging mode. |
+| **PAR_CFG_ASSERT_EN**         | Enable/Disable asserts. Shall be disabled in release build!  | 
+| **PAR_DBG_PRINT**             | Definition of debug print. |
+| **PAR_ASSERT**                | Definition of assert. |
+| **PAR_ATOMIC_BACKEND**        | Select atomic backend implementation. |
 
 **5. Call **par_init()** function**
 
