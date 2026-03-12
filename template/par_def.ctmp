@@ -3,8 +3,8 @@
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@file      par_cfg.c
-*@brief     Configuration for device parameters
+*@file      par_def.c
+*@brief     Define for device parameters
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
 *@date      29.01.2026
@@ -12,7 +12,7 @@
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@addtogroup PAR_CFG
+*@addtogroup PAR_DEF
 * @{ <!-- BEGIN GROUP -->
 *
 * 	Configuration for device parameters

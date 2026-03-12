@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *@file      par_if.h
-*@brief    	Interface for device parameters
+*@brief     Interface for device parameters
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
 *@date      29.01.2026
@@ -24,7 +24,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdint.h>
-#include "parameters/src/par.h"
+#include "par.h"
 #include "par_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,9 +34,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Functions Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-par_status_t par_if_init			(void);
-par_status_t par_if_aquire_mutex	(const par_num_t par_num);
-void         par_if_release_mutex	(const par_num_t par_num);
-void 		 par_if_calc_hash		(const uint8_t * const p_data, const uint32_t size, uint8_t * const p_hash);
+par_status_t par_if_init            (void);
+par_status_t par_if_aquire_mutex    (const par_num_t par_num);
+void         par_if_release_mutex   (const par_num_t par_num);
+void         par_if_calc_hash       (const uint8_t * const p_data, const uint32_t size, uint8_t * const p_hash);
 
 #endif // _PAR_IF_H_

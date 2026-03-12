@@ -40,20 +40,466 @@ NVM module must take following path:
 "root/middleware/nvm/nvm/src/nvm.h"
 ```
 
-### **2. C11 compiler support**
-Parameter module utilize C11 *_Atomic* and *_Generic* features, therefore make sure your compiler supports C11 primitives.  
+### **2. Platform adaptation layer**
+
+This package separates the core parameter logic from platform-specific integration.
+
+Platform-dependent configuration and hooks are provided through the `port/` layer:
+
+* `port/par_cfg_port.h` – platform configuration bridge
+* `port/par_if_port.c` – platform interface backend
+* `port/par_atomic_port.h` – platform atomic backend
+
+This keeps the core module portable while allowing integration with RTOS, mutex, logging, assertion, and atomic services provided by the target platform.
+
+> Note: `parameters/src/par_cfg.h` includes `par_cfg_port.h` unconditionally.
+> You must provide this header in your project include path.
+> If no platform override is required, provide an empty stub `par_cfg_port.h` with include guard.
+
+### **3. Atomic backend configuration**
+
+The module requires an atomic backend for parameter value access.
+
+By default, it uses the C11 atomic backend. If your compiler does not provide usable C11 atomics, or if your platform already provides its own atomic API, you can switch the module to a port-specific backend through `par_atomic_port.h`.
+
+#### When to use `par_atomic_port.h`
+
+Use `par_atomic_port.h` when:
+
+- the compiler does not fully support `<stdatomic.h>`
+- the target platform already provides atomic primitives
+- you want the parameter module to use the RTOS or platform-native atomic implementation
+
+#### How to enable `par_atomic_port.h`
+
+Atomic backend selection is controlled by `PAR_ATOMIC_BACKEND` in `parameters/src/par_atomic.h`.
+
+Available options:
+
+```c
+#define PAR_ATOMIC_BACKEND_C11   1
+#define PAR_ATOMIC_BACKEND_PORT  2
+````
+
+To use the port backend, define:
+
+```c
+#define PAR_ATOMIC_BACKEND PAR_ATOMIC_BACKEND_PORT
+```
+
+After that, `par_atomic.h` will include `par_atomic_port.h` and use the port-provided atomic types and helpers.
+
+#### Notes
+
+* `par_atomic_port.h` must provide all atomic types and operations required by `par_atomic.h`
+* `float32_t` should be stored and loaded by preserving its raw bit representation, not by numeric cast
+* make sure the underlying atomic storage type matches the size of `float`
+* keep all platform-specific atomic adaptation inside `par_atomic_port.h` so the core parameter code does not need to change
 
 ## **Limitations**
  - **Heap Usage:** The module uses malloc during par_init() to allocate RAM space for the parameters based on the configuration table. Ensure your heap is sufficiently sized.
  - **Alignment:** Address offsets are calculated based on 4-byte (32-bit) alignment to satisfy most ARM Cortex-M requirements.
  - **Flat ID Space:** Parameter IDs must be unique across the entire table to ensure NVM consistency.
  - **Execution Time:** If many callbacks are chained to a single parameter, the par_set execution time will increase accordingly.
+ - **Hash-Based ID Lookup:** ID-based lookup is optimized for runtime speed and rejects hash collisions during initialization. See the ID lookup section below.
 
 ## **General Embedded C Libraries Ecosystem**
 In order to be part of *General Embedded C Libraries Ecosystem* this module must be placed in following path: 
 ```
 root/middleware/parameters/parameters/"module_space"
 ```
+
+## Package structure
+
+The package is split into three layers.
+
+### Core layer
+
+Portable parameter logic is implemented under:
+
+```text
+parameters/src/
+```
+
+This layer contains the core implementation of:
+
+* parameter storage and typed access
+* configuration lookup
+* validation and callbacks
+* ID lookup
+* NVM integration
+* atomic abstraction
+* configuration abstraction
+
+### Port layer
+
+Platform-specific integration is implemented under:
+
+```text
+port/
+```
+
+This layer contains:
+
+* `par_cfg_port.h` – platform configuration bridge
+* `par_if_port.c` – platform-specific low-level interface
+* `par_atomic_port.h` – platform-specific atomic backend
+
+This separation keeps the core module portable while isolating platform and RTOS dependencies.
+
+### Template layer
+
+Reference templates are provided under:
+
+```text
+parameters/template/
+```
+
+This layer currently contains:
+
+* `par_cfg.htmp` – configuration header template (default macro layout and comments)
+* `par_cfg.ctmp` – parameter table source template
+* `par_cfg_port.htmp` – port bridge header template
+
+Template files are used as:
+
+* baseline references for keeping generated or manually maintained files aligned with upstream style
+* starting points when creating new `par_cfg.h` / `par_cfg.c` / `par_cfg_port.h` in other projects
+
+Template files are not compiled directly by the runtime library.
+
+---
+
+## Configuration model
+
+The package uses a two-level configuration model.
+
+### Core configuration
+
+Core configuration defaults are defined in:
+
+```text
+parameters/src/par_cfg.h
+```
+
+This file provides default values for options such as:
+
+* `PAR_CFG_NVM_EN`
+* `PAR_CFG_NVM_REGION`
+* `PAR_CFG_TABLE_ID_CHECK_EN`
+* `PAR_CFG_DEBUG_EN`
+* `PAR_CFG_ASSERT_EN`
+* `PAR_CFG_MUTEX_EN`
+* `PAR_CFG_MUTEX_TIMEOUT_MS`
+* `PAR_CFG_IF_PORT_EN`
+* `PAR_CFG_PORT_HOOK_EN`
+
+### Platform bridge
+
+Platform-specific overrides are provided in:
+
+```text
+port/par_cfg_port.h
+```
+
+This file maps platform or build-system configuration symbols to `PAR_CFG_*` options.
+
+`par_cfg_port.h` is mandatory for build because it is directly included by `parameters/src/par_cfg.h`.
+If you do not need overrides, keep a minimal empty file:
+
+```c
+#ifndef _PAR_CFG_PORT_H_
+#define _PAR_CFG_PORT_H_
+/* Optional platform overrides */
+#endif
+```
+
+### Why this split exists
+
+This design keeps the core implementation independent of any single build system or RTOS, while still allowing package-level integration through a dedicated platform bridge.
+
+---
+
+## Port hooks
+
+When `PAR_CFG_PORT_HOOK_EN = 1`, the module uses platform-provided hooks for:
+
+* logging
+* assertions
+* compile-time assertions
+
+The following hooks may be provided by the port layer:
+
+* `PAR_PORT_LOG(...)`
+* `PAR_PORT_ASSERT(x)`
+* `PAR_PORT_STATIC_ASSERT(name, expn)`
+
+This allows the module to integrate with the native debug and assert infrastructure of the target platform.
+
+---
+
+## Interface backend
+
+The low-level interface layer is implemented in `parameters/src/par_if.c`.
+
+When `PAR_CFG_IF_PORT_EN = 1`, the module uses the platform-specific backend provided by:
+
+```text
+port/par_if_port.c
+```
+
+This backend is responsible for platform-dependent services such as:
+
+* initialization
+* mutex handling
+* optional table hash calculation
+
+This keeps the public parameter logic independent from the RTOS or platform implementation.
+
+
+## Parameter identification
+
+Each parameter defined in the configuration table contains two identifiers:
+
+- **par_num** – internal parameter index (enumeration)
+- **id** – external parameter identifier
+
+These identifiers serve different purposes and are intentionally separated.
+
+### Internal identifier (`par_num`)
+
+`par_num` is the enumeration defined in `par_cfg.h` and represents the **internal index of a parameter**.
+
+It is primarily used inside firmware code and by the parameter module APIs.
+
+Example:
+
+```c
+par_set(ePAR_TEST_U8, &value);
+````
+
+Characteristics:
+
+* used as an **index into the parameter configuration table**
+* provides **fast and type-safe access** inside firmware
+* may change if parameters are reordered or new parameters are added
+
+Because of this, `par_num` should generally be used **only inside firmware code**.
+
+### External identifier (`id`)
+
+Each parameter also defines a unique **ID** in the configuration table:
+
+```c
+[ePAR_TEST_U8] = {
+    .id = 0,
+    ...
+}
+```
+
+The **ID is intended for external access** to parameters.
+
+Typical use cases include:
+
+* CLI commands
+* PC configuration tools
+* communication protocols (UART / CAN / etc.)
+* parameter import/export
+* diagnostics or logging
+
+To support these use cases, the module provides APIs that operate using parameter IDs:
+
+* `par_set_by_id()`
+* `par_get_by_id()`
+* `par_save_by_id()`
+
+Internally, these functions resolve the ID to the corresponding `par_num` before accessing the parameter.
+
+### Design rationale
+
+Separating internal and external identifiers provides several advantages:
+
+* **Efficient internal access** through `par_num`
+* **Stable external interface** through `id`
+* the ability to **reorder or extend parameters without breaking external tools**
+
+External systems should always reference parameters by **ID**, while firmware code should typically use **par_num**.
+
+### ID allocation guidelines
+
+Parameter IDs must be **unique across the entire parameter table**.
+
+IDs do not need to be sequential, but it is recommended to group them by subsystem for clarity.
+
+Example allocation:
+
+| ID Range | Subsystem         |
+| -------- | ----------------- |
+| 0–99     | Channel 1         |
+| 100–199  | Channel 2         |
+| 200–299  | Channel 3         |
+| 300–399  | Channel 4         |
+| 10000+   | System parameters |
+
+This approach simplifies integration with external tools and communication protocols.
+
+## ID lookup using hash map
+
+To improve parameter lookup by **ID**, the module builds a runtime hash map during `par_init()`.
+
+This hash map is used by APIs such as:
+
+- `par_get_num_by_id()`
+- `par_set_by_id()`
+- `par_get_by_id()`
+- `par_save_by_id()`
+
+Instead of scanning the full parameter table for every ID lookup, the module hashes the parameter ID and directly maps it to the corresponding `par_num`.
+
+### Why a hash map is used
+
+The parameter module supports two access paths:
+
+- **`par_num`** for internal firmware access
+- **`id`** for external access such as CLI, PC tools, and communication protocols
+
+Internal access by `par_num` is naturally efficient because it uses the parameter enumeration as a direct table index.
+
+External access by **ID** is different. Since IDs are user-defined and do not need to be sequential, converting an ID back to `par_num` would otherwise require a linear search through the full parameter table.
+
+A hash map avoids that cost and provides near constant-time lookup for ID-based APIs.
+
+### How it works
+
+During `par_init()`, the module:
+
+1. walks through the parameter configuration table
+2. hashes each parameter ID into a bucket index
+3. stores the mapping:
+
+```text
+ID -> par_num
+````
+
+Later, when an external API uses an ID, the module:
+
+1. hashes the requested ID
+2. checks the corresponding bucket
+3. returns the mapped `par_num`
+4. performs the actual parameter operation internally
+
+Conceptually:
+
+```text
+External ID
+   |
+   v
+ hash(id)
+   |
+   v
+ hash bucket
+   |
+   v
+ par_num
+   |
+   v
+ internal parameter API
+```
+
+### Why this is better than linear search
+
+Compared to a linear scan of the parameter table, the hash map provides:
+
+* lower lookup latency
+* predictable runtime
+* better scalability as the number of parameters grows
+* lower overhead for frequently used ID-based APIs
+
+This is especially useful when parameters are accessed repeatedly from:
+
+* CLI commands
+* host tools
+* diagnostic services
+* communication stacks
+
+### Why this is preferred over binary search
+
+Binary search would require the parameter table to be sorted by ID or an additional sorted lookup table.
+
+That introduces extra maintenance constraints and reduces flexibility in parameter definition order.
+
+The hash-based approach keeps the configuration table simple and preserves fast ID lookup without requiring sorted IDs.
+
+### Collision policy
+
+This implementation uses a strict one-entry-per-bucket hash map.
+
+That means:
+
+* duplicate IDs are rejected
+* hash collisions are also rejected during initialization
+
+If two different IDs map to the same hash bucket, initialization fails and a debug message is printed.
+
+This design keeps runtime lookup logic simple, fast, and deterministic.
+
+### What to do if a hash collision is reported
+
+If initialization prints a message such as:
+
+```text
+ERR, Hash collision: ID X conflicts with ID Y at bucket Z!
+ERR, Please regenerate IDs or adjust hash parameters.
+```
+
+then two different parameter IDs were mapped to the same hash bucket.
+
+Recommended actions:
+
+1. change one or more parameter IDs so they no longer collide
+2. keep subsystem-based ID allocation, but avoid problematic values
+
+In practice, the preferred solution is to **regenerate or reassign the conflicting IDs**.
+
+### Recommended usage
+
+When defining parameter IDs manually:
+
+* keep IDs unique across the entire table
+* keep IDs stable across firmware versions
+* group IDs by subsystem when possible
+* avoid changing IDs unless external compatibility is intentionally broken
+
+### Notes for generated parameter tables
+
+In future workflows, parameter definitions and IDs can be generated by script tools.
+
+When IDs are generated automatically, collisions can be checked during generation, which means:
+
+* duplicate IDs can be prevented before build time
+* hash collisions can be avoided before firmware is compiled
+* the runtime hash map remains simple and fast
+* manual ID maintenance is reduced
+
+With script-generated parameter tables, hash collision problems should normally not occur.
+
+### Design tradeoff
+
+This implementation intentionally favors:
+
+* **fast lookup**
+* **simple runtime logic**
+* **deterministic behavior**
+
+over:
+
+* runtime collision resolution
+* more complex lookup structures
+
+Compared to alternatives such as linear search, linear probing, or maintaining a sorted structure for binary search, this approach gives better lookup performance for normal operation.
+
+The main tradeoff is that a rare hash collision must be resolved by reassigning IDs or regenerating the parameter table. For this module, that tradeoff is considered better than paying additional runtime cost or complexity on every ID lookup.
+
 
  ## **API**
 | API Functions | Description | Prototype |
@@ -132,10 +578,9 @@ root/middleware/parameters/parameters/"module_space"
 
 ## Usage
 
-**Put all user code between sections: USER CODE BEGIN & USER CODE END!**
+### 1. Define parameter enumeration
 
-**1. Copy template files to root directory of module.**
-**2. List names of all wanted parameters inside **par_cfg.h** file**
+Define the parameter enumeration in `par_def.h`:
 
 ```C
 /**
@@ -149,26 +594,28 @@ root/middleware/parameters/parameters/"module_space"
  */
 typedef enum
 {
-	// USER CODE START...
+    ePAR_TEST_U8 = 0,
+    ePAR_TEST_I8,
 
-	ePAR_TEST_U8 = 0,
-	ePAR_TEST_I8,
+    ePAR_TEST_U16,
+    ePAR_TEST_I16,
 
-	ePAR_TEST_U16,
-	ePAR_TEST_I16,
+    ePAR_TEST_U32,
+    ePAR_TEST_I32,
 
-	ePAR_TEST_U32,
-	ePAR_TEST_I32,
+    ePAR_TEST_F32,
 
-	ePAR_TEST_F32,
-
-	// USER CODE END...
-
-	ePAR_NUM_OF
+    ePAR_NUM_OF
 } par_num_t;
 ```
 
-**3. Change parameter configuration table inside **par_cfg.c** file. It is recommended to use designated initializers.**
+### 2. Define the parameter table
+
+Define the parameter configuration table in `par_def.c`.
+
+It is recommended to use designated initializers.
+
+```C
 
 ```C
 /**
@@ -217,16 +664,49 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 };
 ```
 
-**4. Set-up all configurations options inside **par_cfg.h** file**
+### 3. Configure the module
+
+The main package configuration is defined in:
+
+```text
+parameters/src/par_cfg.h
+```
+
+Platform-specific overrides and hooks are provided in:
+
+```text
+port/par_cfg_port.h
+```
 
 | Configuration | Description |
 | --- | --- |
-| **PAR_CFG_NVM_EN** 			| Enable/Disable usage of NVM for persistant parameters. |
-| **PAR_CFG_NVM_REGION** 		| Select NVM region for Device Parameter storage space. | 
-| **PAR_CFG_DEBUG_EN** 			| Enable/Disable debugging mode. | 
-| **PAR_CFG_ASSERT_EN** 		| Enable/Disable asserts. Shall be disabled in release build!  | 
-| **PAR_DBG_PRINT** 			| Definition of debug print. | 
-| **PAR_ASSERT** 				| Definition of assert. | 
+| **PAR_CFG_NVM_EN**            | Enable/Disable usage of NVM for persistant parameters. |
+| **PAR_CFG_NVM_REGION**        | Select NVM region for Device Parameter storage space. | 
+| **PAR_CFG_DEBUG_EN**          | Enable/Disable debugging mode. |
+| **PAR_CFG_ASSERT_EN**         | Enable/Disable asserts. Shall be disabled in release build!  | 
+| **PAR_DBG_PRINT**             | Definition of debug print. |
+| **PAR_ASSERT**                | Definition of assert. |
+| **PAR_ATOMIC_BACKEND**        | Select atomic backend implementation. |
+| **PAR_CFG_TABLE_ID_CHECK_EN** | Enable or disable parameter table unique ID checking for NVM compatibility workflows. |
+| **PAR_CFG_MUTEX_EN**          | Enable or disable mutex protection.                                                   |
+| **PAR_CFG_MUTEX_TIMEOUT_MS**  | Mutex timeout in milliseconds.                                                        |
+| **PAR_CFG_IF_PORT_EN**        | Enable platform-specific `par_if` backend.                                            |
+| **PAR_CFG_PORT_HOOK_EN**      | Enable platform log/assert hooks.                                                     |
+
+**4. Build integration**
+
+The package build script collects source files from:
+
+* package root
+* `parameters/src/`
+
+and adds the following include paths:
+
+* package root
+* `parameters/src/`
+* `port/`
+
+If you add or replace port-specific files, keep them under `port/` so they remain visible to the build system.
 
 **5. Call **par_init()** function**
 

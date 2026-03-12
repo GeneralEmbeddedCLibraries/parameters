@@ -3,8 +3,8 @@
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@file      par_cfg.h
-*@brief    	Configuration for device parameters
+*@file      par_def.h
+*@brief    	Define for device parameters
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
 *@date      29.01.2026
@@ -17,8 +17,8 @@
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _PAR_CFG_H_
-#define _PAR_CFG_H_
+#ifndef _PAR_DEF_H_
+#define _PAR_DEF_H_
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
@@ -245,92 +245,6 @@ enum
     ePAR_CH_NUM_OF,
 };
 typedef uint8_t par_ch_ref_sel_t;
-
-/**
- * 	Enable/Disable storing persistent parameters to NVM
- */
-#define PAR_CFG_NVM_EN							( 1 )
-
-#if ( 1 == PAR_CFG_NVM_EN )
-	/**
-	 * 	NVM parameter region option
-	 *
-	 * 	@note 	User shall select region based on nvm_cfg.h region
-	 * 			definitions "nvm_region_name_t"
-	 *
-	 * 			Don't care if "PAR_CFG_NVM_EN" set to 0
-	 */
-	#define PAR_CFG_NVM_REGION						( eNVM_REGION_INT_FLASH_DEV_PAR )
-
-	/**
-	 * 	Enable/Disable parameter table unique ID checking
-	 *
-	 * @note	Base on hash unique ID is being calculated with
-	 * 			purpose to detect device and stored parameter table
-	 * 			difference.
-	 *
-	 * 			Must be disabled once the device is release in order
-	 * 			to prevent loss of calibrated data stored in NVM.
-	 *
-	 * 	@pre	"PAR_CFG_NVM_EN" must be enabled otherwise does
-	 * 			not make sense to calculating ID at all.
-	 */
-	#define PAR_CFG_TABLE_ID_CHECK_EN				( 0 )
-
-	#ifndef DEBUG
-	#undef PAR_CFG_TABLE_ID_CHECK_EN
-	#define PAR_CFG_TABLE_ID_CHECK_EN 0
-	#endif
-#endif
-
-/**
- * 	Enable/Disable debug mode
- */
-#define PAR_CFG_DEBUG_EN						( 1 )
-
-#ifndef DEBUG
-#undef PAR_CFG_DEBUG_EN
-#define PAR_CFG_DEBUG_EN 0
-#endif
-
-/**
- * 	Enable/Disable assertions
- */
-#define PAR_CFG_ASSERT_EN						( 1 )
-
-#ifndef DEBUG
-#undef PAR_CFG_ASSERT_EN
-#define PAR_CFG_ASSERT_EN 0
-#endif
-
-/**
- * 	Debug communication port macros
- */
-#if ( 1 == PAR_CFG_DEBUG_EN )
-	#define PAR_DBG_PRINT( ... )				( cli_printf((char*) __VA_ARGS__ ))
-#else
-	#define PAR_DBG_PRINT( ... )				{ ; }
-#endif
-
-/**
- * 	 Assertion macros
- */
-#if ( 1 == PAR_CFG_ASSERT_EN )
-	#define PAR_ASSERT(x)						PROJ_CFG_ASSERT(x)
-#else
-	#define PAR_ASSERT(x)						{ ; }
-#endif
-
-// USER CODE END...
-
-/**
- * 	Invalid configuration catcher
- *
- * 	@note	Shall be intact by end user!
- */
-#if ( 0 == PAR_CFG_NVM_EN ) && ( 1 == PAR_CFG_TABLE_ID_CHECK_EN )
-	#error "Parameter settings invalid: Disable table ID checking (PAR_CFG_TABLE_ID_CHECK_EN)!"
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions Prototypes
