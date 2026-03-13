@@ -25,15 +25,55 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdatomic.h>
 
 #include "par.h"
+#include "par_atomic.h"
 #include "par_nvm.h"
-#include "../../par_if.h"
+#include "par_if.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
+/*
+ * http://www.citi.umich.edu/techreports/reports/citi-tr-00-1.pdf
+ *
+ * GoldenRatio = ~(Math.pow(2, 32) / ((Math.sqrt(5) - 1) / 2)) + 1
+ */
+#define PAR_ID_HASH_GOLDEN_RATIO_32   ( 0x61C88647u )
+
+/**
+ *  Minimum number of hash buckets to keep target load factor <= 0.5.
+ */
+#define PAR_ID_HASH_MIN_BUCKETS       ((uint32_t)(2u * (uint32_t)ePAR_NUM_OF))
+
+/**
+ *  Hash map geometry derived from ePAR_NUM_OF at compile time.
+ */
+enum
+{
+    PAR_ID_HASH_BITS =
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 1  )) ? 1u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 2  )) ? 2u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 3  )) ? 3u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 4  )) ? 4u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 5  )) ? 5u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 6  )) ? 6u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 7  )) ? 7u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 8  )) ? 8u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 9  )) ? 9u  :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 10 )) ? 10u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 11 )) ? 11u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 12 )) ? 12u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 13 )) ? 13u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 14 )) ? 14u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 15 )) ? 15u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 16 )) ? 16u :
+        ( PAR_ID_HASH_MIN_BUCKETS <= ( 1u << 17 )) ? 17u : 18u,
+    PAR_ID_HASH_SIZE = ( 1u << PAR_ID_HASH_BITS ),
+};
+
+PAR_STATIC_ASSERT(par_id_hash_size_valid, (PAR_ID_HASH_SIZE >= PAR_ID_HASH_MIN_BUCKETS));
+PAR_STATIC_ASSERT(par_id_hash_bits_valid, ((PAR_ID_HASH_BITS > 0u) && (PAR_ID_HASH_BITS < 32u)));
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -54,15 +94,35 @@ static struct
 } g_par_cb_table[ePAR_NUM_OF];
 
 /**
+ *  ID hash map entry.
+ */
+typedef struct
+{
+    uint16_t  id;
+    par_num_t par_num;
+    uint8_t   used;
+} par_id_map_entry_t;
+
+/**
+ *  Runtime ID hash map.
+ */
+static par_id_map_entry_t g_par_id_map[PAR_ID_HASH_SIZE] = {0};
+
+/**
+ *  Initialization guard for ID hash map.
+ */
+static bool gb_par_id_map_ready = false;
+
+/**
  *  Parameter live values divided by its type in RAM
  */
-static _Atomic uint8_t *    gpu8_par_value = NULL;
-static _Atomic int8_t  *    gpi8_par_value = NULL;
-static _Atomic uint16_t *   gpu16_par_value = NULL;
-static _Atomic int16_t  *   gpi16_par_value = NULL;
-static _Atomic uint32_t *   gpu32_par_value = NULL;
-static _Atomic int32_t  *   gpi32_par_value = NULL;
-static _Atomic float32_t *  gpf32_par_value = NULL;
+static par_atomic_u8_t *     gpu8_par_value = NULL;
+static par_atomic_i8_t *     gpi8_par_value = NULL;
+static par_atomic_u16_t *    gpu16_par_value = NULL;
+static par_atomic_i16_t *    gpi16_par_value = NULL;
+static par_atomic_u32_t *    gpu32_par_value = NULL;
+static par_atomic_i32_t *    gpi32_par_value = NULL;
+static par_atomic_f32_t *    gpf32_par_value = NULL;
 
 /**
  *  Address offset by parameter enumeration
@@ -72,29 +132,21 @@ static uint32_t gu32_par_offset[ ePAR_NUM_OF ] = { 0 };
 /**
  *  Private getters and setters
  */
-#define PAR_GET_U8_PRIV(par_num)        atomic_load_explicit( &gpu8_par_value[gu32_par_offset[par_num]], memory_order_relaxed )
-#define PAR_GET_I8_PRIV(par_num)        atomic_load_explicit( &gpi8_par_value[gu32_par_offset[par_num]], memory_order_relaxed )
-#define PAR_GET_U16_PRIV(par_num)       atomic_load_explicit( &gpu16_par_value[gu32_par_offset[par_num]], memory_order_relaxed )
-#define PAR_GET_I16_PRIV(par_num)       atomic_load_explicit( &gpi16_par_value[gu32_par_offset[par_num]], memory_order_relaxed )
-#define PAR_GET_U32_PRIV(par_num)       atomic_load_explicit( &gpu32_par_value[gu32_par_offset[par_num]], memory_order_relaxed )
-#define PAR_GET_I32_PRIV(par_num)       atomic_load_explicit( &gpi32_par_value[gu32_par_offset[par_num]], memory_order_relaxed )
+#define PAR_GET_U8_PRIV(par_num)        PAR_ATOMIC_LOAD(u8, &gpu8_par_value[gu32_par_offset[par_num]])
+#define PAR_GET_I8_PRIV(par_num)        PAR_ATOMIC_LOAD(i8, &gpi8_par_value[gu32_par_offset[par_num]])
+#define PAR_GET_U16_PRIV(par_num)       PAR_ATOMIC_LOAD(u16, &gpu16_par_value[gu32_par_offset[par_num]])
+#define PAR_GET_I16_PRIV(par_num)       PAR_ATOMIC_LOAD(i16, &gpi16_par_value[gu32_par_offset[par_num]])
+#define PAR_GET_U32_PRIV(par_num)       PAR_ATOMIC_LOAD(u32, &gpu32_par_value[gu32_par_offset[par_num]])
+#define PAR_GET_I32_PRIV(par_num)       PAR_ATOMIC_LOAD(i32, &gpi32_par_value[gu32_par_offset[par_num]])
+#define PAR_GET_F32_PRIV(par_num)       PAR_ATOMIC_LOAD(f32, &gpf32_par_value[gu32_par_offset[par_num]])
 
-// NOTICE: "atomic_load_explicit" does not support float data type, therfore using GCC/CLang build-in primitive "__atomic_load" to overcome this limitation
-#define PAR_GET_F32_PRIV(par_num) ({ \
-    float32_t __val; \
-    __atomic_load( &gpf32_par_value[gu32_par_offset[par_num]], &__val, __ATOMIC_RELAXED); \
-    __val; \
-})
-
-#define PAR_SET_U8_PRIV(par_num, val)   atomic_store_explicit( &gpu8_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed )
-#define PAR_SET_I8_PRIV(par_num, val)   atomic_store_explicit( &gpi8_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed )
-#define PAR_SET_U16_PRIV(par_num, val)  atomic_store_explicit( &gpu16_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed )
-#define PAR_SET_I16_PRIV(par_num, val)  atomic_store_explicit( &gpi16_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed )
-#define PAR_SET_U32_PRIV(par_num, val)  atomic_store_explicit( &gpu32_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed )
-#define PAR_SET_I32_PRIV(par_num, val)  atomic_store_explicit( &gpi32_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed )
-
-// NOTICE: "atomic_store_explicit" does not support float data type, therfore using GCC/CLang build-in primitive "__atomic_store" to overcome this limitation
-#define PAR_SET_F32_PRIV(par_num, val)  __atomic_store( &gpf32_par_value[gu32_par_offset[par_num]], &val, memory_order_relaxed )    
+#define PAR_SET_U8_PRIV(par_num, val)   PAR_ATOMIC_STORE(u8, &gpu8_par_value[gu32_par_offset[par_num]], (val))
+#define PAR_SET_I8_PRIV(par_num, val)   PAR_ATOMIC_STORE(i8, &gpi8_par_value[gu32_par_offset[par_num]], (val))
+#define PAR_SET_U16_PRIV(par_num, val)  PAR_ATOMIC_STORE(u16, &gpu16_par_value[gu32_par_offset[par_num]], (val))
+#define PAR_SET_I16_PRIV(par_num, val)  PAR_ATOMIC_STORE(i16, &gpi16_par_value[gu32_par_offset[par_num]], (val))
+#define PAR_SET_U32_PRIV(par_num, val)  PAR_ATOMIC_STORE(u32, &gpu32_par_value[gu32_par_offset[par_num]], (val))
+#define PAR_SET_I32_PRIV(par_num, val)  PAR_ATOMIC_STORE(i32, &gpi32_par_value[gu32_par_offset[par_num]], (val))
+#define PAR_SET_F32_PRIV(par_num, val)  PAR_ATOMIC_STORE(f32, &gpf32_par_value[gu32_par_offset[par_num]], (val))
 
 #if ( PAR_CFG_DEBUG_EN )
 
@@ -123,9 +175,13 @@ static uint32_t gu32_par_offset[ ePAR_NUM_OF ] = { 0 };
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static void         par_allocate_ram_space          (void);
-static par_status_t par_check_table_validy          (const par_cfg_t * const p_par_cfg);
+static void             par_allocate_ram_space          (void);
+static inline uint32_t  par_hash_id                     (const uint16_t id);
+static par_status_t     par_build_and_validate_id_map   (const par_cfg_t * const p_par_cfg);
+static par_status_t     par_check_table_validity        (const par_cfg_t * const p_par_cfg);
+#if ( 1 == PAR_CFG_NVM_EN )
 static bool         par_is_value_changed            (const par_num_t par_num, const void * p_val);
+#endif /* ( 1 == PAR_CFG_NVM_EN ) */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -205,48 +261,88 @@ static void par_allocate_ram_space(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*        Hash parameter ID to bucket index
+*
+* @param[in]    id  - Parameter ID
+* @return       hash index
+*/
+////////////////////////////////////////////////////////////////////////////////
+static inline uint32_t par_hash_id(const uint16_t id)
+{
+    return (((uint32_t) id * PAR_ID_HASH_GOLDEN_RATIO_32 ) >> ( 32u - PAR_ID_HASH_BITS ));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*        Build and validate parameter ID hash map
+*
+* @param[in]    p_par_cfg - Pointer to parameters table
+* @return       status    - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+static par_status_t par_build_and_validate_id_map(const par_cfg_t * const p_par_cfg)
+{
+    memset( g_par_id_map, 0, sizeof(g_par_id_map) );
+    for ( par_num_t par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
+    {
+        const uint16_t id = p_par_cfg[par_num].id;
+        const uint32_t bucket_idx = par_hash_id( id );
+        par_id_map_entry_t * const bucket = &g_par_id_map[bucket_idx];
+
+        if ( 0u == bucket->used )
+        {
+            bucket->used = 1u;
+            bucket->id = id;
+            bucket->par_num = par_num;
+            continue;
+        }
+
+        if ( bucket->id == id )
+        {
+            PAR_DBG_PRINT( "ERR, Duplicate parameter ID %u!", (unsigned) id );
+            PAR_ASSERT( 0 );
+            return ePAR_ERROR_INIT;
+        }
+
+        PAR_DBG_PRINT( "ERR, Hash collision: ID %u conflicts with ID %u at bucket %u!",
+            (unsigned) id, (unsigned) bucket->id, (unsigned) bucket_idx );
+        PAR_DBG_PRINT( "ERR, Please regenerate IDs or adjust hash parameters." );
+        PAR_ASSERT( 0 );
+        return ePAR_ERROR_INIT;
+    }
+
+    return ePAR_OK;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *        Check that parameter table is correctly defined
 *
 * @param[in]    p_par_cfg - Pointer to parameters table
 * @return       status    - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-static par_status_t par_check_table_validy(const par_cfg_t * const p_par_cfg)
+static par_status_t par_check_table_validity(const par_cfg_t * const p_par_cfg)
 {
     par_status_t status = ePAR_OK;
+
+    // Build and validate runtime ID hash map
+    status = par_build_and_validate_id_map( p_par_cfg );
+    if ( ePAR_OK != status )
+    {
+        return status;
+    }
 
     // For each parameter
     for ( uint32_t i = 0; i < ePAR_NUM_OF; i++ )
     {
-        // Compare parameters IDs
-        for ( uint32_t j = 0; j < ePAR_NUM_OF; j++ )
-        {
-            if ( i != j )
-            {
-                // Check for two identical IDs
-                if ( p_par_cfg[i].id == p_par_cfg[j].id )
-                {
-                    status = ePAR_ERROR_INIT;
-                    PAR_DBG_PRINT( "ERR, Two parameters have the same ID %d!", p_par_cfg[i].id );
-                    PAR_ASSERT( 0 );
-                    break;
-                }
-            }
-        }
-
-        /**
-         *     Check for correct MIN, MAX and DEF value definitions
+        /*
+         * Keep F32 range/default validation in runtime.
          *
-         *    1. Check that MAX is larger than MIN
-         *    2. Check that DEF is equal or less than MAX
-         *    3. Check that DEF is equal or more than MIN
+         * On some embedded/legacy GCC toolchains, float comparisons used in
+         * typedef-based static asserts may be treated as non-constant
+         * expressions and trigger file-scope VLA warnings.
          */
-        PAR_ASSERT(( ePAR_TYPE_U8 == p_par_cfg[i].type )     ? ((( p_par_cfg[i].min.u8 < p_par_cfg[i].max.u8 ) && ( p_par_cfg[i].def.u8 <= p_par_cfg[i].max.u8 )) && (  p_par_cfg[i].min.u8 <= p_par_cfg[i].def.u8 )) : ( 1 ));
-        PAR_ASSERT(( ePAR_TYPE_I8 == p_par_cfg[i].type )     ? ((( p_par_cfg[i].min.i8 < p_par_cfg[i].max.i8 ) && ( p_par_cfg[i].def.i8 <= p_par_cfg[i].max.i8 )) && (  p_par_cfg[i].min.i8 <= p_par_cfg[i].def.i8 )) : ( 1 ));
-        PAR_ASSERT(( ePAR_TYPE_U16 == p_par_cfg[i].type )    ? ((( p_par_cfg[i].min.u16 < p_par_cfg[i].max.u16 ) && ( p_par_cfg[i].def.u16 <= p_par_cfg[i].max.u16 )) && (  p_par_cfg[i].min.u16 <= p_par_cfg[i].def.u16 )) : ( 1 ));
-        PAR_ASSERT(( ePAR_TYPE_I16 == p_par_cfg[i].type )    ? ((( p_par_cfg[i].min.i16 < p_par_cfg[i].max.i16 ) && ( p_par_cfg[i].def.i16 <= p_par_cfg[i].max.i16 )) && (  p_par_cfg[i].min.i16 <= p_par_cfg[i].def.i16 )) : ( 1 ));
-        PAR_ASSERT(( ePAR_TYPE_U32 == p_par_cfg[i].type )    ? ((( p_par_cfg[i].min.u32 < p_par_cfg[i].max.u32 ) && ( p_par_cfg[i].def.u32 <= p_par_cfg[i].max.u32 )) && (  p_par_cfg[i].min.u32 <= p_par_cfg[i].def.u32 )) : ( 1 ));
-        PAR_ASSERT(( ePAR_TYPE_I32 == p_par_cfg[i].type )    ? ((( p_par_cfg[i].min.i32 < p_par_cfg[i].max.i32 ) && ( p_par_cfg[i].def.i32 <= p_par_cfg[i].max.i32 )) && (  p_par_cfg[i].min.i32 <= p_par_cfg[i].def.i32 )) : ( 1 ));
         PAR_ASSERT(( ePAR_TYPE_F32 == p_par_cfg[i].type )    ? ((( p_par_cfg[i].min.f32 < p_par_cfg[i].max.f32 ) && ( p_par_cfg[i].def.f32 <= p_par_cfg[i].max.f32 )) && (  p_par_cfg[i].min.f32 <= p_par_cfg[i].def.f32 )) : ( 1 ));
 
         // Parameter shall have a description and the name
@@ -274,6 +370,7 @@ static par_status_t par_check_table_validy(const par_cfg_t * const p_par_cfg)
     return status;
 }
 
+#if ( 1 == PAR_CFG_NVM_EN )
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *        Is parameter value changed
@@ -325,6 +422,7 @@ static bool par_is_value_changed(const par_num_t par_num, const void * p_val)
 
     return value_changed;
 }
+#endif /* ( 1 == PAR_CFG_NVM_EN ) */
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -360,7 +458,7 @@ par_status_t par_init(void)
     if ( false != par_is_init()) return ePAR_ERROR_INIT;
 
     // Check if par table is defined correctly
-    status |= par_check_table_validy( par_cfg_get_table());
+    status |= par_check_table_validity( par_cfg_get_table());
 
     // Allocate space in RAM
     par_allocate_ram_space();
@@ -373,6 +471,7 @@ par_status_t par_init(void)
     if ( ePAR_OK == status )
     {
         gb_is_init = true;
+        gb_par_id_map_ready = true;
 
         // Set all parameters to default
         par_set_all_to_default();
@@ -409,6 +508,7 @@ par_status_t par_deinit(void)
 
     // Module de-initialized
     gb_is_init = false;
+    gb_par_id_map_ready = false;
 
     return status;
 }
@@ -1177,17 +1277,17 @@ par_status_t par_bitand_set_u8_fast(const par_num_t par_num, const uint8_t val)
 
     if ( val > range.max.u8 )
     {
-        atomic_fetch_and_explicit( &gpu8_par_value[gu32_par_offset[par_num]], range.max.u8, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u8, &gpu8_par_value[gu32_par_offset[par_num]], range.max.u8);
         return ePAR_WAR_LIMITED;
     }
     else if ( val < range.min.u8 )
     {
-        atomic_fetch_and_explicit( &gpu8_par_value[gu32_par_offset[par_num]], range.min.u8, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u8, &gpu8_par_value[gu32_par_offset[par_num]], range.min.u8);
         return ePAR_WAR_LIMITED;
     }
     else
     {
-        atomic_fetch_and_explicit( &gpu8_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u8, &gpu8_par_value[gu32_par_offset[par_num]], val);
         return ePAR_OK;
     }
 }
@@ -1210,17 +1310,17 @@ par_status_t par_bitand_set_u16_fast(const par_num_t par_num, const uint16_t val
 
     if ( val > range.max.u16 )
     {
-        atomic_fetch_and_explicit( &gpu16_par_value[gu32_par_offset[par_num]], range.max.u16, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u16, &gpu16_par_value[gu32_par_offset[par_num]], range.max.u16);
         return ePAR_WAR_LIMITED;
     }
     else if ( val < range.min.u16 )
     {
-        atomic_fetch_and_explicit( &gpu16_par_value[gu32_par_offset[par_num]], range.min.u16, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u16, &gpu16_par_value[gu32_par_offset[par_num]], range.min.u16);
         return ePAR_WAR_LIMITED;
     }
     else
     {
-        atomic_fetch_and_explicit( &gpu16_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u16, &gpu16_par_value[gu32_par_offset[par_num]], val);
         return ePAR_OK;
     }
 }
@@ -1243,17 +1343,17 @@ par_status_t par_bitand_set_u32_fast(const par_num_t par_num, const uint32_t val
 
     if ( val > range.max.u32 )
     {
-        atomic_fetch_and_explicit( &gpu32_par_value[gu32_par_offset[par_num]], range.max.u32, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u32, &gpu32_par_value[gu32_par_offset[par_num]], range.max.u32);
         return ePAR_WAR_LIMITED;
     }
     else if ( val < range.min.u32 )
     {
-        atomic_fetch_and_explicit( &gpu32_par_value[gu32_par_offset[par_num]], range.min.u32, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u32, &gpu32_par_value[gu32_par_offset[par_num]], range.min.u32);
         return ePAR_WAR_LIMITED;
     }
     else
     {
-        atomic_fetch_and_explicit( &gpu32_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_AND(u32, &gpu32_par_value[gu32_par_offset[par_num]], val);
         return ePAR_OK;
     }
 }
@@ -1276,17 +1376,17 @@ par_status_t par_bitor_set_u8_fast(const par_num_t par_num, const uint8_t val)
 
     if ( val > range.max.u8 )
     {
-        atomic_fetch_or_explicit( &gpu8_par_value[gu32_par_offset[par_num]], range.max.u8, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u8, &gpu8_par_value[gu32_par_offset[par_num]], range.max.u8);
         return ePAR_WAR_LIMITED;
     }
     else if ( val < range.min.u8 )
     {
-        atomic_fetch_or_explicit( &gpu8_par_value[gu32_par_offset[par_num]], range.min.u8, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u8, &gpu8_par_value[gu32_par_offset[par_num]], range.min.u8);
         return ePAR_WAR_LIMITED;
     }
     else
     {
-        atomic_fetch_or_explicit( &gpu8_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u8, &gpu8_par_value[gu32_par_offset[par_num]], val);
         return ePAR_OK;
     }
 }
@@ -1309,17 +1409,17 @@ par_status_t par_bitor_set_u16_fast(const par_num_t par_num, const uint16_t val)
 
     if ( val > range.max.u16 )
     {
-        atomic_fetch_or_explicit( &gpu16_par_value[gu32_par_offset[par_num]], range.max.u16, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u16, &gpu16_par_value[gu32_par_offset[par_num]], range.max.u16);
         return ePAR_WAR_LIMITED;
     }
     else if ( val < range.min.u16 )
     {
-        atomic_fetch_or_explicit( &gpu16_par_value[gu32_par_offset[par_num]], range.min.u16, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u16, &gpu16_par_value[gu32_par_offset[par_num]], range.min.u16);
         return ePAR_WAR_LIMITED;
     }
     else
     {
-        atomic_fetch_or_explicit( &gpu16_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u16, &gpu16_par_value[gu32_par_offset[par_num]], val);
         return ePAR_OK;
     }
 }
@@ -1342,17 +1442,17 @@ par_status_t par_bitor_set_u32_fast(const par_num_t par_num, const uint32_t val)
 
     if ( val > range.max.u32 )
     {
-        atomic_fetch_or_explicit( &gpu32_par_value[gu32_par_offset[par_num]], range.max.u32, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u32, &gpu32_par_value[gu32_par_offset[par_num]], range.max.u32);
         return ePAR_WAR_LIMITED;
     }
     else if ( val < range.min.u32 )
     {
-        atomic_fetch_or_explicit( &gpu32_par_value[gu32_par_offset[par_num]], range.min.u32, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u32, &gpu32_par_value[gu32_par_offset[par_num]], range.min.u32);
         return ePAR_WAR_LIMITED;
     }
     else
     {
-        atomic_fetch_or_explicit( &gpu32_par_value[gu32_par_offset[par_num]], val, memory_order_relaxed );
+        PAR_ATOMIC_FETCH_OR(u32, &gpu32_par_value[gu32_par_offset[par_num]], val);
         return ePAR_OK;
     }
 }
@@ -1790,7 +1890,7 @@ const par_cfg_t * par_get_config(const par_num_t par_num)
     PAR_ASSERT( par_num < ePAR_NUM_OF );
     if ( par_num >= ePAR_NUM_OF ) return NULL;
 
-    return (const par_cfg_t*) par_cfg_get(par_num);
+    return par_cfg_get(par_num);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1946,17 +2046,15 @@ bool par_is_persistant(const par_num_t par_num)
 ////////////////////////////////////////////////////////////////////////////////
 par_status_t par_get_num_by_id(const uint16_t id, par_num_t * const p_par_num)
 {
-    if ( NULL != p_par_num )
+    if (( NULL != p_par_num ) && ( true == gb_par_id_map_ready ))
     {
-        for (par_num_t par_num = 0; par_num < ePAR_NUM_OF; par_num++ )
-        {
-            const par_cfg_t * const par_cfg = par_get_config(par_num);
+        const uint32_t bucket_idx = par_hash_id( id );
+        const par_id_map_entry_t * const bucket = &g_par_id_map[bucket_idx];
 
-            if (( NULL != par_cfg ) && ( id == par_cfg->id ))
-            {
-                *p_par_num = par_num;
-                return ePAR_OK;
-            }
+        if (( 0u != bucket->used ) && ( id == bucket->id ))
+        {
+            *p_par_num = bucket->par_num;
+            return ePAR_OK;
         }
     }
 
