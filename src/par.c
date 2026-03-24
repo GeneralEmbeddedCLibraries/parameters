@@ -126,8 +126,12 @@ static uint32_t gu32_par_offset[ ePAR_NUM_OF ] = { 0 };
 ////////////////////////////////////////////////////////////////////////////////
 static void         par_allocate_ram_space          (void);
 static par_status_t par_check_table_validy          (const par_cfg_t * const p_par_cfg);
-static bool         par_is_value_changed            (const par_num_t par_num, const void * p_val);
 static void         par_raise_on_change_callback    (const par_num_t par_num, const par_type_t new_val, const par_type_t old_val);
+static bool         par_validate_value              (const par_num_t par_num, const par_type_t val);
+
+#if ( 1 == PAR_CFG_NVM_EN )
+    static bool         par_is_value_changed            (const par_num_t par_num, const void * p_val);
+#endif 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -278,58 +282,6 @@ static par_status_t par_check_table_validy(const par_cfg_t * const p_par_cfg)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*        Is parameter value changed
-*
-* @param[in]    par_num - Parameter number
-* @param[in]    p_val   - Parameter value
-* @return       True if parameter value is different from current
-*/
-////////////////////////////////////////////////////////////////////////////////
-static bool par_is_value_changed(const par_num_t par_num, const void * p_val)
-{
-    bool value_changed = false;
-
-    switch ( par_get_type(par_num))
-    {
-        case ePAR_TYPE_U8:
-            value_changed = (par_get_u8(par_num) != *(uint8_t*)p_val);
-            break;
-
-        case ePAR_TYPE_I8:
-            value_changed = (par_get_i8(par_num) != *(int8_t*)p_val);
-            break;
-
-        case ePAR_TYPE_U16:
-            value_changed = (par_get_u16(par_num) != *(uint16_t*)p_val);
-            break;
-
-        case ePAR_TYPE_I16:
-            value_changed = (par_get_i16(par_num) != *(int16_t*)p_val);
-            break;
-
-        case ePAR_TYPE_U32:
-            value_changed = (par_get_u32(par_num) != *(uint32_t*)p_val);
-            break;
-
-        case ePAR_TYPE_I32:
-            value_changed = (par_get_i32(par_num) != *(int32_t*)p_val);
-            break;
-
-        case ePAR_TYPE_F32:
-            value_changed = (par_get_f32(par_num) != *(float32_t*)p_val);
-            break;
-
-        case ePAR_TYPE_NUM_OF:
-        default:
-            PAR_ASSERT( 0 );
-            break;
-    }
-
-    return value_changed;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
 *        Check and raise callback
 *
 * @param[in]    par_num - Parameter number (enumeration)
@@ -375,6 +327,60 @@ static bool par_validate_value(const par_num_t par_num, const par_type_t val)
     // Return true if validation function is not registered for given parameter
     return true;
 }
+
+#if ( 1 == PAR_CFG_NVM_EN )
+    ////////////////////////////////////////////////////////////////////////////////
+    /**
+    *        Is parameter value changed
+    *
+    * @param[in]    par_num - Parameter number
+    * @param[in]    p_val   - Parameter value
+    * @return       True if parameter value is different from current
+    */
+    ////////////////////////////////////////////////////////////////////////////////
+    static bool par_is_value_changed(const par_num_t par_num, const void * p_val)
+    {
+        bool value_changed = false;
+
+        switch ( par_get_type(par_num))
+        {
+            case ePAR_TYPE_U8:
+                value_changed = (par_get_u8(par_num) != *(uint8_t*)p_val);
+                break;
+
+            case ePAR_TYPE_I8:
+                value_changed = (par_get_i8(par_num) != *(int8_t*)p_val);
+                break;
+
+            case ePAR_TYPE_U16:
+                value_changed = (par_get_u16(par_num) != *(uint16_t*)p_val);
+                break;
+
+            case ePAR_TYPE_I16:
+                value_changed = (par_get_i16(par_num) != *(int16_t*)p_val);
+                break;
+
+            case ePAR_TYPE_U32:
+                value_changed = (par_get_u32(par_num) != *(uint32_t*)p_val);
+                break;
+
+            case ePAR_TYPE_I32:
+                value_changed = (par_get_i32(par_num) != *(int32_t*)p_val);
+                break;
+
+            case ePAR_TYPE_F32:
+                value_changed = (par_get_f32(par_num) != *(float32_t*)p_val);
+                break;
+
+            case ePAR_TYPE_NUM_OF:
+            default:
+                PAR_ASSERT( 0 );
+                break;
+        }
+
+        return value_changed;
+    }
+#endif // #if ( 1 == PAR_CFG_NVM_EN )
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
