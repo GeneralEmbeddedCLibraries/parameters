@@ -1,0 +1,261 @@
+# API reference
+
+This document groups the public API from `src/par.h` by responsibility.
+
+## Conventions
+
+- Most runtime APIs require `par_init()` to be called first.
+- Some APIs are compiled only when the matching configuration option is enabled.
+- `par_num_t` is the internal parameter index.
+- ID-based APIs depend on `PAR_CFG_ENABLE_ID = 1`.
+- NVM APIs depend on `PAR_CFG_NVM_EN = 1`.
+- `F32` typed APIs depend on `PAR_CFG_ENABLE_TYPE_F32 = 1`.
+- Validation registration APIs depend on `PAR_CFG_ENABLE_RUNTIME_VALIDATION = 1`.
+- On-change registration APIs depend on `PAR_CFG_ENABLE_CHANGE_CALLBACK = 1`.
+
+## Compile-time availability notes
+
+The module conditionally compiles parts of the API based on configuration.
+
+- `PAR_CFG_NVM_EN = 1` enables NVM APIs
+- `PAR_CFG_ENABLE_ID = 1` enables ID-dependent behavior
+- `PAR_CFG_ENABLE_TYPE_F32 = 1` enables:
+  - `par_set_f32()`
+  - `par_get_f32()`
+  - `par_set_f32_fast()`
+  - `PAR_SET_F32`
+- `PAR_CFG_ENABLE_RUNTIME_VALIDATION = 1` enables:
+  - `par_register_validation()`
+  - runtime validation callbacks in normal setter paths
+- `PAR_CFG_ENABLE_CHANGE_CALLBACK = 1` enables:
+  - `par_register_on_change_cb()`
+  - on-change callbacks in normal setter paths
+- `PAR_CFG_ENABLE_RESET_ALL_RAW = 1` enables:
+  - `par_reset_all_to_default_raw()`
+
+## Lifecycle
+
+| Function | Description |
+| --- | --- |
+| `par_init()` | Initialize the module, validate the table, bind layout/runtime state, optionally run configured runtime ID diagnostics, apply default values to live storage, and optionally load persisted values from NVM. Startup defaults are applied internally and do not use the public setter path. |
+| `par_deinit()` | Best-effort deinitialize the module, including interface-layer resources. It always clears the module init state after attempting child deinit steps. When NVM support is enabled, it only deinitializes the underlying NVM module if this module initialized it. |
+| `par_is_init()` | Return whether the module is initialized. |
+
+## Mutex helpers
+
+| Function | Description |
+| --- | --- |
+| `par_acquire_mutex(par_num)` | Acquire the parameter lock for a specific parameter path. |
+| `par_release_mutex(par_num)` | Release the parameter lock. |
+
+These are relevant only when mutex support is enabled in the integration.
+
+## Pointer-based setters
+
+| Function | Description |
+| --- | --- |
+| `par_set(par_num, p_val)` | Set a parameter from a typed pointer. |
+| `par_set_by_id(id, p_val)` | Set a parameter using its external ID. |
+
+## Typed setter macro wrappers
+
+| Macro | Description |
+| --- | --- |
+| `PAR_SET_U8(par_num, value)` | Call `par_set_u8()` through a typed macro wrapper. |
+| `PAR_SET_I8(par_num, value)` | Call `par_set_i8()` through a typed macro wrapper. |
+| `PAR_SET_U16(par_num, value)` | Call `par_set_u16()` through a typed macro wrapper. |
+| `PAR_SET_I16(par_num, value)` | Call `par_set_i16()` through a typed macro wrapper. |
+| `PAR_SET_U32(par_num, value)` | Call `par_set_u32()` through a typed macro wrapper. |
+| `PAR_SET_I32(par_num, value)` | Call `par_set_i32()` through a typed macro wrapper. |
+| `PAR_SET_F32(par_num, value)` | Call `par_set_f32()` through a typed macro wrapper. Available only when `PAR_CFG_ENABLE_TYPE_F32 = 1`. |
+
+## Typed setter functions
+
+| Function | Description |
+| --- | --- |
+| `par_set_u8()` | Set a `U8` parameter. |
+| `par_set_i8()` | Set an `I8` parameter. |
+| `par_set_u16()` | Set a `U16` parameter. |
+| `par_set_i16()` | Set an `I16` parameter. |
+| `par_set_u32()` | Set a `U32` parameter. |
+| `par_set_i32()` | Set an `I32` parameter. |
+| `par_set_f32()` | Set an `F32` parameter. Available only when `PAR_CFG_ENABLE_TYPE_F32 = 1`. |
+
+Normal typed setters may include runtime validation callbacks and on-change callbacks as part of the normal runtime path. Those hook paths are present only when the matching configuration options are enabled.
+
+## Fast setters
+
+| Function | Description |
+| --- | --- |
+| `par_set_u8_fast()` | Fast set for `U8`. |
+| `par_set_i8_fast()` | Fast set for `I8`. |
+| `par_set_u16_fast()` | Fast set for `U16`. |
+| `par_set_i16_fast()` | Fast set for `I16`. |
+| `par_set_u32_fast()` | Fast set for `U32`. |
+| `par_set_i32_fast()` | Fast set for `I32`. |
+| `par_set_f32_fast()` | Fast set for `F32`. Available only when `PAR_CFG_ENABLE_TYPE_F32 = 1`. |
+
+Use these only in controlled hot paths.
+
+## Fast bitwise update helpers
+
+These helpers are available for unsigned integer widths and are intended only for controlled, high-frequency updates of flags/bitmask parameters. Treat them as unchecked fast paths, not as general-purpose setters for ranged numeric values.
+
+| Function | Description |
+| --- | --- |
+| `par_bitand_set_u8_fast()` | Fast bitwise AND update for `U8`. |
+| `par_bitand_set_u16_fast()` | Fast bitwise AND update for `U16`. |
+| `par_bitand_set_u32_fast()` | Fast bitwise AND update for `U32`. |
+| `par_bitor_set_u8_fast()` | Fast bitwise OR update for `U8`. |
+| `par_bitor_set_u16_fast()` | Fast bitwise OR update for `U16`. |
+| `par_bitor_set_u32_fast()` | Fast bitwise OR update for `U32`. |
+
+## Reset and change tracking
+
+| Function | Description |
+| --- | --- |
+| `par_set_to_default(par_num)` | Reset one parameter to its configured default value through the normal runtime setter path. |
+| `par_set_all_to_default()` | Reset all parameters to their default values. When `PAR_CFG_ENABLE_RESET_ALL_RAW = 1`, this public API forwards to the raw grouped-storage reset path for speed. Otherwise it iterates through the normal runtime setter path and aggregates per-parameter status bits. |
+| `par_reset_all_to_default_raw()` | Restore all live values from a grouped default mirror snapshot via raw memory copy. The internal storage model still uses `U8/U16/U32` width groups. Available only when `PAR_CFG_ENABLE_RESET_ALL_RAW = 1`. |
+| `par_has_changed(par_num, p_has_changed)` | Report whether the value differs from its default. |
+
+`par_set_to_default()` always uses the normal runtime setter path.
+
+`par_set_all_to_default()` is configuration-dependent. When `PAR_CFG_ENABLE_RESET_ALL_RAW = 1`, it forwards to `par_reset_all_to_default_raw()` for the fastest bulk restore path. When the raw-reset option is disabled, it iterates through parameters and uses the normal runtime setter path.
+
+Use `par_reset_all_to_default_raw()` when you want to call the raw grouped-storage restore path explicitly.
+
+These reset APIs are different from startup initialization:
+
+- `par_init()` applies startup defaults internally to live storage
+- `par_set_to_default()` uses runtime setter semantics for one parameter
+- `par_set_all_to_default()` uses raw restore semantics when raw reset is enabled, otherwise it uses runtime setter semantics
+- `par_reset_all_to_default_raw()` always bypasses per-parameter runtime setter semantics
+
+## Pointer-based getters
+
+| Function | Description |
+| --- | --- |
+| `par_get(par_num, p_val)` | Read a parameter into a typed destination pointer. |
+| `par_get_by_id(id, p_val)` | Read a parameter using its external ID. |
+
+Typed getter macros are removed. Call the typed getter functions directly and always check the returned status.
+
+## Typed getter functions
+
+| Function | Description |
+| --- | --- |
+| `par_get_u8(par_num, p_val)` | Read a `U8` parameter into `*p_val`. Returns status. |
+| `par_get_i8(par_num, p_val)` | Read an `I8` parameter into `*p_val`. Returns status. |
+| `par_get_u16(par_num, p_val)` | Read a `U16` parameter into `*p_val`. Returns status. |
+| `par_get_i16(par_num, p_val)` | Read an `I16` parameter into `*p_val`. Returns status. |
+| `par_get_u32(par_num, p_val)` | Read a `U32` parameter into `*p_val`. Returns status. |
+| `par_get_i32(par_num, p_val)` | Read an `I32` parameter into `*p_val`. Returns status. |
+| `par_get_f32(par_num, p_val)` | Read an `F32` parameter into `*p_val`. Available only when `PAR_CFG_ENABLE_TYPE_F32 = 1`. Returns status. |
+| `par_get_default(par_num, p_val)` | Read the configured default value for a parameter. |
+
+## Metadata access
+
+These APIs do not follow the same runtime usage pattern as the value access APIs. They expose parameter metadata from the configuration table.
+
+| Function | Description |
+| --- | --- |
+| `par_get_config(par_num)` | Return the full configuration object for one parameter. |
+| `par_get_name(par_num)` | Return the display name when name metadata is enabled. |
+| `par_get_range(par_num)` | Return the configured min/max range when range metadata is enabled. |
+| `par_get_unit(par_num)` | Return the engineering unit when unit metadata is enabled. |
+| `par_get_desc(par_num)` | Return the description string when description metadata is enabled. |
+| `par_get_type(par_num)` | Return the parameter type enum. |
+| `par_get_access(par_num)` | Return read-only or read-write access metadata when enabled. |
+| `par_is_persistent(par_num)` | Return whether the parameter is marked persistent when enabled. |
+| `par_get_num_by_id(id, p_par_num)` | Convert an external ID to `par_num_t` through the compile-time generated static ID map. This metadata API does not require `par_init()`. |
+| `par_get_id_by_num(par_num, p_id)` | Convert `par_num_t` to external ID. |
+
+## NVM APIs
+
+Available only when `PAR_CFG_NVM_EN = 1`.
+
+| Function | Description |
+| --- | --- |
+| `par_set_n_save(par_num, p_val)` | Set one parameter and persist it immediately. |
+| `par_save_all()` | Persist all persistent parameters. |
+| `par_save(par_num)` | Persist one parameter. |
+| `par_save_by_id(par_id)` | Persist one parameter by external ID. |
+| `par_save_clean()` | Rewrite the full NVM area managed by the module. |
+
+## Registration APIs
+
+These APIs register behavior per parameter.
+
+`par_register_on_change_cb()` is available only when `PAR_CFG_ENABLE_CHANGE_CALLBACK = 1`.
+
+`par_register_validation()` is available only when `PAR_CFG_ENABLE_RUNTIME_VALIDATION = 1`.
+
+| Function | Description |
+| --- | --- |
+| `par_register_on_change_cb(par_num, cb)` | Register a change callback for one parameter. Available only when `PAR_CFG_ENABLE_CHANGE_CALLBACK = 1`. |
+| `par_register_validation(par_num, validation)` | Register a validation callback for one parameter. Available only when `PAR_CFG_ENABLE_RUNTIME_VALIDATION = 1`. |
+
+Example:
+
+```c
+static void on_mode_change(
+    const par_num_t par_num,
+    const par_type_t new_val,
+    const par_type_t old_val)
+{
+    (void)par_num;
+    (void)new_val;
+    (void)old_val;
+}
+
+static bool validate_mode(const par_num_t par_num, const par_type_t val)
+{
+    (void)par_num;
+    return (val.u8 <= 3U);
+}
+
+static void app_hooks_init(void)
+{
+#if ( 1 == PAR_CFG_ENABLE_CHANGE_CALLBACK )
+    par_register_on_change_cb(ePAR_MODE, on_mode_change);
+#endif
+
+#if ( 1 == PAR_CFG_ENABLE_RUNTIME_VALIDATION )
+    par_register_validation(ePAR_MODE, validate_mode);
+#endif
+}
+```
+
+When enabled, these hooks affect runtime writes and explicit reset operations that use the normal setter path. They are not invoked during the internal startup default initialization performed by `par_init()`, by raw restore/reset paths, by typed fast setters, or by bitwise fast setters.
+
+Keep both hook types synchronous, short, and non-blocking. Do not perform long-running I/O, waits, sleeps, or other operations that may extend parameter-module lock hold time. Re-entering the parameter module from these hooks is an advanced usage pattern and should be reviewed carefully at application level.
+
+## Debug helpers
+
+Available only when debug support is enabled.
+
+| Function | Description |
+| --- | --- |
+| `par_get_status_str(status)` | Convert a status code to a debug string. |
+
+## Status categories
+
+`par_status_t` combines normal status, errors, and warnings.
+
+Common values include:
+
+- `ePAR_OK`
+- `ePAR_ERROR`
+- `ePAR_ERROR_INIT`
+- `ePAR_ERROR_NVM`
+- `ePAR_ERROR_CRC`
+- `ePAR_ERROR_TYPE`
+- `ePAR_ERROR_MUTEX`
+- `ePAR_ERROR_VALUE`
+- `ePAR_ERROR_PARAM`
+- `ePAR_ERROR_PAR_NUM`
+- `ePAR_WAR_SET_TO_DEF`
+- `ePAR_WAR_NVM_REWRITTEN`
+- `ePAR_WAR_NO_PERSISTENT`
+- `ePAR_WAR_LIMITED`

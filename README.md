@@ -1,373 +1,138 @@
-# **Device Parameters**
+# Device Parameters
 
-The **Device Parameters** module manages all device parameters through a single configuration table, offering a streamlined approach to system configuration and diagnostics. This module often serves as the backbone of an embedded system, controlling the application's behavior and providing insights into device performance, making diagnostics straightforward and efficient.  
+`Device Parameters` is a portable embedded C module for managing runtime parameters, validation, metadata, and optional NVM persistence from a single parameter definition table.
 
-For more details about storage into NVM look at the [General Embedded C Library Manual](https://github.com/GeneralEmbeddedCLibraries/documentation/blob/develop/General_Embedded_C_Library_Manual.pdf) document.
+It is designed for projects that need a clean way to:
 
-## Key Benefits  
-- **Centralized Configuration**: Simplifies management by defining all system settings in a single table.
-- **Data Integrity**: Integrated Min/Max range checking and custom validation callbacks.
-- **Thread Safety**: Optional mutex protection for multi-threaded environments (e.g., RTOS).
-- **Persistence**: Transparent NVM (Non-Volatile Memory) integration with CRC and signature verification.
-- **Observability**: Built-in support for parameter names, units, and descriptions for easy CLI/GUI integration.
-- **Event-Driven**: Chained callback system for notifying other modules of parameter changes.
+- define parameters once
+- read and write them through a consistent API
+- expose them to CLI, PC tools, or protocol layers by stable external IDs
+- validate values before they are accepted
+- persist selected values to NVM
+- keep memory usage predictable on embedded targets
 
-## Integration with other modules in General Embedded C Libraries ecosystem
-When combined with the following modules, the **Device Parameters** module significantly enhances the capabilities of embedded applications:  
+## What this module provides
 
-1. **[CLI (Command Line Interface)](https://github.com/GeneralEmbeddedCLibraries/cli)**  
-   - Enables communication between the embedded application and a PC.  
-   - Allows real-time configuration and diagnostics via the CLI interface.  
+- **Single source of truth** through `par_table.def`
+- **Typed APIs** for `U8`, `I8`, `U16`, `I16`, `U32`, `I32`, and, when enabled, `F32`
+- **Optional metadata** such as name, unit, description, access, ID, and persistence flags
+- **Validation pipeline** with compile-time checks for integer ranges and optional runtime hooks for dynamic rules
+- **Static live-value storage** grouped by width instead of heap allocation
+- **Fast external lookup by ID** through a compile-time generated static hash map
+- **Optional NVM integration** for persistent parameters
+- **Portable core + platform hooks** for RTOS, mutex, logging, assertions, and atomic backends
 
-2. **[NVM (Non-Volatile Memory)](https://github.com/GeneralEmbeddedCLibraries/nvm)**  
-   - Ensures that configured settings are stored persistently.  
+## Start here
 
-3. **Device Parameters + CLI + NVM**  
-   - Together, these modules allow:  
-     - Communication with a PC using CLI.  
-     - Configuration and diagnostics of the application via Device Parameters.  
-     - Storage of settings to NVM, ensuring data persistence.  
+### Quick start
 
-### Development Benefits  
-By leveraging this combination of modules, embedded firmware development becomes significantly faster and more efficient, enabling developers to focus on functionality rather than repetitive low-level implementation.  
+1. Add the core sources from `src/` to your build.
+2. Provide a project-specific `par_table.def` at the package root.
+3. Provide `port/par_cfg_port.h` in your include path.
+4. Optionally provide `port/par_if_port.c` and `port/par_atomic_port.h` when your platform needs them.
+5. Call `par_init()` before using runtime APIs.
+6. Use the typed `par_set_*` / `par_get_*` APIs in application code. Getter APIs now use an explicit output pointer and return `par_status_t`.
 
-## **Dependencies**
+A minimal example:
 
-### **1. NVM Module**
-In case of using NVM module *PAR_CFG_NVM_EN = 1*, then [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm) must pe part of project. 
-NVM module must take following path:
-```
-"root/middleware/nvm/nvm/src/nvm.h"
-```
+This quick-start example assumes `PAR_CFG_ENABLE_TYPE_F32 = 1`.
 
-### **2. C11 compiler support**
-Parameter module utilize C11 *_Atomic* and *_Generic* features, therefore make sure your compiler supports C11 primitives.  
+```c
+#include "par.h"
 
-## **Limitations**
- - **Heap Usage:** The module uses malloc during par_init() to allocate RAM space for the parameters based on the configuration table. Ensure your heap is sufficiently sized.
- - **Alignment:** Address offsets are calculated based on 4-byte (32-bit) alignment to satisfy most ARM Cortex-M requirements.
- - **Flat ID Space:** Parameter IDs must be unique across the entire table to ensure NVM consistency.
- - **Execution Time:** If many callbacks are chained to a single parameter, the par_set execution time will increase accordingly.
-
-## **General Embedded C Libraries Ecosystem**
-In order to be part of *General Embedded C Libraries Ecosystem* this module must be placed in following path: 
-```
-root/middleware/parameters/parameters/"module_space"
-```
-
- ## **API**
-| API Functions | Description | Prototype |
-| --- | ----------- | ----- |
-| **par_init** 					| Initialization of parameters module 				| par_status_t par_init(void) |****
-| **par_deinit** 				| De-initialization of parameters module 			| par_status_t par_deinit(void) |****
-| **par_is_init** 				| Get initialization flag 							| bool par_is_init(void) |
-
- ## **Setting parameter value API**
-| API Functions | Description | Prototype |
-| --- | ----------- | ----- |
-| **par_set** 					| Set parameter value 								| par_status_t par_set(const par_num_t par_num, const void *p_val) |
-| **par_set_by_id** 			| Set parameter value by ID 						| par_status_t par_set_by_id(const uint16_t id, const void * p_val) |
-| **par_set_u8** 				| Set u8 parameter value 							| par_status_t par_set_u8(const par_num_t par_num, const uint8_t val) |
-| **par_set_i8** 				| Set i8 parameter value 							| par_status_t par_set_i8(const par_num_t par_num, const int8_t val) |
-| **par_set_u16** 				| Set u16 parameter value 							| par_status_t par_set_u16(const par_num_t par_num, const uint16_t val) |
-| **par_set_i16** 				| Set i16 parameter value 							| par_status_t par_set_i16(const par_num_t par_num, const int16_t val) |
-| **par_set_u32** 				| Set u32 parameter value 							| par_status_t par_set_u32(const par_num_t par_num, const uint32_t val) |
-| **par_set_i32** 				| Set i32 parameter value 							| par_status_t par_set_i32(const par_num_t par_num, const int32_t val) |
-| **par_set_f32** 				| Set f32 parameter value 							| par_status_t par_set_f32(const par_num_t par_num, const float32_t val) |
-| **par_set_u8_fast** 			| Set u8 parameter value fast						| par_status_t par_set_u8_fast(const par_num_t par_num, const uint8_t val) |
-| **par_set_i8_fast** 			| Set i8 parameter value fast 						| par_status_t par_set_i8_fast(const par_num_t par_num, const int8_t val) |
-| **par_set_u16_fast** 			| Set u16 parameter value fast						| par_status_t par_set_u16_fast(const par_num_t par_num, const uint16_t val) |
-| **par_set_i16_fast** 			| Set i16 parameter value fast						| par_status_t par_set_i16_fast(const par_num_t par_num, const int16_t val) |
-| **par_set_u32_fast** 			| Set u32 parameter value fast						| par_status_t par_set_u32_fast(const par_num_t par_num, const uint32_t val) |
-| **par_set_i32_fast** 			| Set i32 parameter value fast						| par_status_t par_set_i32_fast(const par_num_t par_num, const int32_t val) |
-| **par_set_f32_fast** 			| Set f32 parameter value fast						| par_status_t par_set_f32_fast(const par_num_t par_num, const float32_t val) |
-| **par_set_to_default** 		| Set parameter to default value 					| par_status_t par_set_to_default (const par_num_t par_num) |
-| **par_set_all_to_default** 	| Set all parameters to default value 				| par_status_t par_set_all_to_default (void) |
-| **PAR_SET** 					| Set generic parameters value 						| #define PAR_SET(par_num, value) |
-
- ## **Getting parameter value API**
-| API Functions | Description | Prototype |
-| --- | ----------- | ----- |
-| **par_get** 					| Get parameter value 								| par_status_t par_get (const par_num_t par_num, void *const p_val)|
-| **par_get_id** 				| Get parameter ID number 							| par_status_t par_get_id(const par_num_t par_num, uint16_t *const p_id) |
-| **par_get_u8** 				| Get u8 parameter value  							| uint8_t par_get_u8(const par_num_t par_num) |
-| **par_get_i8** 				| Get i8 parameter value  							| uint8_t par_get_i8(const par_num_t par_num) |
-| **par_get_u16** 				| Get u16 parameter value  							| uint16_t par_get_u16(const par_num_t par_num) |
-| **par_get_i16** 				| Get i16 parameter value  							| uint16_t par_get_i16(const par_num_t par_num) |
-| **par_get_u32** 				| Get u32 parameter value  							| uint32_t par_get_u32(const par_num_t par_num) |
-| **par_get_i32** 				| Get i32 parameter value  							| uint32_t par_get_i32(const par_num_t par_num) |
-| **par_get_f32** 				| Get f32 parameter value  							| float32_t par_get_f32(const par_num_t par_num) |
-| **par_get_default** 			| Get default parameter value  						| par_status_t par_get_default(const par_num_t par_num, void * const p_val) |
-| **par_is_changed** 			| Is parameter value changed from default			| bool par_is_changed(const par_num_t par_num) |
-| **PAR_GET** 					| Get generic parameters value 						| #define PAR_GET(par_num, dest) |
-
- ## **Parameter configurations API**
-| API Functions | Description | Prototype |
-| --- | ----------- | ----- |
-| **par_get_config** 			| Get parameter configurations 						| const par_cfg_t * par_get_config(const par_num_t par_num) |
-| **par_get_name** 				| Get parameter name 								| const char * par_get_name(const par_num_t par_num) |
-| **par_get_range** 			| Get parameter range 								| par_range_t par_get_range(const par_num_t par_num) |
-| **par_get_unit** 				| Get parameter unit 								| const char * par_get_unit(const par_num_t par_num) |
-| **par_get_desc** 				| Get parameter describtion							| const char * par_get_desc(const par_num_t par_num) |
-| **par_get_type** 				| Get parameter data type							| par_type_list_t par_get_type(const par_num_t par_num) |
-| **par_get_access**			| Get parameter access								| par_access_t par_get_access(const par_num_t par_num) |
-| **par_is_persistant**			| Get parameter persistance							| bool par_is_persistant(const par_num_t par_num) |
-| **par_get_num_by_id** 		| Get parameter number (enumeration) by its ID 		| par_status_t par_get_num_by_id(const uint16_t id, par_num_t *const p_par_num) |
-| **par_get_id_by_num** 		| Get parameter ID by number (enumeration) 			| par_status_t par_get_id_by_num(const par_num_t par_num, uint16_t * const p_id) |
-
- ## **Parameter NVM storage API**
-| API Functions | Description | Prototype |
-| --- | ----------- | ----- |
-| **par_set_n_save** 	| Set and store parameter to NVM 					| par_status_t par_set_n_save(const par_num_t par_num, const void * p_val) |
-| **par_save_all** 		| Store all parameters to NVM 						| par_status_t par_save_all(void) |
-| **par_save** 			| Store single parameter 							| par_status_t par_save(const par_num_t par_num) |
-| **par_save_by_id** 	| Store single parameter by ID 						| par_status_t par_save_by_id(const uint16_t par_id) |
-| **par_save_clean** 	| Re-Write complete NVM memory 						| par_status_t par_save_clean(void) |
-
- ## **Parameter registrations API**
-| API Functions | Description | Prototype |
-| --- | ----------- | ----- |
-| **par_register_on_change_cb** 		| Register on value change callback			| par_status_t par_register_on_change_cb(const par_on_change_cb_t * const cb) |
-| **par_register_validation** 			| Register value validation callback		| par_status_t par_register_validation(const par_validation_t * const validation) |
-
-## Usage
-
-**Put all user code between sections: USER CODE BEGIN & USER CODE END!**
-
-**1. Copy template files to root directory of module.**
-**2. List names of all wanted parameters inside **par_cfg.h** file**
-
-```C
-/**
- * 	List of device parameters
- *
- * @note 	User shall provide parameter name here as it would be using
- * 			later inside code.
- *
- * @note 	User shall change code only inside section of "USER_CODE_BEGIN"
- * 			ans "USER_CODE_END".
- */
-typedef enum
+static void app_init(void)
 {
-	// USER CODE START...
+    if (par_init() != ePAR_OK)
+    {
+        /* Handle initialization error */
+    }
 
-	ePAR_TEST_U8 = 0,
-	ePAR_TEST_I8,
+    (void)par_set_f32(ePAR_CH1_REF_VAL, (float32_t)25.0f);
 
-	ePAR_TEST_U16,
-	ePAR_TEST_I16,
-
-	ePAR_TEST_U32,
-	ePAR_TEST_I32,
-
-	ePAR_TEST_F32,
-
-	// USER CODE END...
-
-	ePAR_NUM_OF
-} par_num_t;
-```
-
-**3. Change parameter configuration table inside **par_cfg.c** file. It is recommended to use designated initializers.**
-
-```C
-/**
- *	Parameters definitions
- *
- *	@brief
- *
- *	Each defined parameter has following properties:
- *
- *		i)      Parameter ID:   Unique parameter identification number. ID shall not be duplicated.
- *		ii)     Name:           Parameter name. Max. length of 32 chars.
- *		iii)    Min:            Parameter minimum value. Min value must be less than max value.
- *		iv)     Max:            Parameter maximum value. Max value must be more than min value.
- *		v)      Def:            Parameter default value. Default value must lie between interval: [min, max]
- *		vi)     Unit:           In case parameter shows physical value. Max. length of 32 chars.
- *		vii)    Data type:      Parameter data type. Supported types: uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t and float32_t
- *		viii)   Access:         Access type visible from external device such as PC. Either ReadWrite or ReadOnly.
- *		ix)     Persistence:    Tells if parameter value is being written into NVM.
- *
- *	@note	User shall fill up wanted parameter definitions!
- */
-static const par_cfg_t g_par_table[ePAR_NUM_OF] =
-{
-
-	// USER CODE BEGIN...
-
-	// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	//                   ID         Name                  Min              Max           Def                 Unit         Data type               PC Access                 Persistent		     Description 
-	// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-	[ePAR_TEST_U8] = {	.id = 0,  .name = "Test_u8",  .min.u8 = 0,      .max.u8 = 10,   .def.u8 = 8,       .unit = "n/a", .type = ePAR_TYPE_U8, .access = ePAR_ACCESS_RW,  .persistant = true, .desc = "Test parameter U8" },
-	[ePAR_TEST_I8] = {	.id = 1,  .name = "Test_i8",  .min.i8 = -10,    .max.i8 = 100,  .def.i8 = -8,      .unit = "n/a", .type = ePAR_TYPE_I8, .access = ePAR_ACCESS_RW,  .persistant = true, .desc = "Test parameter" },
-
-	[ePAR_TEST_U16] = {	.id = 2,  .name = "Test_u16",  .min.u16 = 0,    .max.u16 = 10,  .def.u16 = 3,      .unit = "n/a", .type = ePAR_TYPE_U16, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter U16"},
-	[ePAR_TEST_I16] = {	.id = 3,  .name = "Test_i16",  .min.i16 = -10,  .max.i16 = 100, .def.i16 = -5,     .unit = "n/a", .type = ePAR_TYPE_I16, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter I16"},
-
-	[ePAR_TEST_U32] = {	.id = 4,  .name = "Test_u32",  .min.u32 = 0,    .max.u32 = 10,  .def.u32 = 10,     .unit = "n/a", .type = ePAR_TYPE_U32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter U32" },
-	[ePAR_TEST_I32] = {	.id = 5,  .name = "Test_i32",  .min.i32 = -10,  .max.i32 = 100, .def.i32 = -10,    .unit = "n/a", .type = ePAR_TYPE_I32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter I32" },
-
-	[ePAR_TEST_F32] = {	.id = 6,  .name = "Test_f32",  .min.f32 = -10,  .max.f32 = 100, .def.f32 = -1.123, .unit = "n/a", .type = ePAR_TYPE_F32, .access = ePAR_ACCESS_RW, .persistant = true, .desc = "Test parameter F32" },
-
-	// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-	// USER CODE END...
-};
-```
-
-**4. Set-up all configurations options inside **par_cfg.h** file**
-
-| Configuration | Description |
-| --- | --- |
-| **PAR_CFG_NVM_EN** 			| Enable/Disable usage of NVM for persistant parameters. |
-| **PAR_CFG_NVM_REGION** 		| Select NVM region for Device Parameter storage space. | 
-| **PAR_CFG_DEBUG_EN** 			| Enable/Disable debugging mode. | 
-| **PAR_CFG_ASSERT_EN** 		| Enable/Disable asserts. Shall be disabled in release build!  | 
-| **PAR_DBG_PRINT** 			| Definition of debug print. | 
-| **PAR_ASSERT** 				| Definition of assert. | 
-
-**5. Call **par_init()** function**
-
-```C
-// Init parameters
-if ( ePAR_OK != par_init())
-{
-    PROJECT_CONFIG_ASSERT( 0 );
-}
-```
-**NOTICE: NVM module will be initialized as a part of Device Parameters initialization routine in case of usage (*PAR_CFG_NVM_EN = 1*)!**
-
-**6. Setting/Getting parameter value**
-
-```C
-// Set battery voltage & sytem current
-// NOTICE: When using "par_set" don't forget to always CAST to appropriate data type!
-(void) par_set( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
-(void) par_set( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
-
-// Or equivalent to "par_set"
-PAR_SET( ePAR_BAT_VOLTAGE, g_pwr_data.bat.voltage_filt );
-PAR_SET( ePAR_SYS_CURRENT, g_pwr_data.inp.sys_cur );
-
-// Set and save parameter 
-if ( ePAR_OK != par_set_n_save( ePAR_P1_10, (uint32_t) &p1_10_val ))
-{
-	// Operation error...
-	// Further actions here...
-}
-
-// Get battery voltage & sytem current
-// NOTICE: When using "par_get" don't forget to always CAST to appropriate data type!
-(void) par_get( ePAR_BAT_VOLTAGE, (float32_t*) &g_pwr_data.bat.voltage_filt );
-(void) par_get( ePAR_SYS_CURRENT, (float32_t*) &g_pwr_data.inp.sys_cur );
-
-// Or equivalent to "par_get"
-PAR_GET( ePAR_BAT_VOLTAGE, g_pwr_data.bat.voltage_filt );
-PAR_GET( ePAR_SYS_CURRENT, g_pwr_data.inp.sys_cur );
-```
-
-Setting direct value to parameter:
-
-```C
-par_set( ePAR_BAT_VOLTAGE, (float32_t*) &(float32_t){ 1.1234f} );
-
-// Or equivalent using "PAR_SET"
-// NOTE: When putting direct numbers using "PAR_SET" always cast to appropriate data type! 
-PAR_SET( ePAR_BAT_VOLTAGE, (float32_t) 1.1234f );	
-```
-
-### Normal and fast parameter setting API
-When choosing an API for setting parameter values, you must decide between the safe (normal) API and the fast API (with suffix *_fast*). The choice depends on whether your priority is data integrity and system observability or raw execution speed.
-
-```C
-// --- NORMAL API ---
-// Use this for 90% of your code. It prevents errors and triggers callbacks.
-par_set_f32( ePAR_TARGET_TEMP, 25.5f );
-
-// --- FAST API ---
-// Use this in high frequency control loops where every microsecond counts.
-// WARNING: No safety checks are performed!
-par_set_f32_fast( ePAR_MOTOR_PWM, 0.85f );
-```
-
-**7. Store to NVM**
-
-```C
-// Store all paramters to NVM
-if ( ePAR_OK != par_save_all())
-{
-	// Storing to NVM error...
-	// Further actions here...
+    float32_t ref_val = 0.0f;
+    if (par_get_f32(ePAR_CH1_REF_VAL, &ref_val) != ePAR_OK)
+    {
+        /* Handle read error */
+    }
 }
 ```
 
-**8. On-change callback usage**
+## Documentation map
 
-```C
-////////////////////////////////////////////////////////////////////////////////
-/**
-*        Parameter value change callback
-*
-* @param[out]   par_num - Parameter number
-* @param[out]   new_val - Parameter new value
-* @param[out]   new_val - Parameter old value
-* @return       void
-*/
-////////////////////////////////////////////////////////////////////////////////
-void par_on_change_cb1(const par_num_t par_num, const par_type_t new_val, const par_type_t old_val)
-{
-    cli_printf("Parameter %d change from %d to %d", par_num, old_val.u8, new_val.u8 );
-}
+- [Getting started](docs/getting-started.md) for integration steps, required files, and first-use examples
+- [Architecture](docs/architecture.md) for storage model, validation flow, ID lookup, and layout design
+- [API reference](docs/api-reference.md) for the public API grouped by responsibility
 
-// Define parameter on change callback for "ePAR_CH1_TEST_MODE_EN" parameter
-PAR_DEFINE_ON_CHANGE_CB( test_par_cb, ePAR_CH1_TEST_MODE_EN, par_on_change_cb1);
+## Package layout
 
-// Register at init phase
-@init
-{
-	if ( ePAR_OK != par_register_on_change_cb( &test_par_cb ))
-	{
-		// Operation error...
-		// Further actions here...
-	}
-}
+```text
+parameters/
+├── README.md
+├── CHANGE_LOG.md
+├── doc/
+│   └── DeviceParameter_VerificationReport.xlsx
+├── docs/
+│   ├── api-reference.md
+│   ├── architecture.md
+│   └── getting-started.md
+├── src/
+│   ├── par.c
+│   ├── par.h
+│   ├── par_atomic.h
+│   ├── par_bitwise_impl.inc
+│   ├── par_cfg.h
+│   ├── par_def.c
+│   ├── par_def.h
+│   ├── par_if.c
+│   ├── par_if.h
+│   ├── par_layout.c
+│   ├── par_layout.h
+│   ├── par_nvm.c
+│   ├── par_nvm.h
+│   ├── par_storage_init.inc
+│   └── par_typed_impl.inc
+└── template/
+    ├── par_cfg_port.htmp
+    ├── par_layout_static.htmp
+    └── par_table.deftmp
 ```
 
-**9. Parameter value validation usage**
+## Required integration files
 
-```C
-////////////////////////////////////////////////////////////////////////////////
-/**
-*        Validate parameter value
-*
-* @param[in]   	par_num - Parameter number
-* @param[in]	val 	- Parameter new value
-* @return       true when value valid
-*/
-////////////////////////////////////////////////////////////////////////////////
-static bool validate_par_value(const par_num_t par_num, const par_type_t val)
-{
-    UNUSED(par_num);
+This repository contains the reusable module core and templates. A real integration still needs project-owned files.
 
-	// Prevent parameter to take exact -10 value
-    if ( val.i8 == -10 )   	return false;
-    else                    return true;
-}
+### Required
 
-// Define parameter validation for "ePAR_CH1_REF_VAL" parameter
-PAR_DEFINE_VALIDATION( par_validate, ePAR_CH1_REF_VAL, validate_par_value);
+- `par_table.def` at the package root
+- `port/par_cfg_port.h`
 
-// Register at init phase
-@init
-{
-	if ( ePAR_OK != par_register_validation( &par_validate ))
-	{
-		// Operation error...
-		// Further actions here...
-	}
-}
-```
+### Optional, depending on configuration
 
+- `port/par_if_port.c` when `PAR_CFG_IF_PORT_EN = 1` and the target needs stronger platform hooks than the weak defaults in `par_if.c`
+- `port/par_atomic_port.h` when `PAR_ATOMIC_BACKEND = PAR_ATOMIC_BACKEND_PORT`
+- generated static layout header when `PAR_CFG_LAYOUT_SOURCE = PAR_CFG_LAYOUT_SCRIPT`
+- the external NVM module when `PAR_CFG_NVM_EN = 1`
 
+## When to read which document
+
+- Read [Getting started](docs/getting-started.md) when you are integrating the module into a project.
+- Read [Architecture](docs/architecture.md) when you need to understand how `par_table.def`, storage groups, layout, validation, or ID lookup work internally.
+- Read [API reference](docs/api-reference.md) when you already understand the model and only need function-level guidance.
+
+## Key integration notes
+
+- `par_cfg.h` includes `par_cfg_port.h` unconditionally, so your build must provide that header.
+- `PAR_CFG_ENABLE_TYPE_F32` controls whether floating-point parameter support and the related typed APIs are compiled in.
+- `PAR_CFG_ENABLE_RUNTIME_VALIDATION` and `PAR_CFG_ENABLE_CHANGE_CALLBACK` control whether normal setters include runtime validation callbacks and on-change callbacks.
+- The module separates **internal parameter enumeration** (`par_num_t`) from **external parameter IDs** (`id`).
+- The current ID lookup implementation uses a one-entry-per-bucket hash map generated at compile time from `par_table.def`. External IDs must therefore be not only unique, but also collision-free under the configured hash geometry. Optional runtime diagnostic scans can be enabled with `PAR_CFG_ENABLE_RUNTIME_ID_DUP_CHECK` and `PAR_CFG_ENABLE_RUNTIME_ID_HASH_COLLISION_CHECK` when additional startup logs are useful. See `docs/architecture.md` for the collision rule and avoidance guidance.
+- Unchecked setter APIs skip runtime validation callbacks and on-change callbacks, so they should be reserved for tightly controlled hot paths. Bitwise fast setters are further restricted to `U8` / `U16` / `U32` flags or bitmask parameters. Legacy `*_fast()` names remain as deprecated aliases.
+- NVM support is optional, but when enabled it depends on the external NVM module and on ID and persistence metadata being enabled.
+- `par_init()` applies startup default values directly to live storage. Integer default values from `par_table.def` are compiled into a grouped width-based storage object, while `F32` default values are applied to the 32-bit storage group after layout offsets are available only when `PAR_CFG_ENABLE_TYPE_F32 = 1`. Because this startup initialization does not go through the public setter path, it does not invoke runtime validation or on-change callbacks.
+- `PAR_CFG_ENABLE_RESET_ALL_RAW` controls whether raw reset-all support and grouped default mirror snapshot support are enabled.
+
+## Related projects
+
+- [CLI module](https://github.com/GeneralEmbeddedCLibraries/cli)
+- [NVM module](https://github.com/GeneralEmbeddedCLibraries/nvm)
+- [General Embedded C Library Manual](https://github.com/GeneralEmbeddedCLibraries/documentation/blob/develop/General_Embedded_C_Library_Manual.pdf)
