@@ -45,13 +45,14 @@
 static bool gb_is_init = false;
 
 /**
- * Parameter callback table.
+ *      Parameter callback functions
  */
-static struct
-{
-    pf_par_validation_t validation;     /**< Validation callback function (or NULL). */
-    pf_par_on_change_cb_t on_change;    /**< On change callback function (or NULL). */
-} g_par_cb_table[ePAR_NUM_OF];
+static par_on_change_cb_t * gp_par_cb = NULL;
+
+/**
+ *      Parameter validation functions
+ */
+static par_validation_t * gp_par_validations = NULL;
 
 /**
  *  Parameter live values divided by its type in RAM
@@ -126,6 +127,7 @@ static uint32_t gu32_par_offset[ ePAR_NUM_OF ] = { 0 };
 static void         par_allocate_ram_space          (void);
 static par_status_t par_check_table_validy          (const par_cfg_t * const p_par_cfg);
 static bool         par_is_value_changed            (const par_num_t par_num, const void * p_val);
+static void         par_raise_on_change_callback    (const par_num_t par_num, const par_type_t new_val, const par_type_t old_val);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -324,6 +326,56 @@ static bool par_is_value_changed(const par_num_t par_num, const void * p_val)
     }
 
     return value_changed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*        Check and raise callback
+*
+* @param[in]    par_num - Parameter number (enumeration)
+* @param[in]    new_val - New parameter value
+* @param[in]    old_val - Old parameter value
+* @return       void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void par_raise_on_change_callback(const par_num_t par_num, const par_type_t new_val, const par_type_t old_val)
+{
+    // Value changed
+    if ( new_val.u32 != old_val.u32 )
+    {
+        for (const par_on_change_cb_t * cb = gp_par_cb; NULL != cb; cb=(*cb->next))
+        {
+            if ((!cb->is_range && (par_num == cb->par_num_first)) ||
+                (cb->is_range && (par_num >= cb->par_num_first) && (par_num <= cb->par_num_last)))
+            {
+                cb->callback( par_num, new_val, old_val );
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*        Validated parameter value
+*
+* @param[in]    par_num - Parameter number (enumeration)
+* @param[in]    val     - Parameter value
+* @return       True if value is accepted
+*/
+////////////////////////////////////////////////////////////////////////////////
+static bool par_validate_value(const par_num_t par_num, const par_type_t val)
+{
+    for (const par_validation_t * validation = gp_par_validations; NULL != validation; validation=(*validation->next))
+    {
+        if ((!validation->is_range && (par_num == validation->par_num_first)) ||
+            (validation->is_range && (par_num >= validation->par_num_first) && (par_num <= validation->par_num_last)))
+        {
+            return validation->valid_func( par_num, val );
+        }
+    }
+
+    // Return true if validation function is not registered for given parameter
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -561,15 +613,13 @@ par_status_t par_set_u8(const par_num_t par_num, const uint8_t val)
     PAR_ASSERT( ePAR_TYPE_U8 == par_get_type(par_num));
     if( ePAR_TYPE_U8 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.u8 = PAR_GET_U8_PRIV( par_num )};
-        
+
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.u8 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.u8 = val}))
         {
             status = par_set_u8_fast( par_num, val );
         }
@@ -580,10 +630,7 @@ par_status_t par_set_u8(const par_num_t par_num, const uint8_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.u8 = PAR_GET_U8_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.u8 != old_val.u8))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -616,15 +663,13 @@ par_status_t par_set_i8(const par_num_t par_num, const int8_t val)
     PAR_ASSERT( ePAR_TYPE_I8 == par_get_type(par_num));
     if( ePAR_TYPE_I8 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.i8 = PAR_GET_I8_PRIV( par_num )};
 
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.i8 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.i8 = val}))
         {
             status = par_set_i8_fast( par_num, val );
         }
@@ -635,10 +680,7 @@ par_status_t par_set_i8(const par_num_t par_num, const int8_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.i8 = PAR_GET_I8_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.i8 != old_val.i8))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -671,15 +713,13 @@ par_status_t par_set_u16(const par_num_t par_num, const uint16_t val)
     PAR_ASSERT( ePAR_TYPE_U16 == par_get_type(par_num));
     if( ePAR_TYPE_U16 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.u16 = PAR_GET_U16_PRIV( par_num )};
 
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.u16 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.u16 = val}))
         {
             status = par_set_u16_fast( par_num, val );
         }
@@ -690,10 +730,7 @@ par_status_t par_set_u16(const par_num_t par_num, const uint16_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.u16 = PAR_GET_U16_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.u16 != old_val.u16))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -726,15 +763,13 @@ par_status_t par_set_i16(const par_num_t par_num, const int16_t val)
     PAR_ASSERT( ePAR_TYPE_I16 == par_get_type(par_num));
     if( ePAR_TYPE_I16 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.i16 = PAR_GET_I16_PRIV( par_num )};
 
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.i16 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.i16 = val}))
         {
             status = par_set_i16_fast( par_num, val );
         }
@@ -745,10 +780,7 @@ par_status_t par_set_i16(const par_num_t par_num, const int16_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.i16 = PAR_GET_I16_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.i16 != old_val.i16))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -781,15 +813,13 @@ par_status_t par_set_u32(const par_num_t par_num, const uint32_t val)
     PAR_ASSERT( ePAR_TYPE_U32 == par_get_type(par_num));
     if( ePAR_TYPE_U32 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.u32 = PAR_GET_U32_PRIV( par_num )};
 
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.u32 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.u32 = val}))
         {
             status = par_set_u32_fast( par_num, val );
         }
@@ -800,10 +830,7 @@ par_status_t par_set_u32(const par_num_t par_num, const uint32_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.u32 = PAR_GET_U32_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.u32 != old_val.u32))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -836,15 +863,13 @@ par_status_t par_set_i32(const par_num_t par_num, const int32_t val)
     PAR_ASSERT( ePAR_TYPE_I32 == par_get_type(par_num));
     if( ePAR_TYPE_I32 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.i32 = PAR_GET_I32_PRIV( par_num )};
 
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.i32 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.i32 = val}))
         {
             status = par_set_i32_fast( par_num, val );
         }
@@ -855,10 +880,7 @@ par_status_t par_set_i32(const par_num_t par_num, const int32_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.i32 = PAR_GET_I32_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.i32 != old_val.i32))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -891,15 +913,13 @@ par_status_t par_set_f32(const par_num_t par_num, const float32_t val)
     PAR_ASSERT( ePAR_TYPE_F32 == par_get_type(par_num));
     if( ePAR_TYPE_F32 != par_get_type(par_num)) return ePAR_ERROR_TYPE;
 
-    pf_par_validation_t validation = g_par_cb_table[par_num].validation;
-    pf_par_on_change_cb_t on_change = g_par_cb_table[par_num].on_change;
     // Get mutex
     if ( ePAR_OK == par_acquire_mutex(par_num))
     {
         const par_type_t old_val = {.f32 = PAR_GET_F32_PRIV( par_num )};
 
         // Validated parameter value
-        if ((validation == NULL) || validation(par_num, (par_type_t){.f32 = val}))
+        if ( par_validate_value( par_num, (par_type_t){.f32 = val}))
         {
             status = par_set_f32_fast( par_num, val );
         }
@@ -910,10 +930,7 @@ par_status_t par_set_f32(const par_num_t par_num, const float32_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.f32 = PAR_GET_F32_PRIV( par_num )};
-        if ((on_change != NULL) && (new_val.f32 != old_val.f32))
-        {
-            on_change(par_num, new_val, old_val);
-        }
+        par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
     }
@@ -2079,32 +2096,66 @@ par_status_t par_get_id_by_num(const par_num_t par_num, uint16_t * const p_id)
 /**
 *        Register parameter on change callback
 *
-* @param[in]    par_num - Parameter number (enumeration)
-* @param[in]    cb      - Callback
-* @return       void
+* @param[cb]    cb      - Callback
+* @return       status  - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-void par_register_on_change_cb(const par_num_t par_num, const pf_par_on_change_cb_t cb)
+par_status_t par_register_on_change_cb(const par_on_change_cb_t * const cb)
 {
-    PAR_ASSERT( par_num < ePAR_NUM_OF );
+    static par_on_change_cb_t * prev_cb = NULL;
 
-    g_par_cb_table[par_num].on_change = cb;
+    PAR_ASSERT( NULL != cb );
+    PAR_ASSERT( NULL != cb->callback );
+    if ( NULL == cb ) return ePAR_ERROR;
+    if ( NULL == cb->callback) return ePAR_ERROR;
+
+    // First registration -> store the start of the callback linked list
+    if ( NULL == gp_par_cb )
+    {
+        gp_par_cb = (par_on_change_cb_t*) cb;
+    }
+    else
+    {
+        (*prev_cb->next) = (par_on_change_cb_t*) cb;
+    }
+
+    // Store previous callback
+    prev_cb = (par_on_change_cb_t*) cb;
+
+    return ePAR_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *        Register parameter value validation function
 *
-* @param[in]    par_num     - Parameter number (enumeration)
-* @param[in]    validation  - Validation
-* @return       void
+* @param[cb]    validation  - Validation
+* @return       status      - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-void par_register_validation(const par_num_t par_num, const pf_par_validation_t validation)
+par_status_t par_register_validation(const par_validation_t * const validation)
 {
-    PAR_ASSERT( par_num < ePAR_NUM_OF );
+    static par_validation_t * prev_validation = NULL;
 
-    g_par_cb_table[par_num].validation = validation;
+    PAR_ASSERT( NULL != validation );
+    PAR_ASSERT( NULL != validation->valid_func );
+    if ( NULL == validation ) return ePAR_ERROR;
+    if ( NULL == validation->valid_func) return ePAR_ERROR;
+
+    // First registration -> store the start of the callback linked list
+    if ( NULL == gp_par_validations )
+    {
+        gp_par_validations = (par_validation_t*) validation;
+    }
+    else
+    {
+        (*prev_validation->next) = (par_validation_t*) validation;
+    }
+
+    // Store previous callback
+    prev_validation = (par_validation_t*) validation;
+
+    return ePAR_OK;
 }
 
 #if ( PAR_CFG_DEBUG_EN )
