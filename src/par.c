@@ -45,12 +45,17 @@
 static bool gb_is_init = false;
 
 /**
- *      Parameter callback functions
+ *      Pointer to first parameter on set callback
  */
-static par_on_change_cb_t * gp_par_cb = NULL;
+static par_on_set_cb_t * gp_par_on_set_cb = NULL;
 
 /**
- *      Parameter validation functions
+ *      Pointer to first parameter on chahnge callback
+ */
+static par_on_set_cb_t * gp_par_on_change_cb = NULL;
+
+/**
+ *      Pointer to first parameter validation callback
  */
 static par_validation_t * gp_par_validations = NULL;
 
@@ -124,10 +129,12 @@ static uint32_t gu32_par_offset[ ePAR_NUM_OF ] = { 0 };
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static void         par_allocate_ram_space          (void);
-static par_status_t par_check_table_validy          (const par_cfg_t * const p_par_cfg);
-static bool         par_is_value_changed            (const par_num_t par_num, const void * p_val);
-static void         par_raise_on_change_callback    (const par_num_t par_num, const par_type_t new_val, const par_type_t old_val);
+static void         par_allocate_ram_space              (void);
+static par_status_t par_check_table_validy              (const par_cfg_t * const p_par_cfg);
+static bool         par_is_value_changed                (const par_num_t par_num, const void * p_val);
+static void         par_raise_on_set_callback_from_list (const par_on_set_cb_t *const p_first_cb, const par_num_t par_num, const par_type_t new_val, const par_type_t old_val);
+static void         par_raise_on_set_callback           (const par_num_t par_num, const par_type_t new_val, const par_type_t old_val);
+static void         par_raise_on_change_callback        (const par_num_t par_num, const par_type_t new_val, const par_type_t old_val);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -330,7 +337,45 @@ static bool par_is_value_changed(const par_num_t par_num, const void * p_val)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*        Check and raise callback
+*        Find and raise on set callback from specified list
+*
+* @param[in]    p_first_cb  - Pointer to first callback (in list)
+* @param[in]    par_num     - Parameter number (enumeration)
+* @param[in]    new_val     - New parameter value
+* @param[in]    old_val     - Old parameter value
+* @return       void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void par_raise_on_set_callback_from_list(const par_on_set_cb_t *const p_first_cb, const par_num_t par_num, const par_type_t new_val, const par_type_t old_val)
+{
+    for (const par_on_set_cb_t * cb = p_first_cb; NULL != cb; cb=(*cb->next))
+    {
+        if ((!cb->is_range && (par_num == cb->par_num_first)) ||
+            (cb->is_range && (par_num >= cb->par_num_first) && (par_num <= cb->par_num_last)))
+        {
+            cb->callback( par_num, new_val, old_val );
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*        Check and raise on set callback
+*
+* @param[in]    par_num - Parameter number (enumeration)
+* @param[in]    new_val - New parameter value
+* @param[in]    old_val - Old parameter value
+* @return       void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void par_raise_on_set_callback(const par_num_t par_num, const par_type_t new_val, const par_type_t old_val)
+{
+    par_raise_on_set_callback_from_list(gp_par_on_set_cb, par_num, new_val, old_val);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*        Check and raise on change callback
 *
 * @param[in]    par_num - Parameter number (enumeration)
 * @param[in]    new_val - New parameter value
@@ -343,14 +388,7 @@ static void par_raise_on_change_callback(const par_num_t par_num, const par_type
     // Value changed
     if ( new_val.u32 != old_val.u32 )
     {
-        for (const par_on_change_cb_t * cb = gp_par_cb; NULL != cb; cb=(*cb->next))
-        {
-            if ((!cb->is_range && (par_num == cb->par_num_first)) ||
-                (cb->is_range && (par_num >= cb->par_num_first) && (par_num <= cb->par_num_last)))
-            {
-                cb->callback( par_num, new_val, old_val );
-            }
-        }
+        par_raise_on_set_callback_from_list(gp_par_on_change_cb, par_num, new_val, old_val);
     }
 }
 
@@ -630,6 +668,7 @@ par_status_t par_set_u8(const par_num_t par_num, const uint8_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.u8 = PAR_GET_U8_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -680,6 +719,7 @@ par_status_t par_set_i8(const par_num_t par_num, const int8_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.i8 = PAR_GET_I8_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -730,6 +770,7 @@ par_status_t par_set_u16(const par_num_t par_num, const uint16_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.u16 = PAR_GET_U16_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -780,6 +821,7 @@ par_status_t par_set_i16(const par_num_t par_num, const int16_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.i16 = PAR_GET_I16_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -830,6 +872,7 @@ par_status_t par_set_u32(const par_num_t par_num, const uint32_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.u32 = PAR_GET_U32_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -880,6 +923,7 @@ par_status_t par_set_i32(const par_num_t par_num, const int32_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.i32 = PAR_GET_I32_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -930,6 +974,7 @@ par_status_t par_set_f32(const par_num_t par_num, const float32_t val)
 
         // Raise on change callback
         const par_type_t new_val = {.f32 = PAR_GET_F32_PRIV( par_num )};
+        par_raise_on_set_callback( par_num, new_val, old_val );
         par_raise_on_change_callback( par_num, new_val, old_val );
 
         par_release_mutex(par_num);
@@ -2091,6 +2136,38 @@ par_status_t par_get_id_by_num(const par_num_t par_num, uint16_t * const p_id)
     }
 
 #endif
+////////////////////////////////////////////////////////////////////////////////
+/**
+*        Register parameter on set callback
+*
+* @param[cb]    cb      - Callback
+* @return       status  - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_register_on_set_cb(const par_on_set_cb_t * const cb)
+{
+    static par_on_set_cb_t * prev_cb = NULL;
+
+    PAR_ASSERT( NULL != cb );
+    PAR_ASSERT( NULL != cb->callback );
+    if ( NULL == cb ) return ePAR_ERROR;
+    if ( NULL == cb->callback) return ePAR_ERROR;
+
+    // First registration -> store the start of the callback linked list
+    if ( NULL == gp_par_on_set_cb )
+    {
+        gp_par_on_set_cb = (par_on_set_cb_t*) cb;
+    }
+    else
+    {
+        (*prev_cb->next) = (par_on_set_cb_t*) cb;
+    }
+
+    // Store previous callback
+    prev_cb = (par_on_set_cb_t*) cb;
+
+    return ePAR_OK;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2100,9 +2177,9 @@ par_status_t par_get_id_by_num(const par_num_t par_num, uint16_t * const p_id)
 * @return       status  - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-par_status_t par_register_on_change_cb(const par_on_change_cb_t * const cb)
+par_status_t par_register_on_change_cb(const par_on_set_cb_t * const cb)
 {
-    static par_on_change_cb_t * prev_cb = NULL;
+    static par_on_set_cb_t * prev_cb = NULL;
 
     PAR_ASSERT( NULL != cb );
     PAR_ASSERT( NULL != cb->callback );
@@ -2110,17 +2187,17 @@ par_status_t par_register_on_change_cb(const par_on_change_cb_t * const cb)
     if ( NULL == cb->callback) return ePAR_ERROR;
 
     // First registration -> store the start of the callback linked list
-    if ( NULL == gp_par_cb )
+    if ( NULL == gp_par_on_change_cb )
     {
-        gp_par_cb = (par_on_change_cb_t*) cb;
+        gp_par_on_change_cb = (par_on_set_cb_t*) cb;
     }
     else
     {
-        (*prev_cb->next) = (par_on_change_cb_t*) cb;
+        (*prev_cb->next) = (par_on_set_cb_t*) cb;
     }
 
     // Store previous callback
-    prev_cb = (par_on_change_cb_t*) cb;
+    prev_cb = (par_on_set_cb_t*) cb;
 
     return ePAR_OK;
 }
