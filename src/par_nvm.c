@@ -67,8 +67,7 @@
     /**
      *     Check NVM module compatibility
      */
-    _Static_assert( 2 == NVM_VER_MAJOR );
-    _Static_assert( 1 <= NVM_VER_MINOR );
+    _Static_assert( 3 == NVM_VER_MAJOR, "Requires NVM module version V3.x.x!" );
 
     ////////////////////////////////////////////////////////////////////////////////
     // Definitions
@@ -728,14 +727,10 @@
     ////////////////////////////////////////////////////////////////////////////////
     static par_status_t par_nvm_init_nvm(void)
     {
-        par_status_t status      = ePAR_OK;
-        bool         is_nvm_init = false;
-
-        // First check if NVM is already init
-        (void) nvm_is_init( &is_nvm_init );
+        par_status_t status = ePAR_OK;
         
         // NVM is not jet init
-        if ( false == is_nvm_init )
+        if ( false == nvm_is_init())
         {
             // Init NVM
             if ( eNVM_OK != nvm_init())
